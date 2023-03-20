@@ -1,6 +1,4 @@
 import numpy as np
-
-
 import torch
 from torchvision import models
 from torch import nn
@@ -19,7 +17,7 @@ from math import sqrt
 
 from models.models import VGGBase, AuxiliaryConvolutions, PredictionConvolutions
 from utils.utils import xy_to_cxcy, cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, find_jaccard_overlap
-
+from utils.dataset import SSDDataset as ssdDataset
 
 print(os.listdir("/home/users/b/bozianu/work/SSD/SSD/data/input"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #globally define
@@ -122,7 +120,7 @@ for img_folder in all_img_folder:
 
 print(len(all_img_name), all_img_name[0])
 
-train_ds = SSDDataset(all_img_name[:int(len(all_img_name)*0.1)])
+train_ds = ssdDataset(all_img_name[:int(len(all_img_name)*0.1)])
 _, bbs, lbs = train_ds[29]
 print(bbs)
 print(lbs)
@@ -503,7 +501,6 @@ for img_folder in all_img_folder:
     img_folder_path = '/home/users/b/bozianu/work/SSD/SSD/data/input/Images/' + img_folder
     all_img_name += list(map(lambda x: img_folder + '/'+ x, os.listdir(img_folder_path)))
 
-print(len(all_img_name), all_img_name[0])
 
 train_ds = SSDDataset(all_img_name[:int(len(all_img_name)*0.8)])
 train_dl = DataLoader(train_ds, batch_size=BS, shuffle=True, collate_fn=train_ds.collate_fn)

@@ -2,12 +2,110 @@ import torch
 from torch.nn import functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-
-import numpy as np
 import os
+import re
+import numpy as np
+from math import sqrt
+
 import json
 from pycocotools.coco import COCO
 from PIL import Image
+
+
+
+class SSDDataset(Dataset):
+    def __init__(self, file_folder, is_test=False, transform=True):
+        self.img_folder_path = '/home/users/b/bozianu/work/SSD/SSD/data/input/Images/'
+        self.annotation_folder_path = '/home/users/b/bozianu/work/SSD/SSD/data/input/Annotation/'
+        self.file_folder = file_folder
+        self.is_test = is_test
+        self.transform = transform
+        
+    def __getitem__(self, idx):
+        file = self.file_folder[idx]
+        img_path = self.img_folder_path + file
+        img = Image.open(img_path)
+        img = img.convert('RGB')
+        
+        if not self.is_test:
+            annotation_path = self.annotation_folder_path + file.split('.')[0]
+            with open(annotation_path) as f:
+                annotation = f.read()
+
+            boxes = self.get_xys(annotation)
+
+            new_boxes = self.resize_boxes(boxes, img)
+            if self.transform is not None:
+                img = self.resize_image(img)
+
+            return img, new_boxes, torch.ones(len(new_boxes))
+
+        else:
+            return img
+    
+    def __len__(self):
+        return len(self.file_folder)
+        
+    def get_xys(self, annotation):
+        xmin = list(map(int,re.findall('(?<=<xmin>)[0-9]+?(?=</xmin>)', annotation)))
+        xmax = list(map(int,re.findall('(?<=<xmax>)[0-9]+?(?=</xmax>)', annotation)))
+        ymin = list(map(int,re.findall('(?<=<ymin>)[0-9]+?(?=</ymin>)', annotation)))
+        ymax = list(map(int,re.findall('(?<=<ymax>)[0-9]+?(?=</ymax>)', annotation)))
+        
+        boxes_true = list(map(list, zip(xmin, ymin, xmax,ymax)))
+        return torch.tensor(boxes_true)
+
+    def resize_image(self, img, dims=(300,300)):
+        tsfm = transforms.Compose([transforms.Resize([300, 300]),
+                                   transforms.ToTensor(),
+                                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+        
+        return tsfm(img)
+        
+    def resize_boxes(self, boxes, img, dims=(300, 300)):
+        #rescale boxes so they still cover objects in resized image
+        old_dims = torch.FloatTensor([img.width, img.height, img.width, img.height]).unsqueeze(0)
+        new_boxes = torch.div(boxes,old_dims)
+
+        new_dims = torch.FloatTensor([dims[1], dims[0], dims[1], dims[0]]).unsqueeze(0)
+        scaled_boxes = new_boxes * new_dims
+        
+        return new_boxes
+    
+    def collate_fn(self, batch):
+        """
+        Since each image may have a different number of objects, we need a collate function (to be passed to the DataLoader).
+        This describes how to combine these tensors of different sizes. We use lists.
+        Input:
+          batch, the list of imgs, new_boxes, labels from __getitem__
+        Returns:
+         tensor of images, lists of bounding boxes and labels
+        """
+
+        images = list()
+        boxes = list()
+        labels = list()
+
+        for b in batch:
+            images.append(b[0])
+            boxes.append(b[1])
+            labels.append(b[2])
+
+        images = torch.stack(images, dim=0)
+
+        return images, boxes, labels  # tensor (N, 3, 300, 300), 3 lists of N tensors each
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class CustomCOCODataset(Dataset):
