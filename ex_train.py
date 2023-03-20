@@ -577,13 +577,12 @@ plt.plot(x_axis,tr_loss_tot,'--',label='training loss')
 plt.plot(x_axis,vl_loss_tot,'--',label='val loss')
 plt.legend()
 plt.xlabel('epoch')
-plt.ylabel('Arbitrary Loss')
-plt.savefig('losses.png')
+plt.ylabel('Arbitrary Loss Units')
+#plt.savefig('losses.png')
+plt.savefig("/home/users/b/bozianu/work/SSD/SSD/inference/"+"SSD_model_{}/traininglosses.png".format(EPOCH))
 
 
-
-
-torch.save(model.state_dict(), 'SSD_model_{}.pth'.format(EPOCH))
+torch.save(model.state_dict(), "/home/users/b/bozianu/work/SSD/SSD/models/"+"SSD_model_{}.pth".format(EPOCH))
 
 
 

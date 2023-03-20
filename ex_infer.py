@@ -248,7 +248,7 @@ tsfm = transforms.Compose([
 
 
 
-model_save_path = "/home/users/b/bozianu/work/SSD/SSD/SSD_model_7.pth"
+model_save_path = "/home/users/b/bozianu/work/SSD/SSD/models/SSD_model_7.pth"
 save_at = "/home/users/b/bozianu/work/SSD/SSD/inference/" + "SSD_model_7/" + time.strftime("%Y%m%d-%H%M%S") + "/"
 if not os.path.exists(save_at):
     os.makedirs(save_at)
