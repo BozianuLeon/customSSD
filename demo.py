@@ -11,12 +11,12 @@ from utils.utils import move_dev
 
 
 # Get data
-dataset = NewCOCODataset(root_folder="/Users/leonbozianu/work/phd/SSD/data/val2017",
-                            annotation_json="/Users/leonbozianu/work/phd/SSD/data/annotations/instances_val2017.json")
+dataset = NewCOCODataset(root_folder="/home/users/b/bozianu/work/data/val2017",
+                            annotation_json="/home/users/b/bozianu/work/data/annotations/instances_val2017.json")
 print('Images in dataset:',len(dataset))
 
-train_size = int(0.2 * len(dataset))
-val_size = int(0.1 * len(dataset))
+train_size = int(0.8 * len(dataset))
+val_size = int(0.15 * len(dataset))
 test_size = len(dataset) - train_size - val_size
 print('\ttrain / val / test size : ',train_size,'/',val_size,'/',test_size)
 
@@ -26,8 +26,8 @@ train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset
 
 #config
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-NW = 0
-EPOCH = 4
+NW = 2
+EPOCH = 20
 LR = 1e-3
 BS = 8
 momentum = 0.9  
@@ -43,25 +43,23 @@ val_dataloader = val_init_dataloader.loader()
 
 
 #initialise model
-model = SSD()
+model = SSD(device=device)
 criterion = MultiBoxLoss(priors_cxcy=model.priors_cxcy)
 optimizer = torch.optim.SGD(model.parameters(),lr=LR, momentum=momentum, weight_decay=weight_decay)
 
 
 #training loop
 for epoch in range(EPOCH):
+    tock = time.perf_counter()
     model.train()
     train_loss_this_epoch = []
     valid_loss_this_epoch = []
     for i, data in enumerate(train_dataloader):
-        tock = time.perf_counter()
+        
         img,boxes,labels = data 
-        print(img)
-        print(boxes)
-        print(labels)
         
         #send to GPU
-        img.to(device)
+        img = img.to(device)
         truth_boxes = move_dev(boxes,device)
         truth_labels = move_dev(labels,device)
         
@@ -76,10 +74,10 @@ for epoch in range(EPOCH):
         optimizer.step() # adjust weights
 
         train_loss_this_epoch.append(loss.item())
-        if i%print_feq == 0:
-            print('epoch:', epoch, '\tstep', i, '/', len(train_dataloader),
-                  '\ttrain loss:', '{:.4f}'.format(loss.item()),
-                  '\telapsed time','{:.4f}'.format((time.perf_counter()-tock)),'s')
+        # if i%print_feq == 0:
+        #     print('epoch:', epoch, '\tstep', i, '/', len(train_dataloader),
+        #           '\ttrain loss:', '{:.4f}'.format(loss.item()),
+        #           '\telapsed time','{:.4f}'.format((time.perf_counter()-tock)),'s')
             
         
     
@@ -99,9 +97,10 @@ for epoch in range(EPOCH):
             val_loss = criterion(pred_loc,pred_sco,val_boxes,val_labels)
             valid_loss_this_epoch.append(val_loss.item())
     
-    print('epoch:',epoch, '/', EPOCH, 
+    print('EPOCH:',epoch, '/', EPOCH, 
           '\ttrain loss: {:.4f}'.format(sum(train_loss_this_epoch)/len(train_loss_this_epoch)),
-          '\tval loss: {:.4f}'.format(sum(valid_loss_this_epoch)/len(valid_loss_this_epoch)))
+          '\tval loss: {:.4f}'.format(sum(valid_loss_this_epoch)/len(valid_loss_this_epoch)),
+          '\telapsed time: {:.3f}'.format((time.perf_counter()-tock)),'s')
 
 
 

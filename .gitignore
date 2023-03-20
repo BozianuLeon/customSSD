@@ -2,3 +2,10 @@
 /__pycache__
 /data
 /practice.ipynb
+/inference
+log.*
+*.pth
+*.png
+log7.out
+log5.out
+demo3.py
