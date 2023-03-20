@@ -226,8 +226,6 @@ class SSD(nn.Module):
 
 
 
-print('Imported')
-
 
 
 
@@ -265,6 +263,9 @@ model.load_state_dict(torch.load(model_save_path))
 model.eval()
 
 
+model = SSD()
+model.load_state_dict(torch.load(model_save_path))
+model.eval()
 
 
 for i in range(n_images):

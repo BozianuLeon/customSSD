@@ -1,5 +1,5 @@
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import numpy as np
+
 
 import torch
 from torchvision import models
@@ -9,21 +9,20 @@ from torchvision import transforms
 import torch.nn.functional as F
 import torchvision
 
-from PIL import Image, ImageDraw
+from PIL import Image
 import matplotlib.pyplot as plt
 
 import os
-import json
 import re
-import random
 from math import sqrt
-print(os.listdir("/home/users/b/bozianu/work/SSD/SSD/data/input"))
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 from models.models import VGGBase, AuxiliaryConvolutions, PredictionConvolutions
 from utils.utils import xy_to_cxcy, cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, find_jaccard_overlap
 
 
+print(os.listdir("/home/users/b/bozianu/work/SSD/SSD/data/input"))
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #globally define
 
 
 class SSDDataset(Dataset):
@@ -89,9 +88,10 @@ class SSDDataset(Dataset):
         """
         Since each image may have a different number of objects, we need a collate function (to be passed to the DataLoader).
         This describes how to combine these tensors of different sizes. We use lists.
-        Note: this need not be defined in this Class, can be standalone.
-        :param batch: an iterable of N sets from __getitem__()
-        :return: a tensor of images, lists of varying-size tensors of bounding boxes, labels, and difficulties
+        Input:
+          batch, the list of imgs, new_boxes, labels from __getitem__
+        Returns:
+         tensor of images, lists of bounding boxes and labels
         """
 
         images = list()
@@ -152,9 +152,12 @@ class SSD(nn.Module):
     def forward(self, image):
         """
         Forward propagation.
-        :param image: images, a tensor of dimensions (N, 3, 300, 300)
-        :return: 8732 locations and class scores (i.e. w.r.t each prior box) for each image
+        Input:
+          image, tensor of dimensions (N, 3, 300, 300)
+        Returns:
+         locs, class_scores for all prior boxes (regression and classif coutput)
         """
+
         # Run VGG base network convolutions (lower level feature map generators)
         conv4_3_feats, conv7_feats = self.base(image)  # (N, 512, 38, 38), (N, 1024, 19, 19)
 
@@ -162,7 +165,6 @@ class SSD(nn.Module):
         norm = conv4_3_feats.pow(2).sum(dim=1, keepdim=True).sqrt()  # (N, 1, 38, 38)
         conv4_3_feats = conv4_3_feats / norm  # (N, 512, 38, 38)
         conv4_3_feats = conv4_3_feats * self.rescale_factors  # (N, 512, 38, 38)
-        # (PyTorch autobroadcasts singleton dimensions during arithmetic)
 
         # Run auxiliary convolutions (higher level feature map generators)
         conv8_2_feats, conv9_2_feats, conv10_2_feats, conv11_2_feats = self.aux_convs(conv7_feats)  # (N, 512, 10, 10),  (N, 256, 5, 5), (N, 256, 3, 3), (N, 256, 1, 1)
@@ -176,7 +178,8 @@ class SSD(nn.Module):
     def create_prior_boxes(self):
         """
         Create the 8732 prior (default) boxes for the SSD300, as defined in the paper.
-        :return: prior boxes in center-size coordinates, a tensor of dimensions (8732, 4)
+        Returns:
+          prior boxes in cx,cy,w,h coordinates, a tensor of dimensions (8732, 4)
         """
         fmap_dims = {'conv4_3': 38,
                      'conv7': 19,
@@ -231,12 +234,15 @@ class SSD(nn.Module):
         """
         Decipher the 8732 locations and class scores (output of ths SSD300) to detect objects.
         For each class, perform Non-Maximum Suppression (NMS) on boxes that are above a minimum threshold.
-        :param predicted_locs: predicted locations/boxes w.r.t the 8732 prior boxes, a tensor of dimensions (N, 8732, 4)
-        :param predicted_scores: class scores for each of the encoded locations/boxes, a tensor of dimensions (N, 8732, n_classes)
-        :param min_score: minimum threshold for a box to be considered a match for a certain class
-        :param max_overlap: maximum overlap two boxes can have so that the one with the lower score is not suppressed via NMS
-        :param top_k: if there are a lot of resulting detection across all classes, keep only the top 'k'
-        :return: detections (boxes, labels, and scores), lists of length batch_size
+        Input:
+         predicted_locs: predicted locations/boxes w.r.t the 8732 prior boxes, a tensor of dimensions (N, 8732, 4)
+         predicted_scores: class scores for each of the encoded locations/boxes, a tensor of dimensions (N, 8732, n_classes)
+         min_score: minimum threshold for a box to be considered a match for a certain class
+         max_overlap: maximum overlap two boxes can have so that the one with the lower score is not suppressed via NMS
+         top_k: if there are a lot of resulting detection across all classes, keep only the top 'k'
+
+        Returns:
+          detections (boxes, labels, and scores), List [bx,3]
         """
 
         batch_size = predicted_locs.size(0)
@@ -578,194 +584,6 @@ plt.savefig('losses.png')
 
 
 torch.save(model.state_dict(), 'SSD_model_{}.pth'.format(EPOCH))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-quit()
-#img_number = 16
-img_numbers = np.arange(15,30)
-for img_number in img_numbers:
-    origin_img = Image.open('/home/users/b/bozianu/work/SSD/SSD/data/input/Images/' + all_img_name[img_number]).convert('RGB')
-    img = tsfm(origin_img)
-    img = img.to(device)
-
-
-    with open('/home/users/b/bozianu/work/SSD/SSD/data/input/Annotation/'+all_img_name[img_number][:-4]) as f:
-        reader = f.read()
-
-    xmin = list(map(int,re.findall('(?<=<xmin>)[0-9]+?(?=</xmin>)', reader)))
-    xmax = list(map(int,re.findall('(?<=<xmax>)[0-9]+?(?=</xmax>)', reader)))
-    ymin = list(map(int,re.findall('(?<=<ymin>)[0-9]+?(?=</ymin>)', reader)))
-    ymax = list(map(int,re.findall('(?<=<ymax>)[0-9]+?(?=</ymax>)', reader)))
-    if len(re.findall('(?<=<xmin>)[0-9]+?(?=</xmin>)', reader)) != 1:
-        print(re.findall('(?<=<xmin>)[0-9]+?(?=</xmin>)', reader))
-        print(img_number,'!\n\n\n')
-
-
-    predicted_locs, predicted_scores = model(img.unsqueeze(0))
-    det_boxes, det_labels, det_scores = model.detect_objects(predicted_locs, predicted_scores, min_score=0.2, max_overlap=0.5, top_k=200)
-    print('det_boxes',det_boxes)
-    print('det_labels',det_labels)
-    print('det_scores',det_scores)
-
-    det_boxes = det_boxes[0].to('cpu')
-
-    origin_dims = torch.FloatTensor([origin_img.width, origin_img.height, origin_img.width, origin_img.height]).unsqueeze(0)
-    det_boxes = det_boxes * origin_dims
-    print('det_boxes',det_boxes)
-
-    annotated_image = origin_img
-    draw = ImageDraw.Draw(annotated_image)
-
-    box_location = det_boxes[0].tolist()
-    draw.rectangle(xy=box_location, outline='red',width=3)
-    boxes_true = list(map(list, zip(xmin, ymin, xmax,ymax)))
-    for boxt in boxes_true:
-        draw.rectangle(xy=boxt,outline='limegreen',width=3)
-    plt.figure(figsize=(5, 5))
-    plt.imshow(annotated_image)
-    plt.savefig('/home/users/b/bozianu/work/SSD/SSD/data/output/'+'model_test_inference_{}.png'.format(img_number))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-quit()
-
-
-
-
-
-
-import torch
-
-# ssd_model = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_ssd')
-# utils = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_ssd_processing_utils')
-ssd_model = torch.hub.load('DeepLearningExamples:torchhub', 'ssd')
-utils = torch.hub.load('DeepLearningExamples:torchhub', 'ssd_processing_utils')
-
-
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-ssd_model.to(device)
-ssd_model.eval()
-
-
-
-coco_imgs = ['http://images.cocodataset.org/val2017/000000397133.jpg',
-             'http://images.cocodataset.org/val2017/000000037777.jpg',
-             'http://images.cocodataset.org/val2017/000000252219.jpg']
-
-inputs = [utils.prepare_input(im) for im in coco_imgs]
-tensor = utils.prepare_tensor(inputs)
-
-
-with torch.no_grad():
-    detections_batch = ssd_model(tensor)
-
-
-results_per_input = utils.decode_results(detections_batch)
-best_results_per_input = [utils.pick_best(results, 0.40) for results in results_per_input]
-
-classes_to_labels = utils.get_coco_object_dictionary()
-
-
-
-
-
-
-from matplotlib import pyplot as plt
-import matplotlib.patches as patches
-
-for image_idx in range(len(best_results_per_input)):
-    fig, ax = plt.subplots(1)
-    # Show original, denormalized image...
-    image = inputs[image_idx] / 2 + 0.5
-    ax.imshow(image)
-    # ...with detections
-    bboxes, classes, confidences = best_results_per_input[image_idx]
-    for idx in range(len(bboxes)):
-        left, bot, right, top = bboxes[idx]
-        x, y, w, h = [val * 300 for val in [left, bot, right - left, top - bot]]
-        rect = patches.Rectangle((x, y), w, h, linewidth=1, edgecolor='r', facecolor='none')
-        ax.add_patch(rect)
-        ax.text(x, y, "{} {:.0f}%".format(classes_to_labels[classes[idx] - 1], confidences[idx]*100), bbox=dict(facecolor='white', alpha=0.5))
-plt.show()
-
-
-
-
-
-
-
-
-
 
 
 
