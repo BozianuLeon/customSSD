@@ -7,7 +7,7 @@ from math import sqrt
 
 
 from models.models import VGGBase, AuxiliaryConvolutions, PredictionConvolutions
-from utils.utils import cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, xy_to_cxcy, find_jaccard_overlap
+from utils.utils import cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, xy_to_cxcy
 
 
 
@@ -28,7 +28,7 @@ class SSD(nn.Module):
         self.rescale_factors = nn.Parameter(torch.FloatTensor(1, 512, 1, 1))  # there are 512 channels in conv4_3_feats
         nn.init.constant_(self.rescale_factors, 20)
 
-        # Prior boxes
+        # Prior boxes (Anchors in RPN terms)
         self.priors_cxcy = self.create_prior_boxes()
         
     def forward(self, image):
@@ -44,9 +44,9 @@ class SSD(nn.Module):
         conv4_3_feats, conv7_feats = self.base(image)  # (N, 512, 38, 38), (N, 1024, 19, 19)
 
         # Rescale conv4_3 after L2 norm
-        norm = torch.sqrt(conv4_3_feats.pow(2).sum(dim=1, keepdim=True))#.sqrt()  # (N, 1, 38, 38)
+        norm = torch.sqrt(conv4_3_feats.pow(2).sum(dim=1, keepdim=True))  # (N, 1, 38, 38)
         conv4_3_feats = conv4_3_feats / norm  # (N, 512, 38, 38)
-        conv4_3_feats = conv4_3_feats * self.rescale_factors  # (N, 512, 38, 38)
+        conv4_3_feats = conv4_3_feats * self.rescale_factors.to(self.device)  # (N, 512, 38, 38)
 
         # Run auxiliary convolutions (higher level feature map generators)
         conv8_2_feats, conv9_2_feats, conv10_2_feats, conv11_2_feats = self.aux_convs(conv7_feats)  # (N, 512, 10, 10),  (N, 256, 5, 5), (N, 256, 3, 3), (N, 256, 1, 1)
@@ -95,7 +95,7 @@ class SSD(nn.Module):
                     cy = (i + 0.5) / fmap_dims[fmap]
 
                     for ratio in aspect_ratios[fmap]:
-                        prior_boxes.append([cx, cy, obj_scales[fmap] * sqrt(ratio), obj_scales[fmap] / sqrt(ratio)])
+                        prior_boxes.append([cx, cy, obj_scales[fmap]*sqrt(ratio), obj_scales[fmap]/sqrt(ratio)])
 
                         # For an aspect ratio of 1, use an additional prior whose scale is the geometric mean of the
                         # scale of the current feature map and the scale of the next feature map
@@ -116,7 +116,7 @@ class SSD(nn.Module):
         """
         Decipher the 8732 locations and class scores (output of ths SSD300) to detect objects.
         For each class, perform Non-Maximum Suppression (NMS) on boxes that are above a minimum threshold.
-        
+
         Input:
          predicted_locs: predicted locations/boxes w.r.t the 8732 prior boxes, a tensor of dimensions (N, 8732, 4)
          predicted_scores: class scores for each of the encoded locations/boxes, a tensor of dimensions (N, 8732, n_classes)
@@ -148,7 +148,7 @@ class SSD(nn.Module):
             image_labels = list()
             image_scores = list()
 
-            max_scores, best_label = predicted_scores[i].max(dim=1)  # (8732)
+            max_scores, best_label = predicted_scores[i].max(dim=1)  # (8732) #NOT USED?
 
             # Check for each class
             for c in range(1, self.n_classes):
@@ -167,13 +167,14 @@ class SSD(nn.Module):
                 class_decoded_locs = class_decoded_locs[sort_ind]  # (n_min_score, 4)
 
                 # Find the overlap between predicted boxes
-                overlap = find_jaccard_overlap(class_decoded_locs, class_decoded_locs)  # (n_qualified, n_min_score)
+                overlap = torchvision.ops.box_iou(class_decoded_locs, class_decoded_locs)  # (n_qualified, n_min_score)
+
 
                 # Non-Maximum Suppression (NMS)
 
                 # A torch.uint8 (byte) tensor to keep track of which predicted boxes to suppress
                 # 1 implies suppress, 0 implies don't suppress
-                suppress = torch.zeros((n_above_min_score), dtype=torch.uint8).to(self.device)  # (n_qualified)
+                suppress = torch.zeros((n_above_min_score), dtype=torch.uint8,device=self.device)  # (n_qualified)
 
                 # Consider each box in order of decreasing scores
                 for box in range(class_decoded_locs.size(0)):
@@ -277,7 +278,7 @@ class MultiBoxLoss(nn.Module):
         for i in range(batch_size):
             n_objects = boxes[i].size(0)
 
-            overlap = find_jaccard_overlap(boxes[i],self.priors_xy)  # (n_objects, 8732)
+            overlap = torchvision.ops.box_iou(boxes[i],self.priors_xy)  # (n_objects, 8732)
 
             # For each prior, find the object that has the maximum overlap
             overlap_for_each_prior, object_for_each_prior = overlap.max(dim=0)  # (8732)
