@@ -117,6 +117,10 @@ def cxcy_to_gcxgcy(cxcy, priors_cxcy):
     # The 10 and 5 below are referred to as 'variances' in the original Caffe repo, completely empirical
     # They are for some sort of numerical conditioning, for 'scaling the localization gradient'
     # See https://github.com/weiliu89/caffe/issues/155
+    # prior_widths = priors_cxcy[:,2]
+    # prior_heights = priors_cxcy[:,3]
+    # print('In the encode step\n Priors:', priors_cxcy.shape,torch.count_nonzero(prior_widths),torch.count_nonzero(prior_heights),'\n',priors_cxcy)
+    # print('trues?',cxcy.shape,cxcy)
     return torch.cat([(cxcy[:, :2] - priors_cxcy[:, :2]) / (priors_cxcy[:, 2:] / 10),  # g_c_x, g_c_y
                       torch.log(cxcy[:, 2:] / priors_cxcy[:, 2:]) * 5], 1)  # g_w, g_h
 

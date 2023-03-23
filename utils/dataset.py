@@ -10,6 +10,7 @@ from math import sqrt
 import json
 from pycocotools.coco import COCO
 from PIL import Image
+import cv2
 
 
 
@@ -119,8 +120,8 @@ class SSDCOCODataset(Dataset):
         self.cat_ids = self.coco.getCatIds(['dog','cat','horse','sheep','cow','bird','elephant','zebra','giraffe','bear'])
         id_list = np.hstack([self.coco.getImgIds(catIds=[idx]) for idx in self.cat_ids]) #only include images of animals
         id_list_uniq = list(sorted(set(id_list))) #only include each image once
-        #id_list_3 = [i for i in id_list_uniq if self.check_channels(i)] #only include color images
-        self.ids = id_list_uniq #id_list_3       
+        id_list_3 = [i for i in id_list_uniq if self.check_channels(i)] #only include color images
+        self.ids =  id_list_3       
         
         
     def __getitem__(self, idx):
@@ -168,7 +169,6 @@ class SSDCOCODataset(Dataset):
         return tsfm(img)
 
 
-        
     def resize_boxes(self, boxes, img, dims=(300, 300)):
         #rescale boxes so they still cover objects in resized image
         old_dims = torch.FloatTensor([img.width, img.height, img.width, img.height]).unsqueeze(0)
@@ -179,6 +179,22 @@ class SSDCOCODataset(Dataset):
         
         return new_boxes
     
+
+    def check_channels(self, img_id):
+        #checks that we have an RGB image
+        img_path = self.coco.loadImgs([img_id])[0]["file_name"]
+        im = Image.open(os.path.join(self.root, img_path))
+        if len(im.mode)==1:
+            im.close()
+            return False
+        elif len(im.mode)==3:
+            im.close()
+            return True
+        else:
+            im.close()
+            return -1
+
+
     def collate_fn(self, batch):
         """
         Since each image may have a different number of objects, we need a collate function (to be passed to the DataLoader).
@@ -206,6 +222,92 @@ class SSDCOCODataset(Dataset):
 
 
 
+
+
+
+class SSDToyDataset(Dataset):
+    '''
+    Preparing toy data dataset, result in same format as COCO dataset
+    '''
+    def __init__(self,annotation_json,is_test=False,transform=True):
+
+        with open(annotation_json) as json_file:
+            annotations = json.load(json_file)
+        self.annotations = annotations
+        self.ids = torch.arange(len(self.annotations))
+        self.is_test = is_test
+        self.transform = transform
+
+    def __getitem__(self, index):
+        annotations_i = self.annotations[str(index)]
+        path = annotations_i["image"]["img_path"]
+        img = cv2.imread(path)#cv2.imread(path,0).T #0 for grayscale, transpose for x-y flip
+        n_objs = annotations_i["anns"]["n_gausses"] #len(annotations_i["anns"]["bboxes"])
+
+        if not self.is_test:
+            boxes = self.get_xys(annotations_i,n_objs)
+            
+            if self.transform is True:
+                new_boxes = self.resize_boxes(boxes,img)
+                img = self.resize_image(img)
+
+            return img, new_boxes, torch.ones(len(new_boxes))
+        
+        else:
+            return img
+    
+    def __len__(self):
+        return len(self.ids)
+
+
+    def get_xys(self, anns, n_objs):
+
+        boxes_true = []
+        for i in range(n_objs):
+            xmin = anns["anns"]["bboxes"][i][0]
+            ymin = anns["anns"]["bboxes"][i][1]
+            xmax = xmin + anns["anns"]["bboxes"][i][2]
+            ymax = ymin + anns["anns"]["bboxes"][i][3]
+            boxes_true.append([xmin,ymin,xmax,ymax])
+
+        return torch.tensor(boxes_true)
+
+
+    def resize_image(self, img, dims=(300,300)):
+        tsfm = transforms.Compose([transforms.ToTensor(),
+                                   transforms.Resize([300, 300]),
+                                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+        
+        return tsfm(img).permute(0,2,1) #permute necessary beacuse its cv2
+
+    def resize_boxes(self, boxes, img, dims=(300, 300)):
+        #rescale boxes so they still cover objects in resized image
+        old_dims = torch.FloatTensor([img.shape[0], img.shape[1], img.shape[0], img.shape[1]]).unsqueeze(0)
+        new_boxes = torch.div(boxes,old_dims)
+
+        new_dims = torch.FloatTensor([dims[1], dims[0], dims[1], dims[0]]).unsqueeze(0)
+        scaled_boxes = new_boxes * new_dims
+        
+        return new_boxes
+
+    def xywh2xyxy(self,x):
+        x, y, w, h = x.unbind(-1)
+        b = [x,y,x+w,y+h]
+        return torch.stack(b, dim=-1)
+
+    def collate_fn(self, batch):
+        images = list()
+        boxes = list()
+        labels = list()
+
+        for b in batch:
+            images.append(b[0])
+            boxes.append(b[1])
+            labels.append(b[2])
+
+        images = torch.stack(images, dim=0)
+
+        return images, boxes, labels  # tensor (N, 3, 300, 300), 3 lists of N tensors each
 
 
 

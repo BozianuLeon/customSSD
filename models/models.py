@@ -118,7 +118,7 @@ class VGGBase(nn.Module):
         state_dict['conv7.bias'] = decimate(conv_fc7_bias, m=[4])  # (1024)
 
         self.load_state_dict(state_dict)
-        print("\nLoaded base VGG model (w/ pretrained weights).\n")
+        print("\nLoaded base VGG model (w/ pretrained weights).")
 
 
 

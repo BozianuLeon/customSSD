@@ -250,7 +250,7 @@ class MultiBoxLoss(nn.Module):
         self.neg_pos_ratio = neg_pos_ratio
         self.alpha = alpha
 
-        self.smooth_l1 = nn.SmoothL1Loss()
+        self.smooth_l1 = nn.L1Loss()
         self.cross_entropy = nn.CrossEntropyLoss(reduction='none')
         self.device = device
 
@@ -318,7 +318,6 @@ class MultiBoxLoss(nn.Module):
 
         # Localization loss is computed only over positive (non-background) priors
         loc_loss = self.smooth_l1(predicted_locs[positive_priors], true_locs[positive_priors])  # (), scalar
-
         # Note: indexing with a torch.uint8 (byte) tensor flattens the tensor when indexing is across multiple dimensions (N & 8732)
         # So, if predicted_locs has the shape (N, 8732, 4), predicted_locs[positive_priors] will have (total positives, 4)
 
@@ -352,7 +351,13 @@ class MultiBoxLoss(nn.Module):
 
         # As in the paper, averaged over positive priors only, although computed over both positive and hard-negative priors
         conf_loss = (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) / n_positives.sum().float()  # (), scalar
-        #print('conf_loss',conf_loss,'\tloc_loss',loc_loss)
+        if conf_loss > 100 or loc_loss >100:
+            print('conf_loss',conf_loss.item(),'\tloc_loss',loc_loss.item())
+            print('n objects in image',n_objects)
+            print('n_positives',n_positives)
+            # print('Predicted boxes of positive priors:',predicted_locs[positive_priors].shape, '\n',predicted_locs[positive_priors])
+            # print('True ENCODED boxes of positive priors:',true_locs[positive_priors].shape,'\n',true_locs[positive_priors])
+            # print('END OF LOSS FUNC\n')
         return conf_loss + self.alpha * loc_loss
 
 
