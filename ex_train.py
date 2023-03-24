@@ -16,7 +16,7 @@ from math import sqrt
 
 from ssd import SSD, MultiBoxLoss 
 from models.models import VGGBase, AuxiliaryConvolutions, PredictionConvolutions
-from utils.utils import xy_to_cxcy, cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, find_jaccard_overlap
+from utils.utils import xy_to_cxcy, cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy
 from utils.dataset import SSDDataset
 
 print(os.listdir("/home/users/b/bozianu/work/SSD/SSD/data/input"))

@@ -125,6 +125,7 @@ def cxcy_to_gcxgcy(cxcy, priors_cxcy):
                       torch.log(cxcy[:, 2:] / priors_cxcy[:, 2:]) * 5], 1)  # g_w, g_h
 
 
+
 def gcxgcy_to_cxcy(gcxgcy, priors_cxcy):
     """
     Decode bounding box coordinates predicted by the model, since they are encoded in the form mentioned above.

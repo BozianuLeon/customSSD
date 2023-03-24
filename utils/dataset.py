@@ -241,7 +241,10 @@ class SSDToyDataset(Dataset):
     def __getitem__(self, index):
         annotations_i = self.annotations[str(index)]
         path = annotations_i["image"]["img_path"]
-        img = cv2.imread(path)#cv2.imread(path,0).T #0 for grayscale, transpose for x-y flip
+        #img = cv2.imread(path)#cv2.imread(path,0).T #0 for grayscale, transpose for x-y flip
+
+        img = Image.open(path)
+        img = img.convert('RGB')
         n_objs = annotations_i["anns"]["n_gausses"] #len(annotations_i["anns"]["bboxes"])
 
         if not self.is_test:
@@ -274,15 +277,20 @@ class SSDToyDataset(Dataset):
 
 
     def resize_image(self, img, dims=(300,300)):
-        tsfm = transforms.Compose([transforms.ToTensor(),
-                                   transforms.Resize([300, 300]),
-                                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+        # tsfm = transforms.Compose([transforms.ToTensor(),
+        #                            transforms.Resize([300, 300]),
+        #                            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+
+        tsfm = transforms.Compose([transforms.Resize([300, 300]),
+                                   transforms.ToTensor(),])
+                                   #transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
         
         return tsfm(img).permute(0,2,1) #permute necessary beacuse its cv2
 
     def resize_boxes(self, boxes, img, dims=(300, 300)):
         #rescale boxes so they still cover objects in resized image
-        old_dims = torch.FloatTensor([img.shape[0], img.shape[1], img.shape[0], img.shape[1]]).unsqueeze(0)
+        #old_dims = torch.FloatTensor([img.shape[0], img.shape[1], img.shape[0], img.shape[1]]).unsqueeze(0)
+        old_dims = torch.FloatTensor([img.width, img.height, img.width, img.height]).unsqueeze(0)
         new_boxes = torch.div(boxes,old_dims)
 
         new_dims = torch.FloatTensor([dims[1], dims[0], dims[1], dims[0]]).unsqueeze(0)
@@ -308,11 +316,6 @@ class SSDToyDataset(Dataset):
         images = torch.stack(images, dim=0)
 
         return images, boxes, labels  # tensor (N, 3, 300, 300), 3 lists of N tensors each
-
-
-
-
-
 
 
 
