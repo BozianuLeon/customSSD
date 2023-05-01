@@ -3,7 +3,25 @@ from torch import nn
 from torch.nn import functional as F
 import torchvision
 
-from SSD.utils.utils import decimate
+
+def decimate(tensor, m):
+    """
+    Decimate a tensor by a factor 'm', i.e. downsample by keeping every 'm'th value.
+    This is used when we convert FC layers to equivalent Convolutional layers, BUT of a smaller size.
+    Input:
+      tensor: tensor to be decimated
+      list of decimation factors for each dimension of the tensor; None if not to be decimated along a dimension
+    Return:
+      decimated tensor
+    """
+
+    assert tensor.dim() == len(m)
+    for d in range(tensor.dim()):
+        if m[d] is not None:
+            tensor = tensor.index_select(dim=d,index=torch.arange(start=0, end=tensor.size(d), step=m[d]).long())
+
+    return tensor
+
 
 
 class VGGBase(nn.Module):
