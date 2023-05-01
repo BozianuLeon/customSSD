@@ -24,7 +24,6 @@ from utils.utils import xy_to_cxcy, cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy
 
 
 all_img_folder = os.listdir('/home/users/b/bozianu/work/SSD/SSD/data/input/Images')
-
 all_img_name = []
 for img_folder in all_img_folder:
     img_folder_path = '/home/users/b/bozianu/work/SSD/SSD/data/input/Images/' + img_folder
@@ -47,16 +46,18 @@ save_at = "/home/users/b/bozianu/work/SSD/SSD/inference/" + "SSD_model_7/" + tim
 if not os.path.exists(save_at):
     os.makedirs(save_at)
 
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-n_images = 15
 
 
 
+
+#Load model
 model = SSD()
 model.load_state_dict(torch.load(model_save_path))
 model.eval()
 
-
+n_images = 15
 for i in range(n_images):
     
     img_number = -1*randint(1,len(all_img_name))
@@ -78,20 +79,15 @@ for i in range(n_images):
     predicted_locs, predicted_scores = model(img.unsqueeze(0))
     det_boxes, det_labels, det_scores = model.detect_objects(predicted_locs, predicted_scores, min_score=0.2, max_overlap=0.5, top_k=200)
     det_boxes = [box.to(device) for box in det_boxes]
-    # print('det_boxes',det_boxes)
-    # print('det_labels',det_labels)
-    # print('det_scores',det_scores)
     
     origin_dims = torch.FloatTensor([origin_img.width, origin_img.height, origin_img.width, origin_img.height]).unsqueeze(0).to(device)
     det_boxes = [box * origin_dims for box in det_boxes]
 
 
-
-
     draw = ImageDraw.Draw(origin_img)
 
     #PREDICTIONS
-    pred_boxes = det_boxes[0].tolist()
+    pred_boxes = det_boxes[0].tolist() #first entry in list 
     print(' # pred_boxes',len(pred_boxes),'!')
     for boxp in pred_boxes:
         draw.rectangle(xy=boxp, outline='red',width=3)
