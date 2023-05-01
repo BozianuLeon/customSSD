@@ -3,7 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 import torchvision
 
-from utils.utils import decimate
+from SSD.utils.utils import decimate
 
 
 class VGGBase(nn.Module):

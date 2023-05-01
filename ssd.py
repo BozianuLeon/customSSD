@@ -6,8 +6,8 @@ import numpy as np
 from math import sqrt
 
 
-from models.models import VGGBase, AuxiliaryConvolutions, PredictionConvolutions
-from utils.utils import cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, xy_to_cxcy
+from SSD.models.models import VGGBase, AuxiliaryConvolutions, PredictionConvolutions
+from SSD.utils.utils import cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, xy_to_cxcy
 
 
 
