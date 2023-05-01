@@ -43,6 +43,7 @@ train_das, val_das, test_das = torch.utils.data.random_split(das,[train_size,val
 BS = 8
 train_dal = DataLoader(train_das, batch_size=BS, shuffle=True, collate_fn=das.collate_fn)
 val_dal = DataLoader(val_das,batch_size=BS,shuffle=True,collate_fn=das.collate_fn)
+test_dal = DataLoader(test_das,batch_size=BS,shuffle=False,collate_fn=das.collate_fn)
 
 
 
@@ -62,21 +63,21 @@ invtsfm = transforms.Compose([
 
 
 
-model_save_path = "/home/users/b/bozianu/work/SSD/SSD/models/SSD_model_7_toy.pth"
-save_at = "/home/users/b/bozianu/work/SSD/SSD/inference/" + "SSD_model_7_toy/" + time.strftime("%Y%m%d-%H%M") + "/"
+model_save_path = "/home/users/b/bozianu/work/SSD/SSD/models/SSD_model_20_toy.pth"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/inference/" + "SSD_model_20_toy/" + time.strftime("%Y%m%d-%H%M") + "/"
 if not os.path.exists(save_at):
     os.makedirs(save_at)
 
 device = "cpu" #torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-model = SSD(device=device)
+model = SSD(device=device,pretrained_vgg=False)
 model.load_state_dict(torch.load(model_save_path,map_location=torch.device(device)))
 model.eval()
 
 
-n_batches = 3
+n_batches = 2
 
-for step, (img, tru_boxes, labels) in enumerate(val_dal):
+for step, (img, tru_boxes, labels) in enumerate(test_dal):
 
     img_tensor = img.to(device)
     img = invtsfm(img_tensor)

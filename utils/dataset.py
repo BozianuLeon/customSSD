@@ -10,7 +10,6 @@ from math import sqrt
 import json
 from pycocotools.coco import COCO
 from PIL import Image
-import cv2
 
 
 
@@ -322,13 +321,134 @@ class SSDToyDataset(Dataset):
 
 
 
+class SSDRealDataset(Dataset):
+    '''
+    Now we have real calorimeter images produced using real_data_production script.
+    Conversely to other datasets, the "images" are saved as [2,97,64] pytorch tensors
+    '''
+    def __init__(self,annotation_json,is_test=False):
+
+        with open(annotation_json) as json_file:
+            annotations = json.load(json_file)
+        self.annotations = annotations
+        self.ids = torch.arange(len(self.annotations))
+        self.is_test = is_test
+        if self.is_test:
+            print('Initialising dataset module in test mode, dataloader ouput in form:\n img, boxes, extent')
+
+    def __getitem__(self, index):
+        annotations_i = self.annotations[str(index)]
+        path = annotations_i["image"]["img_path"]
+        
+        img_tensor = torch.load(path)
+        img_tensor = img_tensor.type('torch.FloatTensor')
+        n_objs = annotations_i["anns"]["n_clusters"] 
+        extent = annotations_i["anns"]["extent"]
+
+        
+        transfm = transforms.Compose([transforms.Resize([300, 300],interpolation=transforms.InterpolationMode.NEAREST)])
+        img = transfm(img_tensor)
+        boxes = self.get_xys(annotations_i,n_objs)
+        boxes = self.resize_boxes(boxes,img_tensor)
+
+        if not self.is_test:
+            return img, boxes, torch.ones(len(boxes)) #for training we need the so-called class labels
+
+        else:
+            return img, boxes, torch.FloatTensor(extent) #for inference we know the labels ALL 1, we want the extent for plotting
+    
+    def __len__(self):
+        return len(self.ids)
+    
+    def get_extent(self):
+        #extent is the same for every image!
+        annotations_0 = self.annotations[0]
+        extent = annotations_0["anns"]["extent"]
+        return extent
+
+    def get_xys(self, anns, n_objs):
+        boxes_true = []
+        for i in range(n_objs):
+            xmin = anns["anns"]["bboxes"][i][0]
+            ymin = anns["anns"]["bboxes"][i][1]
+            xmax = xmin + anns["anns"]["bboxes"][i][2]
+            ymax = ymin + anns["anns"]["bboxes"][i][3]
+            boxes_true.append([xmin,ymin,xmax,ymax])
+
+        return torch.tensor(boxes_true)
+
+    def resize_boxes(self, boxes, img, dims=(300, 300)):
+        #rescale boxes so they still cover objects in resized image
+        
+        #scaling_factor = torch.FloatTensor([dims[0]/img.shape[2], dims[1]/img.shape[1], dims[0]/img.shape[2], dims[1]/img.shape[1]]).unsqueeze(0)
+        scaling_factor = torch.FloatTensor([1/img.shape[2], 1/img.shape[1], 1/img.shape[2], 1/img.shape[1]]).unsqueeze(0)
+        scaled_boxes = scaling_factor * boxes
+        return scaled_boxes
+
+    def collate_fn(self, batch):
+        images = list()
+        boxes = list()
+        labels = list()
+
+        for b in batch:
+            images.append(b[0])
+            boxes.append(b[1])
+            labels.append(b[2])
+
+        images = torch.stack(images, dim=0)
+
+        return images, boxes, labels  # tensor (N, 3, 300, 300), 3 lists of N tensors each
 
 
 
 
 
 
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    import matplotlib
+    das = SSDRealDataset('/home/users/b/bozianu/work/data/real/anns_2layers.json')
+    print('Images in dataset:',len(das))
+    device = "cpu" #torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+    image_tensor, truth_boxes, truth_labels = das[0]
+    #examine_one_image(image_tensor,truth_boxes)
+
+    BS = 8
+    train_dal = DataLoader(das, batch_size=BS, shuffle=True, collate_fn=das.collate_fn)
+
+    n_batches = 0
+    for step, (img, tru_boxes, labels) in enumerate(train_dal):
+
+        img_tensor = img.to(device)
+        tru_boxes = [box.detach().to(device) for box in tru_boxes]
+        labels = [label.detach().to(device) for label in labels]
+        B, C, H, W = img.shape
+        print(type(img),img.shape, img_tensor.shape)
+        img_shape = torch.FloatTensor([H,W,H,W]).unsqueeze(0)
+        tru_boxes = [box * img_shape for box in tru_boxes]
+
+        #revert to original images/box dimensions
+        B, C, H, W = img.shape
 
 
+        for i in range(len(img)):
+            image_i = img[i].cpu().squeeze()
+            gt_boxes_i = tru_boxes[i]
+
+            f,ax = plt.subplots(1,2)
+            ax[0].imshow(image_i[0],cmap='binary_r')
+            ax[1].imshow(image_i[1],cmap='binary_r')
+            for bbx in gt_boxes_i:
+                x,y=float(bbx[0]),float(bbx[1])
+                w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
+                bb = matplotlib.patches.Rectangle((x,y),w,h,lw=1,ec='limegreen',fc='none')
+                ax[0].add_patch(bb)
+                ax[1].add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1,ec='limegreen',fc='none'))
+
+            f.savefig('datasettest.png')
+            plt.close()
+ 
+        if step==n_batches:
+            break

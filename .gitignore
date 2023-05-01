@@ -3,9 +3,12 @@
 /data
 /practice.ipynb
 /inference
+/logs
+/dev
 log.*
 *.pth
 *.png
 log7.out
 log5.out
 demo3.py
+*pycache*

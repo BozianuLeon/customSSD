@@ -32,15 +32,16 @@ from utils.dataset import SSDDataset, SSDToyDataset
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EPOCHS = 25
+EPOCHS = 35
 LR = 1e-3
 BS = 8
+NW = 2
 momentum = 0.9  # momentum
 weight_decay = 5e-4  # weight decay
 print_feq = 100
 
 model = SSD(pretrained_vgg=False)
-criterion = MultiBoxLoss(priors_cxcy=model.priors_cxcy,alpha=1.3).to(device)
+criterion = MultiBoxLoss(priors_cxcy=model.priors_cxcy,alpha=1.25).to(device)
 optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=momentum, weight_decay=weight_decay)
 
 
@@ -57,11 +58,8 @@ torch.random.manual_seed(1)
 train_das, val_das, test_das = torch.utils.data.random_split(das,[train_size,val_size,test_size])
 
 
-train_dal = DataLoader(train_das, batch_size=BS, shuffle=True, collate_fn=das.collate_fn)
-val_dal = DataLoader(val_das,batch_size=BS,shuffle=True,collate_fn=das.collate_fn)
-
-
-
+train_dal = DataLoader(train_das, batch_size=BS, shuffle=True, collate_fn=das.collate_fn,num_workers=NW)
+val_dal = DataLoader(val_das,batch_size=BS,shuffle=True,collate_fn=das.collate_fn,num_workers=NW)
 
 
 
@@ -137,17 +135,17 @@ plt.savefig(save_at+"traininglosses.png")
 
 
 
-quit()
-import matplotlib
-import matplotlib.pyplot as plt
-# cv2.imswrite('image.png',img.cpu().detach().numpy())
 
-print(type(imm),imm.shape)
-print(boxes)
-fig,ax = plt.subplots(1,1)
-ax.imshow(imm.permute(1,2,0),cmap='binary_r')
-for i in boxes:
-    ax.add_patch(matplotlib.patches.Rectangle((i[0],i[1]),i[2]-i[0],i[3]-i[1],fc='none',ec='green',lw=2))
+# import matplotlib
+# import matplotlib.pyplot as plt
+# # cv2.imswrite('image.png',img.cpu().detach().numpy())
 
-plt.savefig('image.png')
+# print(type(imm),imm.shape)
+# print(boxes)
+# fig,ax = plt.subplots(1,1)
+# ax.imshow(imm.permute(1,2,0),cmap='binary_r')
+# for i in boxes:
+#     ax.add_patch(matplotlib.patches.Rectangle((i[0],i[1]),i[2]-i[0],i[3]-i[1],fc='none',ec='green',lw=2))
+
+# plt.savefig('image.png')
 

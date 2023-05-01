@@ -16,11 +16,13 @@ from utils.utils import cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, xy_to_cxcy
 
 
 class SSD(nn.Module):
-    def __init__(self, n_classes=2,device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),pretrained_vgg=True):
+    def __init__(self, n_classes=2,in_channels=3,device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),pretrained_vgg=True):
         super(SSD, self).__init__()
         self.device=device
         self.n_classes = n_classes
+        self.in_channels = in_channels
         
+        self.init_conv = nn.Conv2d(in_channels,out_channels=3,kernel_size=1,stride=1).to(device)
         self.base = VGGBase(pretrained=pretrained_vgg).to(device)
         self.aux_convs = AuxiliaryConvolutions().to(device)
         self.pred_convs = PredictionConvolutions(n_classes).to(device)
@@ -39,9 +41,11 @@ class SSD(nn.Module):
         Returns:
          locs, class_scores for all prior boxes (regression and classif coutput)
         """
+        #We need to ensure the input to VGG has 3 channels, even greyscale images
+        image_three_channel = self.init_conv(image)
 
         # Run VGG base network convolutions (lower level feature map generators)
-        conv4_3_feats, conv7_feats = self.base(image)  # (N, 512, 38, 38), (N, 1024, 19, 19)
+        conv4_3_feats, conv7_feats = self.base(image_three_channel)  # (N, 512, 38, 38), (N, 1024, 19, 19)
 
         # Rescale conv4_3 after L2 norm
         norm = torch.sqrt(conv4_3_feats.pow(2).sum(dim=1, keepdim=True))  # (N, 1, 38, 38)
@@ -224,6 +228,11 @@ class SSD(nn.Module):
 
 
 
+#Matcher
+#should we use hungarian matcher??
+#possible need to change the scale of the anchors? So we have more matches
+#https://github.com/facebookresearch/detr/blob/main/models/matcher.py
+#https://github.com/pytorch/vision/torchvision/models/detection/_utils.py
 
 
 
@@ -244,7 +253,7 @@ class MultiBoxLoss(nn.Module):
 
     def __init__(self, priors_cxcy, threshold=0.5, neg_pos_ratio=3, alpha=1., device=torch.device("cuda" if torch.cuda.is_available() else "cpu")):
         super(MultiBoxLoss, self).__init__()
-        self.priors_cxcy = priors_cxcy
+        self.priors_cxcy = priors_cxcy #UNINITIALSED PRIORS/ANCHORS
         self.priors_xy = cxcy_to_xy(priors_cxcy)
         self.threshold = threshold
         self.neg_pos_ratio = neg_pos_ratio
@@ -318,6 +327,7 @@ class MultiBoxLoss(nn.Module):
 
         # Localization loss is computed only over positive (non-background) priors
         loc_loss = self.smooth_l1(predicted_locs[positive_priors], true_locs[positive_priors])  # (), scalar
+        #print('Loc loss->',loc_loss)
         # Note: indexing with a torch.uint8 (byte) tensor flattens the tensor when indexing is across multiple dimensions (N & 8732)
         # So, if predicted_locs has the shape (N, 8732, 4), predicted_locs[positive_priors] will have (total positives, 4)
 
@@ -362,20 +372,40 @@ class MultiBoxLoss(nn.Module):
                 print('predicted_scores.view(-1,n_classes)\n',predicted_scores.view(-1, n_classes))
                 print('true_classes.view(-1)\n',true_classes.view(-1),true_classes.view(-1).shape,sum(true_classes.view(-1)))
 
-            if loc_loss > 100:
-                print('Predicted boxes of positive priors:',predicted_locs[positive_priors].shape, '\n',predicted_locs[positive_priors])
-                print('True ENCODED boxes of positive priors:',true_locs[positive_priors].shape,'\n',true_locs[positive_priors])
-                print('True DECODED:')
-                print(boxes[i][object_for_each_prior].shape,boxes[i][object_for_each_prior])
-                print('centre-size',xy_to_cxcy(boxes[i][object_for_each_prior]).shape, xy_to_cxcy(boxes[i][object_for_each_prior]))
-                print('priors', self.priors_cxcy.shape,self.priors_cxcy[0,:])
+            # if loc_loss > 100:
+            #     print('Predicted boxes of positive priors:',predicted_locs[positive_priors].shape, '\n',predicted_locs[positive_priors])
+            #     print('True ENCODED boxes of positive priors:',true_locs[positive_priors].shape,'\n',true_locs[positive_priors])
+            #     print('True DECODED:')
+            #     print(boxes[i][object_for_each_prior].shape,boxes[i][object_for_each_prior])
+            #     print('centre-size',xy_to_cxcy(boxes[i][object_for_each_prior]).shape, xy_to_cxcy(boxes[i][object_for_each_prior]))
+            #     print('priors', self.priors_cxcy.shape,self.priors_cxcy[0,:])
             
-            print('END OF LOSS FUNC\n') 
-        #print('conf: ',conf_loss.item(),'loc: ',loc_loss.item())
         return conf_loss + self.alpha * loc_loss
 
 
 
 
 
+#testing
+if __name__=='__main__':
+    from utils.dataset import SSDRealDataset
+    from torch.utils.data import DataLoader
+    das = SSDRealDataset(annotation_json="/home/users/b/bozianu/work/data/real/annotations.json")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    train_dal = DataLoader(das, batch_size=2, shuffle=False, collate_fn=das.collate_fn)
+    model = SSD(pretrained_vgg=False,in_channels=1)
+    #criterion = MultiBoxLoss(priors_cxcy=model.priors_cxcy, alpha=0.9,device=device).to(device)
+    criterion = NewDetectionLoss(priors_cxcy=model.priors_cxcy).to(device)
+    print(model.priors_cxcy.shape,type(model.priors_cxcy))
 
+    for step, (img, boxes, labels) in enumerate(train_dal):
+        img = img.to(device)
+        boxes = [box.to(device) for box in boxes]
+        labels = [label.to(device) for label in labels]
+        
+        pred_loc, pred_sco = model(img)
+        print('Boxes,',len(boxes),boxes[0].shape,boxes[1].shape)
+        loss = criterion(pred_loc, pred_sco, boxes, labels)
+        print('Overall loss->',loss)
+        if step==0:
+            break
