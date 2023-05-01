@@ -361,24 +361,6 @@ class MultiBoxLoss(nn.Module):
 
         # As in the paper, averaged over positive priors only, although computed over both positive and hard-negative priors
         conf_loss = (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) / n_positives.sum().float()  # (), scalar
-        #print('Whats the split',conf_loss.item(), loc_loss.item())
-        if conf_loss + self.alpha * loc_loss > 100:
-            print('conf_loss',conf_loss.item(),'\tloc_loss',loc_loss.item())
-            print('n objects in image',n_objects)
-            print('n_positives?',n_positives)
-            if conf_loss > 100:
-                # print('Predicted boxes of positive priors:',predicted_locs[positive_priors].shape, '\n',predicted_locs[positive_priors])
-                # print('True ENCODED boxes of positive priors:',true_locs[positive_priors].shape,'\n',true_locs[positive_priors])
-                print('predicted_scores.view(-1,n_classes)\n',predicted_scores.view(-1, n_classes))
-                print('true_classes.view(-1)\n',true_classes.view(-1),true_classes.view(-1).shape,sum(true_classes.view(-1)))
-
-            # if loc_loss > 100:
-            #     print('Predicted boxes of positive priors:',predicted_locs[positive_priors].shape, '\n',predicted_locs[positive_priors])
-            #     print('True ENCODED boxes of positive priors:',true_locs[positive_priors].shape,'\n',true_locs[positive_priors])
-            #     print('True DECODED:')
-            #     print(boxes[i][object_for_each_prior].shape,boxes[i][object_for_each_prior])
-            #     print('centre-size',xy_to_cxcy(boxes[i][object_for_each_prior]).shape, xy_to_cxcy(boxes[i][object_for_each_prior]))
-            #     print('priors', self.priors_cxcy.shape,self.priors_cxcy[0,:])
             
         return conf_loss + self.alpha * loc_loss
 
