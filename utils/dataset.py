@@ -355,6 +355,7 @@ class SSDRealDataset(Dataset):
             return img, boxes, torch.ones(len(boxes)) #for training we need the so-called class labels
 
         else:
+            print('In self.is_test, including extent.')
             return img, boxes, torch.FloatTensor(extent) #for inference we know the labels ALL 1, we want the extent for plotting
     
     def __len__(self):
