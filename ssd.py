@@ -6,12 +6,8 @@ import numpy as np
 from math import sqrt
 
 
-from SSD.models.models import VGGBase, AuxiliaryConvolutions, PredictionConvolutions
-from SSD.utils.utils import cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, xy_to_cxcy
-
-
-
-
+from models.models import VGGBase, AuxiliaryConvolutions, PredictionConvolutions
+from utils.utils import cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, xy_to_cxcy
 
 
 
@@ -122,8 +118,8 @@ class SSD(nn.Module):
         For each class, perform Non-Maximum Suppression (NMS) on boxes that are above a minimum threshold.
 
         Input:
-         predicted_locs: predicted locations/boxes w.r.t the 8732 prior boxes, a tensor of dimensions (N, 8732, 4)
-         predicted_scores: class scores for each of the encoded locations/boxes, a tensor of dimensions (N, 8732, n_classes)
+         predicted_locs: predicted locations/boxes w.r.t the 8732 prior boxes; tensor of dimensions (N, 8732, 4)
+         predicted_scores: class scores for each of the encoded locations/boxes; tensor of dimensions (N, 8732, n_classes)
          min_score: minimum threshold for a box to be considered a match for a certain class
          max_overlap: maximum overlap two boxes can have so that the one with the lower score is not suppressed via NMS
          top_k: if there are a lot of resulting detection across all classes, keep only the top 'k'
@@ -228,12 +224,6 @@ class SSD(nn.Module):
 
 
 
-#Matcher
-#should we use hungarian matcher??
-#possible need to change the scale of the anchors? So we have more matches
-#https://github.com/facebookresearch/detr/blob/main/models/matcher.py
-#https://github.com/pytorch/vision/torchvision/models/detection/_utils.py
-
 
 
 
@@ -245,21 +235,29 @@ class SSD(nn.Module):
 
 class MultiBoxLoss(nn.Module):
     """
-    The MultiBox loss, a loss function for object detection.
-    This is a combination of:
-    (1) a localization loss for the predicted locations of the boxes, and
-    (2) a confidence loss for the predicted class scores.
+    The MultiBox loss as seen in the paper, a loss function for object detection
+    is derived from the MultiBox objective.
+    This is a weighted sum of:
+        (1) a localization/regression loss for the predicted locations of the boxes, 
+        (2) a confidence loss for the predicted class scores.
     """
 
-    def __init__(self, priors_cxcy, threshold=0.5, neg_pos_ratio=3, alpha=1., device=torch.device("cuda" if torch.cuda.is_available() else "cpu")):
+    def __init__(self, 
+                 priors_cxcy, 
+                 threshold=0.5, 
+                 neg_pos_ratio=3, 
+                 alpha=1., 
+                 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    ):
+
         super(MultiBoxLoss, self).__init__()
         self.priors_cxcy = priors_cxcy #UNINITIALSED PRIORS/ANCHORS
         self.priors_xy = cxcy_to_xy(priors_cxcy)
-        self.threshold = threshold
-        self.neg_pos_ratio = neg_pos_ratio
-        self.alpha = alpha
+        self.threshold =  #IoU threshold
+        self.neg_pos_ratio = neg_pos_ratio #unbalanced number of pos/neg default boxes
+        self.alpha = alpha #weight of localisation loss
 
-        self.smooth_l1 = nn.L1Loss()
+        self.smooth_l1 = nn.SmoothL1Loss()
         self.cross_entropy = nn.CrossEntropyLoss(reduction='none')
         self.device = device
 
@@ -267,18 +265,19 @@ class MultiBoxLoss(nn.Module):
     def forward(self, predicted_locs, predicted_scores, boxes, labels):
         """
         Forward propagation.
-        :param predicted_locs: predicted locations/boxes w.r.t the 8732 prior boxes, a tensor of dimensions (N, 8732, 4)
-        :param predicted_scores: class scores for each of the encoded locations/boxes, a tensor of dimensions (N, 8732, n_classes)
-        :param boxes: true  object bounding boxes in boundary coordinates, a list of N tensors
-        :param labels: true object labels, a list of N tensors
-        :return: multibox loss, a scalar
+        Input:
+         predicted_locs : model output for coord parameterisation w.r.t default/prior boxes; torch.tensor [N,8732,4]
+         predicted_scores : model output confidence score for each prior box, prob. of containing object; torch.tensor [N,8732,n_classes]
+         boxes : ground truth boxes in boundary coords (xyxy); list [N, ] of torch.tensors
+         labels : ground truth object labels, (torch.ones); list [N, ] of torch.tensors
+        Returns:
+         multibox loss : reduced along batch dimension, scalar
         """
 
         batch_size = predicted_locs.size(0)
         n_priors = self.priors_cxcy.size(0)
         n_classes = predicted_scores.size(2)
 
-        assert n_priors == predicted_locs.size(1) == predicted_scores.size(1)
 
         true_locs = torch.zeros((batch_size, n_priors, 4), dtype=torch.float,device=self.device)#.to(self.device)  # (N, 8732, 4)
         true_classes = torch.zeros((batch_size, n_priors), dtype=torch.long,device=self.device).to(self.device)  # (N, 8732)
@@ -296,25 +295,19 @@ class MultiBoxLoss(nn.Module):
             # 1. An object might not be the best object for all priors, and is therefore not in object_for_each_prior.
             # 2. All priors with the object may be assigned as background based on the threshold (0.5).
 
-            # To remedy this -
             # First, find the prior that has the maximum overlap for each object.
-            _, prior_for_each_object = overlap.max(dim=1)  # (N_o)
-
-            # Then, assign each object to the corresponding maximum-overlap-prior. (This fixes 1.)
+            # Then, assign each object to the corresponding maximum-overlap-prior
+            _, prior_for_each_object = overlap.max(dim=1)          
             object_for_each_prior[prior_for_each_object] = torch.LongTensor(range(n_objects)).to(self.device)
-
-            # To ensure these priors qualify, artificially give them an overlap of greater than 0.5. (This fixes 2.)
             overlap_for_each_prior[prior_for_each_object] = 1.
 
             # Labels for each prior
-            label_for_each_prior = labels[i][object_for_each_prior]  # (8732)
-            # Set priors whose overlaps with objects are less than the threshold to be background (no object)
+            label_for_each_prior = labels[i][object_for_each_prior] 
+            # Set priors whose overlaps with objects are less than the threshold to be background 
             label_for_each_prior[overlap_for_each_prior < self.threshold] = 0  # (8732)
 
-            # Store
             true_classes[i] = label_for_each_prior
-
-            # Encode center-size object coordinates into the form we regressed predicted boxes to
+            # Encode the "true" locations (using the center-size coords here) we'll regress to, using paper parameterisation
             true_locs[i] = cxcy_to_gcxgcy(xy_to_cxcy(boxes[i][object_for_each_prior]), self.priors_cxcy)  # (8732, 4)
 
         # Identify priors that are positive (object/non-background)
@@ -322,13 +315,10 @@ class MultiBoxLoss(nn.Module):
 
 
         # LOCALIZATION LOSS
-        #print('predicted_locs[positive_priors]',predicted_locs[positive_priors])
-        #print('true_locs[positive_priors]',true_locs[positive_priors])
 
-        # Localization loss is computed only over positive (non-background) priors
+        # Localization loss is computed only over positive priors
         loc_loss = self.smooth_l1(predicted_locs[positive_priors], true_locs[positive_priors])  # (), scalar
-        #print('Loc loss->',loc_loss)
-        # Note: indexing with a torch.uint8 (byte) tensor flattens the tensor when indexing is across multiple dimensions (N & 8732)
+        # Indexing with torch.uint8 (byte) tensor flattens the tensor along the batch dimension also
         # So, if predicted_locs has the shape (N, 8732, 4), predicted_locs[positive_priors] will have (total positives, 4)
 
 
@@ -367,18 +357,149 @@ class MultiBoxLoss(nn.Module):
 
 
 
+#Matcher
+#use hungarian matcher??
+#possible need to change the scale of the anchors? So we have more matches
+#https://github.com/facebookresearch/detr/blob/main/models/matcher.py
+#https://github.com/pytorch/vision/torchvision/models/detection/_utils.py
+
+
+
+from scipy.optimize import linear_sum_assignment
+
+class HungarianMatcher(nn.Module):
+    """
+    This class computes an assignment between the targets and the predictions of the network
+    For efficiency reasons, the targets don't include the no_object. Because of this, in general,
+    there are more predictions than targets. In this case, we do a 1-to-1 matching of the best predictions,
+    while the others are un-matched (and thus treated as non-objects).
+    """
+
+    def __init__(self, cost_class=1, cost_bbox=1, cost_giou=1):
+        """
+        Creates the matcher
+        Params:
+            cost_class: This is the relative weight of the classification error in the matching cost
+            cost_bbox: This is the relative weight of the L1 error of the bounding box coordinates in the matching cost
+            cost_giou: This is the relative weight of the giou loss of the bounding box in the matching cost
+        """
+        super().__init__()
+        self.cost_class = cost_class
+        self.cost_bbox = cost_bbox
+        self.cost_giou = cost_giou
+        assert cost_class != 0 or cost_bbox != 0 or cost_giou != 0, "all costs cant be 0"
+
+
+
+    def box_iou(self, boxes1, boxes2):
+        area1 = torchvision.ops.boxes.box_area(boxes1)
+        area2 = torchvision.ops.boxes.box_area(boxes2)
+
+        lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
+        rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
+
+        wh = (rb - lt).clamp(min=0)  # [N,M,2]
+        inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
+
+        union = area1[:, None] + area2 - inter
+
+        iou = inter / union
+        return iou, union   
+        
+    def generalized_box_iou(self, boxes1, boxes2):
+        """
+        Generalized IoU from https://giou.stanford.edu/
+        The boxes should be in [x0, y0, x1, y1] format
+        Returns a [N, M] pairwise matrix, where N = len(boxes1)
+        and M = len(boxes2)
+        """
+        # degenerate boxes gives inf / nan results
+        # so do an early check
+        #assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
+        assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
+        iou, union = self.box_iou(boxes1, boxes2)
+
+        lt = torch.min(boxes1[:, None, :2], boxes2[:, :2])
+        rb = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+
+        wh = (rb - lt).clamp(min=0)  # [N,M,2]
+        area = wh[:, :, 0] * wh[:, :, 1]
+
+        return iou - (area - union) / area
+
+
+    @torch.no_grad()
+    def forward(self, predicted_locs, predicted_scores, boxes, labels):
+        """ Performs the matching
+        Params:
+                 "pred_logits": Tensor of dim [batch_size, num_queries, num_classes] with the classification logits
+                 "pred_boxes": Tensor of dim [batch_size, num_queries, 4] with the predicted box coordinates
+                 "labels": Tensor of dim [num_target_boxes] (where num_target_boxes is the number of ground-truth
+                           objects in the target) containing the class labels
+                 "boxes": Tensor of dim [num_target_boxes, 4] containing the target box coordinates
+        Returns:
+            A list of size batch_size, containing tuples of (index_i, index_j) where:
+                - index_i is the indices of the selected predictions (in order)
+                - index_j is the indices of the corresponding selected targets (in order)
+            For each batch element, it holds:
+                len(index_i) = len(index_j) = min(num_queries, num_target_boxes)
+        """
+
+        batch_size = predicted_locs.size(0)
+        n_priors = predicted_locs.size(1) #8732
+        n_classes = predicted_scores.size(2)  #2
+
+        out_prob = predicted_scores.flatten(0,1).softmax(-1) # [batch_size*n_priors, n_classes]
+        out_bbox = predicted_locs.flatten(0,1) # [batch_size*n_priors, 4]
+        #print(out_bbox)
+
+        #we should concat the target labels and boxes
+        tgt_ids = torch.cat([v for v in labels]).long() # [16]
+        tgt_bbox = torch.cat([v for v in boxes]) # [16,4]       
+
+        # Compute the classification cost. Contrary to the loss, we don't use the NLL,
+        # but approximate it in 1 - proba[target class].
+        # The 1 is a constant that doesn't change the matching, it can be ommitted.
+        cost_class = -out_prob[:, tgt_ids] # [batch_size*n_priors, 16]
+        #print('1',cost_class.shape)
+
+        # Compute the L1 cost between boxes
+        cost_bbox = torch.cdist(xy_to_cxcy(out_bbox), xy_to_cxcy(tgt_bbox), p=1) # [batch_size*n_priors, 16]
+        #print('2',cost_bbox.shape)
+
+        cost_giou = -self.generalized_box_iou(out_bbox,tgt_bbox) # [batch_size*n_priors, 16]
+        #print('3',cost_giou.shape)
+        #final cost matrix:
+        C = self.cost_bbox * cost_bbox + self.cost_class * cost_class + self.cost_giou * cost_giou
+        C = C.view(batch_size, n_priors, -1).cpu() # [batch_size, n_priors, 16]
+        #print('C',C.shape)
+
+        sizes = [len(v) for v in boxes] # [batch_size] n_objects_per_image
+        #print(sizes)
+        indices = [linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))]
+        #print(indices)
+
+        return [(torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
+
+
+
+
+
+
 
 #testing
 if __name__=='__main__':
     from utils.dataset import SSDRealDataset
     from torch.utils.data import DataLoader
-    das = SSDRealDataset(annotation_json="/home/users/b/bozianu/work/data/real/annotations.json")
+    das = SSDRealDataset(annotation_json="/home/users/b/bozianu/work/data/real/anns_2layers.json")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_dal = DataLoader(das, batch_size=2, shuffle=False, collate_fn=das.collate_fn)
-    model = SSD(pretrained_vgg=False,in_channels=1)
-    #criterion = MultiBoxLoss(priors_cxcy=model.priors_cxcy, alpha=0.9,device=device).to(device)
-    criterion = NewDetectionLoss(priors_cxcy=model.priors_cxcy).to(device)
+    model = SSD(pretrained_vgg=False,in_channels=2)
+    criterion = MultiBoxLoss(priors_cxcy=model.priors_cxcy, alpha=0.9,device=device).to(device)
+    #criterion = NewDetectionLoss(priors_cxcy=model.priors_cxcy).to(device)
     print(model.priors_cxcy.shape,type(model.priors_cxcy))
+    matcher = HungarianMatcher()
+    print(matcher)
 
     for step, (img, boxes, labels) in enumerate(train_dal):
         img = img.to(device)
@@ -386,8 +507,16 @@ if __name__=='__main__':
         labels = [label.to(device) for label in labels]
         
         pred_loc, pred_sco = model(img)
+        matcher(pred_loc,pred_sco,boxes,labels)
+
+
+
         print('Boxes,',len(boxes),boxes[0].shape,boxes[1].shape)
         loss = criterion(pred_loc, pred_sco, boxes, labels)
         print('Overall loss->',loss)
         if step==0:
             break
+
+
+
+
