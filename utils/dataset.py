@@ -333,13 +333,19 @@ class SSDRealDataset(Dataset):
         self.annotations = annotations
         self.ids = torch.arange(len(self.annotations))
         self.is_test = is_test
+        self.direc = "/home/users/b/bozianu/work/data/real/1-layer-imgs/"
+        print('I retrieve images from the following directory:\n\t',direc,'\nAct accordingly...')
         if self.is_test:
             print('Initialising dataset module in test mode, dataloader ouput in form:\n img, boxes, extent')
 
     def __getitem__(self, index):
         annotations_i = self.annotations[str(index)]
-        path = annotations_i["image"]["img_path"]
-        
+        #path = annotations_i["image"]["img_path"] #legacy
+        #in the new regime we can choose which directory to look in, to include different numb. channels
+        path = self.direc + annotations_i["image"]["file_name"]
+        h5file_number = annotations_i["image"]["file"]
+        event_number_inh5 = annotations_i["image"]["event"]
+
         img_tensor = torch.load(path)
         img_tensor = img_tensor.type('torch.FloatTensor')
         n_objs = annotations_i["anns"]["n_clusters"] 
@@ -355,8 +361,8 @@ class SSDRealDataset(Dataset):
             return img, boxes, torch.ones(len(boxes)) #for training we need the so-called class labels
 
         else:
-            print('In self.is_test, including extent.')
-            return img, boxes, torch.FloatTensor(extent) #for inference we know the labels ALL 1, we want the extent for plotting
+            print('In self.is_test, including extent, h5file and event number.')
+            return img, boxes, torch.FloatTensor(extent), h5file_number, event_number_inh5 #for inference we know the labels ALL 1, we want the extent for plotting
     
     def __len__(self):
         return len(self.ids)
