@@ -5,6 +5,8 @@
 /inference
 /logs
 /dev
+/cached*
+/inference2
 infer_real.py
 train_real.py
 log.*

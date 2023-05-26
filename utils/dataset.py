@@ -333,10 +333,10 @@ class SSDRealDataset(Dataset):
         self.annotations = annotations
         self.ids = torch.arange(len(self.annotations))
         self.is_test = is_test
-        self.direc = "/home/users/b/bozianu/work/data/real/1-layer-imgs/"
-        print('I retrieve images from the following directory:\n\t',direc,'\nAct accordingly...')
+        self.direc = "/home/users/b/bozianu/work/data/real/3-layer-imgs/"
+        print('I retrieve images from the following directory:\n\t',self.direc,'\nAct accordingly...')
         if self.is_test:
-            print('Initialising dataset module in test mode, dataloader ouput in form:\n img, boxes, extent')
+            print('Initialising dataset module in test mode, dataloader ouput in form:\n img, boxes, extent, h5file and event number.')
 
     def __getitem__(self, index):
         annotations_i = self.annotations[str(index)]
@@ -346,8 +346,8 @@ class SSDRealDataset(Dataset):
         h5file_number = annotations_i["image"]["file"]
         event_number_inh5 = annotations_i["image"]["event"]
 
-        img_tensor = torch.load(path)
-        img_tensor = img_tensor.type('torch.FloatTensor')
+        img_tensor = torch.load(path) #only needed for 3 channels
+        img_tensor = img_tensor.type('torch.FloatTensor')#.unsqueeze(0)#unsqueeze to get the channel dimension out!
         n_objs = annotations_i["anns"]["n_clusters"] 
         extent = annotations_i["anns"]["extent"]
 
@@ -359,10 +359,9 @@ class SSDRealDataset(Dataset):
 
         if not self.is_test:
             return img, boxes, torch.ones(len(boxes)) #for training we need the so-called class labels
-
         else:
-            print('In self.is_test, including extent, h5file and event number.')
-            return img, boxes, torch.FloatTensor(extent), h5file_number, event_number_inh5 #for inference we know the labels ALL 1, we want the extent for plotting
+            #for inference we know the labels ALL 1, we want the extent for plotting
+            return img, boxes, torch.FloatTensor(extent), h5file_number, event_number_inh5 
     
     def __len__(self):
         return len(self.ids)
@@ -395,18 +394,30 @@ class SSDRealDataset(Dataset):
     def collate_fn(self, batch):
         images = list()
         boxes = list()
-        labels = list()
 
-        for b in batch:
-            images.append(b[0])
-            boxes.append(b[1])
-            labels.append(b[2])
+        #training
+        if not self.is_test:
+            labels = list()
+            for b in batch:
+                images.append(b[0])
+                boxes.append(b[1])
+                labels.append(b[2])
 
-        images = torch.stack(images, dim=0)
+            images = torch.stack(images, dim=0)
+            return images, boxes, labels  # tensor (N, 3, 300, 300), 3 lists of N tensors        
 
-        return images, boxes, labels  # tensor (N, 3, 300, 300), 3 lists of N tensors each
-
-
+        else:
+            extents = list()
+            files = list()
+            eve_numbs = list()
+            for b in batch:
+                images.append(b[0])
+                boxes.append(b[1])
+                extents.append(b[2])
+                files.append(b[3])
+                eve_numbs.append(b[4])
+            images = torch.stack(images, dim=0) 
+            return images, boxes, extents, files, eve_numbs
 
 
 

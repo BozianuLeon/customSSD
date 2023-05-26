@@ -253,7 +253,7 @@ class MultiBoxLoss(nn.Module):
         super(MultiBoxLoss, self).__init__()
         self.priors_cxcy = priors_cxcy #UNINITIALSED PRIORS/ANCHORS
         self.priors_xy = cxcy_to_xy(priors_cxcy)
-        self.threshold =  #IoU threshold
+        self.threshold =  threshold#IoU threshold
         self.neg_pos_ratio = neg_pos_ratio #unbalanced number of pos/neg default boxes
         self.alpha = alpha #weight of localisation loss
 
