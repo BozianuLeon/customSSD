@@ -1,5 +1,6 @@
 import torch
 import torchvision
+import numpy as np
 
 
 def sel_device(dev):
@@ -60,6 +61,12 @@ def move_dev(
     else:
         return tensor.to(dev)
     
+
+def remove_nan(array):
+    #find the indices where there are not nan values
+    good_indices = np.where(array==array) 
+    return array[good_indices]
+
 
 
 
@@ -142,6 +149,100 @@ def gcxgcy_to_cxcy(gcxgcy, priors_cxcy):
 
 
 
+
+
+
+
+def wrap_check_NMS(boxes,scores,ymin,ymax,threshold=0.35):
+    #we now need a function that removes duplicates, ie the boxes we put into the padded region
+    #to resolve the discontinuity problem, we must have a maximum of 1 box for each REAL cluster
+
+    #input is a np.ndarray containing the boxes in xyxy coords, after multiplication of extent
+    boxes = torch.tensor(boxes)
+    suppress = np.zeros(len(boxes))
+    for i in range(len(boxes)):
+        #needs further investigation
+        box_i = boxes[i]
+
+        if (box_i[1] < ymin) or (box_i[3] > ymax):
+            #compare to the "un"wrapped box
+            modded_box_i = box_i + (-1*torch.sign(box_i[1])) * torch.tensor([0.0, 2*np.pi, 0.0, 2*np.pi])
+            overlaps = torchvision.ops.box_iou(modded_box_i.unsqueeze(0), boxes)
+            #if overlap too much, take that with the greater confidence
+            print('torch max overlaps',torch.max(overlaps),box_i,scores[i],scores[torch.argmax(overlaps)])
+            if torch.max(overlaps) > threshold:
+                wrapped_guy = torch.argmax(overlaps)
+                suppress[i] = max(suppress[i],scores[i]<scores[wrapped_guy])
+
+    boxes = boxes.numpy()
+    return boxes[np.where(suppress==0)]
+
+
+def wrap_check_truth(boxes,ymin,ymax):
+    #here we look at truth boxes, remove the (wrapped) "duplicates" 
+    #and mitigate those crossing the discontinuity
+    #input is a np.ndarray containing the boxes in xyxy coords, after multiplication of extent
+
+    boxes = torch.tensor(boxes)
+    suppress = np.zeros(len(boxes))
+    for j in range(len(boxes)):
+        box_j = boxes[j]
+
+        #case (A) the truth box lies entirely outside the true phi range
+        if (box_j[1]>ymax) or (box_j[3]<ymin):
+            suppress[j] = 1
+        
+        #case (B) the truth box has two corners outside the true phi range
+        #check the IoU of the truth box with its duplicate, remove just one of these
+        elif (box_j[1] < ymin) or (box_j[3] > ymax):
+            modded_box_j = box_j + (-1*torch.sign(box_j[1])) * torch.tensor([0.0, 2*np.pi, 0.0, 2*np.pi])
+            overlaps = torchvision.ops.box_iou(modded_box_j.unsqueeze(0), boxes)
+            wrapped_box = boxes[torch.argmax(overlaps)]
+
+            #keep the truth box with the largest area (can be different due to merging).
+            suppress[j] = max(suppress[j],(box_j[2]-box_j[0])*(box_j[3]-box_j[1])<(wrapped_box[2]-wrapped_box[0])*(wrapped_box[3]-wrapped_box[1]))
+
+    boxes = boxes.numpy()
+    return boxes[np.where(suppress==0)]
+
+
+
+def get_cells_from_boxes(boxes,cells):
+    #boxes in xyxy
+    ymin,ymax = min(cells['cell_phi']),max(cells['cell_phi'])
+
+    list_o_cells = []
+    for i in range(len(boxes)):
+        box_i = boxes[i]
+        #need a check that the corners are inside the true extent:
+        #here's where we need to break boxes in 2
+        if (box_i[1] < ymin):
+            modded_box_i = box_i + np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
+            conditon1 = np.logical_and.reduce((cells['cell_eta']>box_i[0], cells['cell_eta']<box_i[2],cells['cell_phi']>ymin,cells['cell_phi']<box_i[3]))
+            conditon2 = np.logical_and.reduce((cells['cell_eta']>modded_box_i[0], cells['cell_eta']<modded_box_i[2],cells['cell_phi']>modded_box_i[1],cells['cell_phi']<ymax))
+            tot_cond = np.logical_and(conditon1,conditon2)
+            cells_here = cells[np.where(condition)]
+            print(box_i)
+            print('!',len(cells_here))
+
+        elif (box_i[3] > ymax):
+            modded_box_i = box_i - np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
+            conditon1 = np.logical_and.reduce((cells['cell_eta']>box_i[0], cells['cell_eta']<box_i[2],cells['cell_phi']>box_i[1],cells['cell_phi']<ymax))
+            conditon2 = np.logical_and.reduce((cells['cell_eta']>modded_box_i[0], cells['cell_eta']<modded_box_i[2],cells['cell_phi']>ymin,cells['cell_phi']<modded_box_i[3]))
+            tot_cond = np.logical_and(conditon1,conditon2)
+            cells_here = cells[np.where(condition)]
+            print(box_i)
+            print('!',len(cells_here))
+
+        else:
+            condition = np.logical_and.reduce((cells['cell_eta']>box_i[0], cells['cell_eta']<box_i[2], cells['cell_phi']>box_i[1], cells['cell_phi']>box_i[3])) #multiple conditions #could use np.all(x,axis)
+            cells_here = cells[np.where(condition)]
+            print(box_i)
+            print(len(cells_here))
+    
+        list_o_cells.append(cells_here)
+
+    return list_o_cells
 
 
 

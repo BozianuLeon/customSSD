@@ -340,8 +340,7 @@ class SSDRealDataset(Dataset):
 
     def __getitem__(self, index):
         annotations_i = self.annotations[str(index)]
-        #path = annotations_i["image"]["img_path"] #legacy
-        #in the new regime we can choose which directory to look in, to include different numb. channels
+        #in the new regime we can choose which directory to look in
         path = self.direc + annotations_i["image"]["file_name"]
         h5file_number = annotations_i["image"]["file"]
         event_number_inh5 = annotations_i["image"]["event"]
@@ -351,14 +350,16 @@ class SSDRealDataset(Dataset):
         n_objs = annotations_i["anns"]["n_clusters"] 
         extent = annotations_i["anns"]["extent"]
 
-        
+        # transform image to match model input
+        # pixel normalisation here?
         transfm = transforms.Compose([transforms.Resize([300, 300],interpolation=transforms.InterpolationMode.NEAREST)])
         img = transfm(img_tensor)
         boxes = self.get_xys(annotations_i,n_objs)
         boxes = self.resize_boxes(boxes,img_tensor)
 
         if not self.is_test:
-            return img, boxes, torch.ones(len(boxes)) #for training we need the so-called class labels
+            #for training we need the so-called class labels
+            return img, boxes, torch.ones(len(boxes)) 
         else:
             #for inference we know the labels ALL 1, we want the extent for plotting
             return img, boxes, torch.FloatTensor(extent), h5file_number, event_number_inh5 
@@ -422,6 +423,13 @@ class SSDRealDataset(Dataset):
 
 
 
+
+
+
+
+
+
+#testing
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import matplotlib

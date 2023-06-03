@@ -183,14 +183,11 @@ def area_covered(truth_boxes,predicted_boxes,filter=False):
 
 
 
-### Physical!
 
 
 
 
-
-
-
+#testing
 if __name__=="__main__":
     #always check whether the boxes need to be mutliplied by extents
     tboxes = torch.tensor([[ 1.1125, -0.5430,  1.2125, -0.1503],
@@ -256,13 +253,6 @@ if __name__=="__main__":
     # print(((1.1950-1.2)**2+(-0.7484--0.7363)**2)**.5)
     quit()
 
-
-
-
-    
-
-
-
     tboxes = torch.tensor([[-1.6500, -2.9943, -1.5125, -2.7980],
                             [-1.6500,  3.2889, -1.5125,  3.4852],
                             [ 4.2431, -3.0457,  4.5888, -2.7053],
@@ -281,28 +271,6 @@ if __name__=="__main__":
                             [-1.7328,  3.8827, -1.5029,  4.1173],
                             [-1.5159,  3.3068, -1.2927,  3.7263]])
     print(centre_diffs(tboxes,pboxes))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
