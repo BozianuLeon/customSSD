@@ -318,7 +318,6 @@ class MultiBoxLoss(nn.Module):
         # Indexing with torch.uint8 (byte) tensor flattens the tensor along the batch dimension also
         # So, if predicted_locs has the shape (N, 8732, 4), predicted_locs[positive_priors] will have (total positives, 4)
 
-
         # CONFIDENCE LOSS
 
         # Confidence loss is computed over positive priors and the most difficult (hardest) negative priors in each image
