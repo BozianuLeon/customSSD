@@ -158,7 +158,8 @@ def wrap_check_NMS(boxes,scores,ymin,ymax,threshold=0.35):
     #to resolve the discontinuity problem, we must have a maximum of 1 box for each REAL cluster
 
     #input is a np.ndarray containing the boxes in xyxy coords, after multiplication of extent
-    boxes = torch.tensor(boxes)
+    if isinstance(boxes,np.ndarray):
+        boxes = torch.tensor(boxes)
     suppress = np.zeros(len(boxes))
     for i in range(len(boxes)):
         #needs further investigation
@@ -167,11 +168,10 @@ def wrap_check_NMS(boxes,scores,ymin,ymax,threshold=0.35):
         modded_box_i = box_i + (-1*torch.sign(box_i[1])) * torch.tensor([0.0, 2*np.pi, 0.0, 2*np.pi])
         overlaps = torchvision.ops.box_iou(modded_box_i.unsqueeze(0), boxes)
         #if overlap too much, take that with the greater confidence
-        print('torch max overlaps',torch.max(overlaps),box_i,scores[i],scores[torch.argmax(overlaps)])
         if torch.max(overlaps) > threshold:
             wrapped_guy = torch.argmax(overlaps)
             suppress[i] = max(suppress[i],scores[i]<scores[wrapped_guy])
-    print('suppress',suppress)
+
     boxes = boxes.numpy()
     boxes = boxes[np.where(suppress==0)]
     final_boxes = []
@@ -189,8 +189,8 @@ def wrap_check_truth(boxes,ymin,ymax):
     #here we look at truth boxes, remove the (wrapped) "duplicates" 
     #and mitigate those crossing the discontinuity
     #input is a np.ndarray containing the boxes in xyxy coords, after multiplication of extent
-
-    boxes = torch.tensor(boxes)
+    if isinstance(boxes,np.ndarray):
+        boxes = torch.tensor(boxes)
     suppress = np.zeros(len(boxes))
     for j in range(len(boxes)):
         box_j = boxes[j]
@@ -226,7 +226,6 @@ def get_cells_from_boxes(boxes,cells):
         #here's where we need to break boxes in 2
 
         if (box_i[1] < ymin) and (box_i[3] > ymin):
-            print(1,'!')
             modded_box_i = box_i + np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
             bottom_out = max(box_i[1],ymin)
             top_out = min(modded_box_i[3],ymax)
@@ -236,7 +235,6 @@ def get_cells_from_boxes(boxes,cells):
 
         
         elif (box_i[3] > ymax) and (box_i[1] < ymax):
-            print(2)
             modded_box_i = box_i - np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
             top_top = max(box_i[3],ymax)
             bottom_bottom = min(modded_box_i[1],ymin)
@@ -246,25 +244,22 @@ def get_cells_from_boxes(boxes,cells):
 
 
         elif (box_i[1] < ymin):
-            print(3)
             modded_box_i = box_i + np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
             y_cond = np.logical_and.reduce((cells['cell_phi']>modded_box_i[1], cells['cell_phi']>modded_box_i[3]))
 
 
         elif (box_i[3] > ymax):
-            print(4)
             modded_box_i = box_i - np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
             y_cond = np.logical_and.reduce((cells['cell_phi']>modded_box_i[1], cells['cell_phi']>modded_box_i[3]))
 
 
         else:
-            print(5)
             y_cond = np.logical_and.reduce((cells['cell_phi']>box_i[1], cells['cell_phi']<box_i[3])) #multiple conditions #could use np.all(x,axis)
         
         tot_cond = np.logical_and(x_condition,y_cond)
         cells_here = cells[np.where(tot_cond)]
         list_o_cells.append(cells_here)
-    print()
+
     return list_o_cells
 
 
