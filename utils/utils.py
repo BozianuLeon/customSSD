@@ -70,6 +70,7 @@ def remove_nan(array):
 
 
 def transform_angle(angle):
+    #maps angle to [-pi,pi]
     angle %= 2 * np.pi  # Map angle to [0, 2π]
     if angle >= np.pi:
         angle -= 2 * np.pi  # Map angle to [-π, π]
