@@ -326,15 +326,17 @@ class SSDRealDataset(Dataset):
     Now we have real calorimeter images produced using real_data_production script.
     Conversely to other datasets, the "images" are saved as [2,97,64] pytorch tensors
     '''
-    def __init__(self,annotation_json,is_test=False):
+    def __init__(self,annotation_json,image_directory,is_test=False):
 
         with open(annotation_json) as json_file:
             annotations = json.load(json_file)
         self.annotations = annotations
         self.ids = torch.arange(len(self.annotations))
         self.is_test = is_test
-        self.direc = "/home/users/b/bozianu/work/data/real/3-layer-imgs/"
-        print('I retrieve images from the following directory:\n\t',self.direc,'\nAct accordingly...')
+        if image_directory:
+            self.direc = image_directory
+        else:
+            print('No image directory specified. Please input folder containing calorimeter images.')
         if self.is_test:
             print('Initialising dataset module in test mode, dataloader ouput in form:\n img, boxes, extent, h5file and event number.')
 
