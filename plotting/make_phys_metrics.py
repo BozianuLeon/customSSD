@@ -87,6 +87,8 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
 
 
+total_clus_energy, total_clus_eta, total_clus_phi, total_clus_n = list(), list(), list(), list()
+
 total_match_energy_ratios, total_match_eta_diff, total_match_phi_diff, total_match_n_diff = list(), list(), list(), list()
 total_match_pred_energy, total_match_pred_eta, total_match_pred_phi, total_match_pred_n = list(), list(), list(), list()
 total_unmatch_pred_energy, total_unmatch_pred_eta, total_unmatch_pred_phi, total_unmatch_pred_n = list(), list(), list(), list()
@@ -115,11 +117,24 @@ for i in range(len(a)):
     #get the cells
     h5f = a[i]['h5file']
     event_no = a[i]['event_no']
+
     #load cells from h5
-    file = "/home/users/b/bozianu/work/data/real/cells/user.cantel.33075755._00000{}.calocellD3PD_mc16_JZW4.r14423.h5".format(h5f)
+    # file = "/home/users/b/bozianu/work/data/real/cells/user.cantel.33075755._00000{}.calocellD3PD_mc16_JZW4.r14423.h5".format(h5f)
+    file = "/home/users/b/bozianu/work/data/pileup-JZ4/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
     with h5py.File(file,"r") as f:
         h5group = f["caloCells"]
         cells = h5group["2d"][event_no]
+
+    clusters_file = "/home/users/b/bozianu/work/data/pileup-JZ4/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
+    with h5py.File(clusters_file,"r") as f:
+        cl_data = f["caloCells"] 
+        event_data = cl_data["1d"][event_no]
+        cluster_data = cl_data["2d"][event_no]
+
+    total_clus_energy.append((cluster_data['cl_E_em']+cluster_data['cl_E_had']).tolist())
+    total_clus_eta.append(cluster_data['cl_eta'].tolist())
+    total_clus_phi.append(cluster_data['cl_phi'].tolist())
+    total_clus_n.append(cluster_data['cl_cell_n'].tolist())
 
     print(i)
     #matched
@@ -127,6 +142,7 @@ for i in range(len(a)):
     list_p_cl_etas, list_t_cl_etas = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eta')
     list_p_cl_phis, list_t_cl_phis = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='phi')
     list_p_cl_ns, list_t_cl_ns = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='n_cells')
+
 
     #matches
     total_match_energy_ratios.append(np.array(list_p_cl_es) / np.array(list_t_cl_es))
@@ -160,6 +176,7 @@ for i in range(len(a)):
     total_match_tru_phi.append(list_t_cl_phis)
     total_match_pred_n.append(list_p_cl_ns)
     total_match_tru_n.append(list_t_cl_ns)
+    
 
     #unmatched
     list_p_cl_es2, list_t_cl_es2 = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='energy')

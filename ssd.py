@@ -4,6 +4,8 @@ from torch.nn import functional as F
 import torchvision
 import numpy as np
 from math import sqrt
+import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 
 from models.models import VGGBase, AuxiliaryConvolutions, PredictionConvolutions
@@ -14,7 +16,7 @@ from utils.utils import cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy, xy_to_cxcy
 class SSD(nn.Module):
     def __init__(self, n_classes=2,in_channels=3,device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),pretrained_vgg=True):
         super(SSD, self).__init__()
-        self.device=device
+        self.device = device
         self.n_classes = n_classes
         self.in_channels = in_channels
         
@@ -151,10 +153,10 @@ class SSD(nn.Module):
 
             for c in range(1, self.n_classes):
                 # Keep only predicted boxes and scores where scores for this class are above the minimum score
-                class_scores = predicted_scores[i][:, c]  # (8732)
+                class_scores = predicted_scores[i][:, c].to(self.device)  # (8732)
                 score_above_min_score = class_scores > min_score  # torch.uint8 (byte) tensor, for indexing
-                n_above_min_score = score_above_min_score.sum().item()
-                if n_above_min_score == 0:
+                n_above_min_score = score_above_min_score.sum()
+                if score_above_min_score.sum() == 0:
                     #no predictions pass the confidence threshold
                     continue
 

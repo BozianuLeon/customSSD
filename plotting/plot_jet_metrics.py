@@ -37,10 +37,9 @@ file_names = [['total_energy_esdjets','total_energy_fjets','total_energy_tboxjet
               ['total_pt_esdjets','total_pt_fjets','total_pt_tboxjets','total_pt_pboxjets'],
               ['total_eta_esdjets','total_eta_fjets','total_eta_tboxjets','total_eta_pboxjets'],
               ['total_phi_esdjets','total_phi_fjets','total_phi_tboxjets','total_phi_pboxjets'],
-              ['total_n_esdjets','total_n_fjets','total_n_tboxjets','total_n_pboxjets'],
-              ['total_m_esdjets','total_m_fjets','total_m_tboxjets','total_m_pboxjets']]
+              ['total_n_esdjets','total_n_fjets','total_n_tboxjets','total_n_pboxjets']]
 
-xlabs = ['Jet E', 'Jet $p_{T}$ (MeV)', '$\eta$', '$\phi$', 'N jets', 'Mass']
+xlabs = ['Jet E', 'Jet $p_{T}$ (MeV)', '$\eta$', '$\phi$', 'N jets']
 
 
 
@@ -58,7 +57,7 @@ for i in range(len(file_names)):
         events_list = load_object(file_to_look_in + '/' + file_names[i][j] + '.pkl')
         try:
             total_array = np.concatenate(events_list)
-            if file_names[i][j] in ['total_energy_fjets','total_pt_fjets','total_eta_fjets','total_phi_fjets','total_n_fjets','total_m_fjets']:
+            if file_names[i][j] in ['total_energy_fjets','total_pt_fjets','total_eta_fjets','total_phi_fjets','total_n_fjets']:
                 total_array = total_array[highpt_indices]
             if file_names[i][j] in ['total_phi_fjets','total_phi_tboxjets','total_phi_pboxjets']:
                 total_array = vectorised_angle(total_array)
