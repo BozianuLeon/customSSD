@@ -20,37 +20,38 @@ from utils.metrics import delta_n, n_unmatched_truth, n_unmatched_preds, centre_
 # model_name = "comp3_SSD_model_15_real"
 # save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/" + model_name + "/" + time.strftime("%Y%m%d-%H") + "/"
 # save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
+# save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12/"
 path_to_structured_array = save_loc + "struc_array.npy"
 
 with open(path_to_structured_array, 'rb') as f:
     a = np.load(f)
 
 print(a.shape,a.dtype)
-look_here = 2
-h5f = a[look_here]['h5file']
-event_no = a[look_here]['event_no']
-print(h5f,event_no)
+# look_here = 2
+# h5f = a[look_here]['h5file']
+# event_no = a[look_here]['event_no']
+# print(h5f,event_no)
 
-preds = a[look_here]['p_boxes']
-tees = a[look_here]['t_boxes']
-extent = a[look_here]['extent']
-b = preds[np.where(preds[:,0] > 0)]
+# preds = a[look_here]['p_boxes']
+# tees = a[look_here]['t_boxes']
+# extent = a[look_here]['extent']
+# b = preds[np.where(preds[:,0] > 0)]
 
-file = "/home/users/b/bozianu/work/data/real/cells/user.cantel.33075755._00000{}.calocellD3PD_mc16_JZW4.r14423.h5".format(h5f)
-with h5py.File(file,"r") as f:
-    h5group = f["caloCells"]
+# file = "/home/users/b/bozianu/work/data/real/cells/user.cantel.33075755._00000{}.calocellD3PD_mc16_JZW4.r14423.h5".format(h5f)
+# with h5py.File(file,"r") as f:
+#     h5group = f["caloCells"]
 
-    #get column names
-    print(h5group['1d'].dtype.descr)
-    print()
-    print(h5group['2d'].dtype.descr)
-    print()
+#     #get column names
+#     print(h5group['1d'].dtype.descr)
+#     print()
+#     print(h5group['2d'].dtype.descr)
+#     print()
     
-    #convert to numpy arrays in chun sizes
-    event = h5group["1d"][event_no]
-    cells = h5group["2d"][event_no]
-    print(event)
+#     #convert to numpy arrays in chun sizes
+#     event = h5group["1d"][event_no]
+#     cells = h5group["2d"][event_no]
+#     print(event)
 
 
 

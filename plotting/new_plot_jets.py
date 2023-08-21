@@ -246,7 +246,7 @@ ax[2].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '
 ax[2].legend(loc='lower right')
 
 plt.tight_layout()
-f.savefig(save_loc+f'eff3plot_{nth_jet}leading{fourth_lead_jet_pt_cut/1000:.0f}GeV.png')
+f.savefig(save_loc+f'eff3plot_{nth_jet}leading{nth_lead_jet_pt_cut/1000:.0f}GeV.png')
 
 
 
@@ -289,7 +289,7 @@ n_pbox, bins, _ = ax[0].hist(hi_pboxets_pt,bins=bins,histtype='step',label=f'PBo
 n_fj, bins, _ = ax[0].hist(hi_fjets_pt,bins=bins,histtype='step',label=f'FJets {len(hi_fjets_pt)}')
 n_esd, bins, _ = ax[0].hist(hi_esdjets_pt,bins=bins,histtype='step',label=f'ESD Jets {len(hi_esdjets_pt)}')
 ax[0].axvline(pt_cut,ls='--',color='red',label='pT cut')
-ax[0].set(ylabel='Freq.',title=f'100 Events Jet pT w/ cut {pt_cut/1000:.0f}GeV')
+ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events Jet pT w/ cut {pt_cut/1000:.0f}GeV')
 ax[0].set_yscale('log')
 ax[0].grid(color='0.95')
 ax[0].legend()

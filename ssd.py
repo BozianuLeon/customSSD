@@ -191,15 +191,16 @@ class SSD(nn.Module):
 
                 # Store only unsuppressed boxes for this class
                 image_boxes.append(class_decoded_locs[torch.logical_not(suppress.bool())])
-                image_labels.append(torch.LongTensor((suppress.bool()).sum().item() * [c]).to(self.device))
+                # image_labels.append(torch.LongTensor((suppress.bool()).sum().item() * [c]).to(self.device))
+                image_labels.append(torch.ones(class_scores[torch.logical_not(suppress.bool())].shape,device=self.device))
                 image_scores.append(class_scores[torch.logical_not(suppress.bool())])
 
             # If no object in any class is found, store a placeholder for 'background'
             # not needed in our case?
-            if len(image_boxes) == 0:
-                image_boxes.append(torch.FloatTensor([[0., 0., 1., 1.]]).to(self.device))
-                image_labels.append(torch.LongTensor([0]).to(self.device))
-                image_scores.append(torch.FloatTensor([0.]).to(self.device))
+            # if len(image_boxes) == 0:
+            #     image_boxes.append(torch.FloatTensor([[0., 0., 1., 1.]]).to(self.device))
+            #     image_labels.append(torch.LongTensor([0]).to(self.device))
+            #     image_scores.append(torch.FloatTensor([0.]).to(self.device))
 
             # Concatenate into single tensors
             image_boxes = torch.cat(image_boxes, dim=0)  # (n_objects, 4)
