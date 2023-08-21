@@ -219,6 +219,12 @@ def save_object(obj, filename):
 
 
 print('Saving the physics metrics in lists...')
+#ground truth clusters
+save_object(total_clus_energy,save_loc+'total_clus_energy.pkl')
+save_object(total_clus_eta, save_loc+'total_clus_eta.pkl')
+save_object(total_clus_phi, save_loc+'total_clus_phi.pkl')
+save_object(total_clus_n, save_loc+'total_clus_n.pkl')
+
 #matched
 save_object(total_match_energy_ratios,save_loc+'total_match_energy_ratios.pkl')
 save_object(total_match_eta_diff, save_loc+'total_match_eta_diff.pkl')
