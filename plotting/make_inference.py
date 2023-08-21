@@ -47,7 +47,7 @@ model.eval()
 #this should be saved in a h5 file, with formatted "columns":
 # event_no: int, h5file: int, img: numpy array?, ground truth boxes: list, predicted_boxes: list, predicted_scores: list, extent
 print(len(test_dal)*BS)
-dt = np.dtype([('event_no', 'i4'), ('h5file', 'S2'), ('extent', 'f8', (4)),
+dt = np.dtype([('event_no', 'i4'), ('h5file', 'S2'), ('extent', 'f8', (4)),  #S2 for a string of length exactly 2
                ('t_boxes', 'f4', (100,4)), ('p_boxes', 'f4', (40, 4)), ('p_scores', 'f4', (40))])
 Large = np.zeros((len(test_dal)*BS), dtype=dt)               
 

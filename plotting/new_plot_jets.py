@@ -285,7 +285,7 @@ hi_pboxets_pt = all_pboxjets_pt[np.argwhere(all_pboxjets_pt>pt_cut)]
 
 
 fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
-n_tbox, bins, _ = ax[0].hist(hi_tboxets_pt,bins=100,histtype='step',label=f'TBox Jets {len(hi_tboxets_pt)}')
+n_tbox, bins, _ = ax[0].hist(hi_tboxets_pt,bins=50,histtype='step',label=f'TBox Jets {len(hi_tboxets_pt)}')
 n_pbox, bins, _ = ax[0].hist(hi_pboxets_pt,bins=bins,histtype='step',label=f'PBox Jets {len(hi_pboxets_pt)}')
 n_fj, bins, _ = ax[0].hist(hi_fjets_pt,bins=bins,histtype='step',label=f'FJets {len(hi_fjets_pt)}')
 n_esd, bins, _ = ax[0].hist(hi_esdjets_pt,bins=bins,histtype='step',label=f'ESD Jets {len(hi_esdjets_pt)}')
@@ -334,10 +334,10 @@ hi_pboxets_eta = all_pboxjets_eta[np.argwhere(all_pboxjets_pt>pt_cut)]
 
 
 fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
-n_tbox, bins, _ = ax[0].hist(hi_tboxets_eta,bins=50,histtype='step',label=f'TBox Jets {len(hi_tboxets_eta)}')
+n_esd, bins, _ = ax[0].hist(hi_esdjets_eta,bins=50,histtype='step',label=f'ESD Jets {len(hi_esdjets_eta)}')
+n_tbox, bins, _ = ax[0].hist(hi_tboxets_eta,bins=bins,histtype='step',label=f'TBox Jets {len(hi_tboxets_eta)}')
 n_pbox, bins, _ = ax[0].hist(hi_pboxets_eta,bins=bins,histtype='step',label=f'PBox Jets {len(hi_pboxets_eta)}')
 n_fj, bins, _ = ax[0].hist(hi_fjets_eta,bins=bins,histtype='step',label=f'FJets {len(hi_fjets_eta)}')
-n_esd, bins, _ = ax[0].hist(hi_esdjets_eta,bins=bins,histtype='step',label=f'ESD Jets {len(hi_esdjets_eta)}')
 ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events Jet Eta w/ pT cut {pt_cut/1000:.0f}GeV')
 # ax[0].set_yscale('log')
 ax[0].grid(color='0.95')
@@ -367,18 +367,19 @@ fig.savefig(save_loc+'jet_eta.png')
 
 
 eta_min,eta_max = -2.7,2.7
-cent_fjets_pt = all_fjets_pt[np.argwhere(eta_min<all_fjets_eta<eta_max)]
-cent_esdjets_pt = all_esdjets_pt[np.argwhere(eta_min<all_fjets_eta<eta_max)]
-cent_tboxets_pt = all_tboxjets_pt[np.argwhere(eta_min<all_fjets_eta<eta_max)]
-cent_pboxets_pt = all_pboxjets_pt[np.argwhere(eta_min<all_fjets_eta<eta_max)]
+cent_fjets_pt = all_fjets_pt[(all_fjets_eta > eta_min) & (all_fjets_eta < eta_max) & (all_fjets_pt>pt_cut)]
+cent_esdjets_pt = all_esdjets_pt[(all_esdjets_eta > eta_min) & (all_esdjets_eta < eta_max)]
+cent_tboxets_pt = all_tboxjets_pt[(all_tboxjets_eta > eta_min) & (all_tboxjets_eta < eta_max)]
+cent_pboxets_pt = all_pboxjets_pt[(all_pboxjets_eta > eta_min) & (all_pboxjets_eta < eta_max)]
 
-
+print(all_fjets_pt)
+print(cent_fjets_pt)
 fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
-n_tbox, bins, _ = ax[0].hist(cent_tboxets_pt,bins=50,histtype='step',label=f'TBox Jets {len(cent_tboxets_pt)}')
+n_esd, bins, _ = ax[0].hist(cent_esdjets_pt,bins=50,histtype='step',label=f'ESD Jets {len(cent_esdjets_pt)}')
+n_tbox, bins, _ = ax[0].hist(cent_tboxets_pt,bins=bins,histtype='step',label=f'TBox Jets {len(cent_tboxets_pt)}')
 n_pbox, bins, _ = ax[0].hist(cent_pboxets_pt,bins=bins,histtype='step',label=f'PBox Jets {len(cent_pboxets_pt)}')
 n_fj, bins, _ = ax[0].hist(cent_fjets_pt,bins=bins,histtype='step',label=f'FJets {len(cent_fjets_pt)}')
-n_esd, bins, _ = ax[0].hist(cent_esdjets_pt,bins=bins,histtype='step',label=f'ESD Jets {len(cent_esdjets_pt)}')
-ax[0].axvline(pt_cut,ls='--',color='red',label='pT cut')
+# ax[0].axvline(pt_cut,ls='--',color='red',label='pT cut')
 ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events Central Jets w/ eta cut [{eta_min},{eta_max}]')
 ax[0].set_yscale('log')
 ax[0].grid(color='0.95')

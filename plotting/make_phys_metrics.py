@@ -22,7 +22,7 @@ from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan, get_cells_
 
 ########################################################################################################
 #load inference from .npy
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12/"
 path_to_structured_array = save_loc + "/struc_array.npy"
 
 with open(path_to_structured_array, 'rb') as f:

@@ -15,12 +15,12 @@ def load_object(fname):
     with open(fname,'rb') as file:
         return pickle.load(file)
 
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/comp3_SSD_model_15_real/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_model_15_real_PU/"
 if not os.path.exists(save_loc):
    os.makedirs(save_loc)
-file_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
+file_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12/"
 
-total_match_energy_ratios = np.concatenate(load_object(file_to_look_in + "/total_match_energy_ratios.pkl"))
+total_match_energy_ratios = np.concatenate(load_object(file_to_look_in + "total_match_energy_ratios.pkl"))
 file_names = ['total_match_energy_ratios',
               'total_match_eta_diff',
               'total_match_phi_diff',
