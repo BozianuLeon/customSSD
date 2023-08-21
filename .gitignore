@@ -13,6 +13,6 @@ log.*
 *.pth
 *.pkl
 *.png
-
+*.out
 
 
