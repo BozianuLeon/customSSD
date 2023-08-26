@@ -103,3 +103,34 @@ f.savefig(save_loc + 'box_pts.png')
 
 
 
+
+#####################################################################################################################################
+#Plot 1, the energies of our boxes and the true clusters
+#total:
+total_clus_energies = np.concatenate(load_object(file_to_look_in + 'total_clus_energy.pkl'))
+total_pred_energies = np.concatenate(load_object(file_to_look_in + 'total_pred_energy.pkl'))
+total_tru_energies = np.concatenate(load_object(file_to_look_in + 'total_tru_energy.pkl'))
+
+f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+n_clus, bins, _ = ax[0].hist(total_clus_energies/1000,bins=50,histtype='step',color='tab:blue',label='True Clusters >5GeV ({})'.format(len(total_clus_energies)))
+n_pbox, _, _ = ax[0].hist(total_pred_energies/1000,bins=bins,histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_pred_energies)))
+n_tbox, _, _ = ax[0].hist(total_tru_energies/1000,bins=bins,histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_tru_energies)))
+ax[0].grid()
+ax[0].set(ylabel='Freq.',title='Cluster/Box Energies',yscale='log')
+ax[0].legend()
+
+ratios_pbox = get_ratio(n_pbox,n_clus)
+ratios_tbox = get_ratio(n_tbox,n_clus)
+bin_centers = (bins[:-1] + bins[1:]) / 2
+# ax[1].plot(bin_centers, ratios_tbox, label='TBox Jets',marker='o',color='green',markersize=3.5)
+# ax[1].plot(bin_centers, ratios_pbox, label='PBox Jets',marker='x',color='red',markersize=3.5)
+ax[1].scatter(bin_centers, ratios_tbox, label='TBox Jets',marker='_',color='green',s=50)
+ax[1].scatter(bin_centers, ratios_pbox, label='PBox Jets',marker='_',color='red',s=50)
+ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
+ax[1].set(xlabel="Cluster Energy (GeV)",ylabel='Ratio')
+ax[1].grid()
+# ax[1].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
+f.subplots_adjust(hspace=0)
+f.savefig(save_loc + 'total_cluster_boxes_energy.png')
+plt.close()
+
