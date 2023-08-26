@@ -22,7 +22,8 @@ from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan, get_cells_
 
 ########################################################################################################
 #load inference from .npy
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
+# save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12/"
 path_to_structured_array = save_loc + "/struc_array.npy"
 
 with open(path_to_structured_array, 'rb') as f:
@@ -120,17 +121,23 @@ for i in range(len(a)):
     # print(h5f,type(h5f),str(h5f),h5f.decode('utf-8'))
 
     #load cells from h5
-    # file = "/home/users/b/bozianu/work/data/real/cells/user.cantel.33075755._00000{}.calocellD3PD_mc16_JZW4.r14423.h5".format(h5f)
-    file = "/home/users/b/bozianu/work/data/pileup-JZ4/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f.decode('utf-8'))
+    file = "/home/users/b/bozianu/work/data/real/cells/user.cantel.33075755._00000{}.calocellD3PD_mc16_JZW4.r14423.h5".format(h5f)
+    # file = "/home/users/b/bozianu/work/data/pileup-JZ4/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f.decode('utf-8'))
     with h5py.File(file,"r") as f:
         h5group = f["caloCells"]
         cells = h5group["2d"][event_no]
 
-    clusters_file = "/home/users/b/bozianu/work/data/pileup-JZ4/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f.decode('utf-8'))
+    clusters_file = "/home/users/b/bozianu/work/data/real/topo/user.cantel.33075755._00000{}.topoclusterD3PD_mc16_JZW4.r14423.h5".format(h5f)
+    # clusters_file = "/home/users/b/bozianu/work/data/pileup-JZ4/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f.decode('utf-8'))
     with h5py.File(clusters_file,"r") as f:
         cl_data = f["caloCells"] 
         event_data = cl_data["1d"][event_no]
         cluster_data = cl_data["2d"][event_no]
+        cluster_data = remove_nan(cluster_data)
+        cluster_data = cluster_data[cluster_data['cl_E_em']+cluster_data['cl_E_had']>5000]
+        if i==0:
+            print(len(cluster_data))
+            print(cluster_data)
 
     total_clus_energy.append((cluster_data['cl_E_em']+cluster_data['cl_E_had']).tolist())
     total_clus_eta.append(cluster_data['cl_eta'].tolist())
@@ -195,10 +202,10 @@ for i in range(len(a)):
     total_unmatch_tru_n.append(list_t_cl_ns2)
 
     #total
-    list_p_cl_es3, list_t_cl_es3 = event_cluster_estimates(pees,scores,tees,cells,target='energy')
-    list_p_cl_etas3, list_t_cl_etas3 = event_cluster_estimates(pees,scores,tees,cells,target='eta')
-    list_p_cl_phis3, list_t_cl_phis3 = event_cluster_estimates(pees,scores,tees,cells,target='phi') 
-    list_p_cl_ns3, list_t_cl_ns3 = event_cluster_estimates(pees,scores,tees,cells,target='n_cells') 
+    list_p_cl_es3, list_t_cl_es3 = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='energy')
+    list_p_cl_etas3, list_t_cl_etas3 = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='eta')
+    list_p_cl_phis3, list_t_cl_phis3 = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='phi') 
+    list_p_cl_ns3, list_t_cl_ns3 = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='n_cells') 
 
     total_pred_energy.append(list_p_cl_es3)
     total_tru_energy.append(list_t_cl_es3)

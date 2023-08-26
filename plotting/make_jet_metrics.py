@@ -74,7 +74,7 @@ for i in range(len(a)):
     new_jet_data = remove_nan(jet_data)
 
 
-
+    #all clusters
     ESD_inputs = []
     m = 0.0 #topoclusters have 0 mass
     for i in range(len(new_cluster_data)):
