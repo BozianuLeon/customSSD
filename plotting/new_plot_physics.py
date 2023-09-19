@@ -30,10 +30,12 @@ def load_object(fname):
     with open(fname,'rb') as file:
         return pickle.load(file)
 
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/comp3_SSD_model_15_real/clusters/"
+# save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/comp3_SSD_model_15_real/clusters/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_model_20_real_PU/clusters/"
 if not os.path.exists(save_loc):
    os.makedirs(save_loc)
-file_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
+# file_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
+file_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_20_real_PU/20230831-05/"
 
 total_match_energy_ratios = np.concatenate(load_object(file_to_look_in + "total_match_energy_ratios.pkl"))
 file_names = ['total_match_energy_ratios',
@@ -65,6 +67,8 @@ average_n = sum(n_unmatched_per_event) / len(n_unmatched_per_event)
 print(len(n_unmatched_per_event))
 print(average_n)
 
+true_cluster_numbers = load_object(file_to_look_in + 'total_clus_energy.pkl')
+
 
 #####################################################################################################################################
 #Plot 1, the energies of our boxes and the true clusters
@@ -74,7 +78,7 @@ total_pred_energies = np.concatenate(load_object(file_to_look_in + 'total_pred_e
 total_tru_energies = np.concatenate(load_object(file_to_look_in + 'total_tru_energy.pkl'))
 
 f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-n_clus, bins, _ = ax[0].hist(total_clus_energies/1000,bins=50,histtype='step',color='tab:blue',label='True Clusters >5GeV ({})'.format(len(total_clus_energies)))
+n_clus, bins, _ = ax[0].hist(total_clus_energies/1000,bins=50,histtype='step',color='tab:blue',label='True Clusters >1GeV ({})'.format(len(total_clus_energies)))
 n_pbox, _, _ = ax[0].hist(total_pred_energies/1000,bins=bins,histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_pred_energies)))
 n_tbox, _, _ = ax[0].hist(total_tru_energies/1000,bins=bins,histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_tru_energies)))
 ax[0].grid()
@@ -159,7 +163,7 @@ total_pred_etas = np.concatenate(load_object(file_to_look_in + 'total_pred_eta.p
 total_tru_etas = np.concatenate(load_object(file_to_look_in + 'total_tru_eta.pkl'))
 
 f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-n_clus, bins, _ = ax[0].hist(total_clus_etas,bins=50,histtype='step',color='tab:blue',label='True Clusters >5GeV ({})'.format(len(total_clus_etas)))
+n_clus, bins, _ = ax[0].hist(total_clus_etas,bins=50,histtype='step',color='tab:blue',label='True Clusters >1GeV ({})'.format(len(total_clus_etas)))
 n_pbox, _, _ = ax[0].hist(total_pred_etas,bins=bins,histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_pred_etas)))
 n_tbox, _, _ = ax[0].hist(total_tru_etas,bins=bins,histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_tru_etas)))
 ax[0].grid()
@@ -237,7 +241,7 @@ total_pred_phis = np.concatenate(load_object(file_to_look_in + 'total_pred_phi.p
 total_tru_phis = np.concatenate(load_object(file_to_look_in + 'total_tru_phi.pkl'))
 
 f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-n_clus, bins, _ = ax[0].hist(total_clus_phis,bins=50,histtype='step',color='tab:blue',label='True Clusters >5GeV ({})'.format(len(total_clus_phis)))
+n_clus, bins, _ = ax[0].hist(total_clus_phis,bins=50,histtype='step',color='tab:blue',label='True Clusters >1GeV ({})'.format(len(total_clus_phis)))
 n_pbox, _, _ = ax[0].hist(total_pred_phis,bins=bins,histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_pred_phis)))
 n_tbox, _, _ = ax[0].hist(total_tru_phis,bins=bins,histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_tru_phis)))
 ax[0].grid()
@@ -318,7 +322,7 @@ central_pred_energies = total_pred_energies[central_mask_pred]
 central_tru_energies = total_tru_energies[central_mask_truth]
 
 f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-n_clus, bins, _ = ax[0].hist(central_clus_energies/1000,bins=50,histtype='step',color='tab:blue',label='True $|\eta|<2.5$ Clusters >5GeV ({})'.format(len(central_clus_energies)))
+n_clus, bins, _ = ax[0].hist(central_clus_energies/1000,bins=50,histtype='step',color='tab:blue',label='True $|\eta|<2.5$ Clusters >1GeV ({})'.format(len(central_clus_energies)))
 n_pbox, _, _ = ax[0].hist(central_pred_energies/1000,bins=bins,histtype='step',color='red',label='Predicted $|\eta|<2.5$ Boxes ({})'.format(len(central_pred_energies)))
 n_tbox, _, _ = ax[0].hist(central_tru_energies/1000,bins=bins,histtype='step',color='green',label='Truth $|\eta|<2.5$ Boxes ({})'.format(len(central_tru_energies)))
 ax[0].grid()

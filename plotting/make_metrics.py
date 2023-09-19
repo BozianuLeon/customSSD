@@ -16,12 +16,8 @@ sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
 from utils.metrics import delta_n, n_unmatched_truth, n_unmatched_preds, centre_diffs, hw_diffs, area_covered
 
 
-
-# model_name = "comp3_SSD_model_15_real"
-# save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/" + model_name + "/" + time.strftime("%Y%m%d-%H") + "/"
-# save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
-# save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12/"
+# save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_20_real_PU/20230831-05/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_10_large_mu/20230912-14/"
 path_to_structured_array = save_loc + "struc_array.npy"
 
 with open(path_to_structured_array, 'rb') as f:

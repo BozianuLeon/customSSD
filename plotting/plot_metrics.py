@@ -19,7 +19,7 @@ def load_object(fname):
         return pickle.load(file)
 
 
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_model_15_real_PU/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_model_25_large_mu/"
 if not os.path.exists(save_loc):
     os.makedirs(save_loc)
 
@@ -30,8 +30,10 @@ if not os.path.exists(save_loc):
 #          "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"]
 # names = ["combined", "EM", "HAD", "EM+HAD", "EM+HAD+combi"]
 files = ["/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/",
-         "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12/"]
-names = ["no pu","pu-32"]
+         "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12/",
+         "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_20_real_PU/20230831-05/",
+         "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_25_large_mu/20230908-12/"]
+names = ["$\mu$=0","$\mu$=32, 3","$\mu$=32, 8","$\mu$=32, 8, 50k" ]
 
 f1,ax1 = plt.subplots()
 f2,ax2 = plt.subplots()
@@ -69,23 +71,23 @@ for file,name in zip(files,names):
     total_w_diff_filter_rad = np.concatenate(load_object(file + "/total_w_diff_filter_rad.pkl"))
     total_area_cov_filter_rad = load_object(file + "/total_area_cov_filter_rad.pkl")
 
-    ax1.hist(total_delta_n,histtype='step',bins=np.arange(-5,20,step=1),label=name+f" {len(total_delta_n)} events")
-    ax2.hist(total_n_unmatch_truth,histtype='step',bins=np.arange(0,20,step=1),label=name+f" {len(total_n_unmatch_truth)} events")
-    ax3.hist(total_n_unmatch_pred,histtype='step',bins=np.arange(0,20,step=1),label=name+f" {len(total_n_unmatch_pred)} events")
-    ax4.hist(total_area_cov,histtype='step',bins=np.arange(0,1,step=0.025),label=name+f" {len(total_area_cov)} events")
-    ax5.hist(total_centre_diff,histtype='step',bins=np.arange(0,10,step=0.2),label=name+f" {len(total_centre_diff)} clusters")
-    ax6.hist(total_h_diff,histtype='step',bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_h_diff)} clusters")
-    ax7.hist(total_w_diff,histtype='step',bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_w_diff)} clusters")
+    ax1.hist(total_delta_n,histtype='step',density=True,bins=np.arange(-5,20,step=1),label=name+f" {len(total_delta_n)} events")
+    ax2.hist(total_n_unmatch_truth,histtype='step',density=True,bins=np.arange(0,20,step=1),label=name+f" {len(total_n_unmatch_truth)} events")
+    ax3.hist(total_n_unmatch_pred,histtype='step',density=True,bins=np.arange(0,20,step=1),label=name+f" {len(total_n_unmatch_pred)} events")
+    ax4.hist(total_area_cov,histtype='step',density=True,bins=np.arange(0,1,step=0.025),label=name+f" {len(total_area_cov)} events")
+    ax5.hist(total_centre_diff,histtype='step',density=True,bins=np.arange(0,10,step=0.2),label=name+f" {len(total_centre_diff)} clusters")
+    ax6.hist(total_h_diff,histtype='step',density=True,bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_h_diff)} clusters")
+    ax7.hist(total_w_diff,histtype='step',density=True,bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_w_diff)} clusters")
 
-    ax8.hist(total_area_cov_filter,histtype='step',bins=np.arange(0,1,step=0.025),label=name+f" {len(total_area_cov_filter)} events")
-    ax9.hist(total_centre_diff_filter,histtype='step',bins=np.arange(0,10,step=0.2),label=name+f" {len(total_centre_diff_filter)} clusters")
-    ax10.hist(total_h_diff_filter,histtype='step',bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_h_diff_filter)} clusters")
-    ax11.hist(total_w_diff_filter,histtype='step',bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_w_diff_filter)} clusters")
+    ax8.hist(total_area_cov_filter,histtype='step',density=True,bins=np.arange(0,1,step=0.025),label=name+f" {len(total_area_cov_filter)} events")
+    ax9.hist(total_centre_diff_filter,histtype='step',density=True,bins=np.arange(0,10,step=0.2),label=name+f" {len(total_centre_diff_filter)} clusters")
+    ax10.hist(total_h_diff_filter,histtype='step',density=True,bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_h_diff_filter)} clusters")
+    ax11.hist(total_w_diff_filter,histtype='step',density=True,bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_w_diff_filter)} clusters")
 
-    ax12.hist(total_area_cov_filter_rad,histtype='step',bins=np.arange(0,1,step=0.025),label=name+f" {len(total_area_cov_filter_rad)} events")
-    ax13.hist(total_centre_diff_filter_rad,histtype='step',bins=np.arange(0,10,step=0.2),label=name+f" {len(total_centre_diff_filter_rad)} clusters")
-    ax14.hist(total_h_diff_filter_rad,histtype='step',bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_h_diff_filter_rad)} clusters")
-    ax15.hist(total_w_diff_filter_rad,histtype='step',bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_w_diff_filter_rad)} clusters")
+    ax12.hist(total_area_cov_filter_rad,histtype='step',density=True,bins=np.arange(0,1,step=0.025),label=name+f" {len(total_area_cov_filter_rad)} events")
+    ax13.hist(total_centre_diff_filter_rad,histtype='step',density=True,bins=np.arange(0,10,step=0.2),label=name+f" {len(total_centre_diff_filter_rad)} clusters")
+    ax14.hist(total_h_diff_filter_rad,histtype='step',density=True,bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_h_diff_filter_rad)} clusters")
+    ax15.hist(total_w_diff_filter_rad,histtype='step',density=True,bins=np.arange(-2,2,step=0.1),label=name+f" {len(total_w_diff_filter_rad)} clusters")
 
 
 ax1.set(xlabel='total_delta_n')

@@ -300,8 +300,13 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
         return list_pred_cl_energies, list_tru_cl_energies
 
     def calc_cl_eta(cl_array):
+        if sum(cl_array['cell_E'])==0:
+            print('No Energy!: ',cl_array)
         return np.dot(cl_array['cell_eta'],np.abs(cl_array['cell_E'])) / sum(np.abs(cl_array['cell_E']))
+
     def calc_cl_phi(cl_array):
+        if sum(cl_array['cell_E'])==0:
+            print('No Energy!: ',cl_array)
         return np.dot(cl_array['cell_phi'],np.abs(cl_array['cell_E'])) / sum(np.abs(cl_array['cell_E']))
 
     if target  == 'eta':

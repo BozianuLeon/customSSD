@@ -347,7 +347,7 @@ class SSDRealDataset(Dataset):
         h5file_number = annotations_i["image"]["file"]
         event_number_inh5 = annotations_i["image"]["event"]
 
-        img_tensor = torch.load(path)[[0,3,4],:,:] #only needed for 3 channels #additional channels currently mess performance
+        img_tensor = torch.load(path)#[[0,3,4],:,:] #only needed for 3 channels #additional channels currently mess performance
         img_tensor = img_tensor.type('torch.FloatTensor')#.unsqueeze(0)#unsqueeze to get the channel dimension out!
         n_objs = annotations_i["anns"]["n_clusters"] 
         extent = annotations_i["anns"]["extent"]

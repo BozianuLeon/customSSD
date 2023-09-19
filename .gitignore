@@ -13,6 +13,9 @@ log.*
 *.pth
 *.pkl
 *.png
+*.sh
 *.out
+jobname*
+
 
 

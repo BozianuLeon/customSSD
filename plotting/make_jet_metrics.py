@@ -15,7 +15,7 @@ from utils.utils import transform_angle, remove_nan, get_cells_from_boxes, event
 
 ########################################################################################################
 #load inference from .npy
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_20_real_PU/20230831-05/"
 path_to_structured_array = save_loc + "struc_array.npy"
 
 with open(path_to_structured_array, 'rb') as f:
@@ -51,19 +51,21 @@ for i in range(len(a)):
     #load cells from h5
     #get the cells
     h5f = a[i]['h5file']
+    h5f = h5f.decode('utf-8')
+    print(h5f)
     event_no = a[i]['event_no']
-    file = "/home/users/b/bozianu/work/data/real/cells/user.cantel.33075755._00000{}.calocellD3PD_mc16_JZW4.r14423.h5".format(h5f)
+    file = "/home/users/b/bozianu/work/data/pileup-JZ4/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
     with h5py.File(file,"r") as f:
         h5group = f["caloCells"]
         cells = h5group["2d"][event_no]
 
-    clusters_file = "/home/users/b/bozianu/work/data/real/topo/user.cantel.33075755._00000{}.topoclusterD3PD_mc16_JZW4.r14423.h5".format(h5f)
+    clusters_file = "/home/users/b/bozianu/work/data/pileup-JZ4/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
     with h5py.File(clusters_file,"r") as f:
         cl_data = f["caloCells"]
         cluster_data = cl_data["2d"][event_no]
         cluster_cell_data = cl_data["3d"][event_no]
 
-    jets_file = "/home/users/b/bozianu/work/data/real/jets/user.cantel.33075755._00000{}.jetD3PD_mc16_JZW4.r14423.h5".format(h5f)
+    jets_file = "/home/users/b/bozianu/work/data/pileup-JZ4/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(h5f)
     with h5py.File(jets_file,"r") as f:
         j_data = f["caloCells"]
         jet_data = j_data["2d"][event_no]
