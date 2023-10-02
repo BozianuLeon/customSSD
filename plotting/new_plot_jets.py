@@ -44,11 +44,11 @@ def nth_leading_jet_pt(list_of_jet_energies_in_event,n):
         return np.nan
 
 
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/comp3_SSD_model_15_real/jets/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_model_10_large_mu/jets/"
 if not os.path.exists(save_loc):
    os.makedirs(save_loc)
 
-file_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
+file_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_10_large_mu/20230912-14/"
 
 
 

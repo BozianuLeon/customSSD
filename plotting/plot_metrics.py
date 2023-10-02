@@ -19,7 +19,7 @@ def load_object(fname):
         return pickle.load(file)
 
 
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_model_25_large_mu/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_model_10_large_mu/"
 if not os.path.exists(save_loc):
     os.makedirs(save_loc)
 
@@ -32,8 +32,9 @@ if not os.path.exists(save_loc):
 files = ["/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/",
          "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_15_real_PU/20230821-12/",
          "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_20_real_PU/20230831-05/",
-         "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_25_large_mu/20230908-12/"]
-names = ["$\mu$=0","$\mu$=32, 3","$\mu$=32, 8","$\mu$=32, 8, 50k" ]
+         "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_25_large_mu/20230908-12/",
+         "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_10_large_mu/20230912-14/"]
+names = ["$\mu$=0","$\mu$=32, 15e","$\mu$=32, 20e","$\mu$=32, 25e, 50k", "$\mu$=32, 10e, 50k"]
 
 f1,ax1 = plt.subplots()
 f2,ax2 = plt.subplots()

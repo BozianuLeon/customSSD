@@ -76,6 +76,13 @@ def transform_angle(angle):
         angle -= 2 * np.pi  # Map angle to [-π, π]
     return angle
 
+def phi_mod2pi(phis):
+    repeated_phis = np.copy(phis)
+    mask = repeated_phis >= 0
+
+    repeated_phis[mask] -= 2*np.pi
+    repeated_phis[~mask] += 2*np.pi
+    return repeated_phis
 
 
 
@@ -263,7 +270,15 @@ def get_cells_from_boxes(boxes,cells):
         
         tot_cond = np.logical_and(x_condition,y_cond)
         cells_here = cells[np.where(tot_cond)]
-        list_o_cells.append(cells_here)
+        #guard against boxes containing no cells!
+        if not len(cells_here)==0:
+            list_o_cells.append(cells_here)
+        else:    
+            #so that we know where there were no cells!
+            placeholder_values = np.array([(-1, -1, -1.0, -1, -1, -1, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0)],
+                dtype=[('cell_BadCells', '<i4'), ('cell_DetCells', '<i4'), ('cell_E', '<f4'), ('cell_GainCells', '<i4'), ('cell_IdCells', '<u4'), ('cell_QCells', '<i4'), ('cell_Sigma', '<f4'), ('cell_TimeCells', '<f4'), ('cell_eta', '<f4'), ('cell_phi', '<f4'), ('cell_pt', '<f4'), ('cell_xCells', '<f4'), ('cell_yCells', '<f4'), ('cell_zCells', '<f4')])
+            list_o_cells.append(placeholder_values)
+            print('No cells in box!')
 
     return list_o_cells
 

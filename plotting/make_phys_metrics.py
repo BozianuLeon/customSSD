@@ -3,6 +3,7 @@ import numpy as np
 from scipy import stats
 import matplotlib
 from matplotlib import pyplot as plt
+from itertools import compress
 import torch
 import torchvision
 import os
@@ -23,7 +24,7 @@ from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan, get_cells_
 ########################################################################################################
 #load inference from .npy
 # save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/comp3_SSD_model_15_real/20230526-05/"
-save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_10_large_mu/20230912-14/"
+save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_25_large_mu/20230908-12/"
 path_to_structured_array = save_loc + "/struc_array.npy"
 
 with open(path_to_structured_array, 'rb') as f:
@@ -57,6 +58,17 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
     list_pred_cl_cells = get_cells_from_boxes(wc_pred_boxes,cells)
     list_tru_cl_cells = get_cells_from_boxes(wc_truth_boxes,cells)
+    for data in list_pred_cl_cells:
+        if sum(data['cell_BadCells']) < 0:
+            print(data)
+    
+    # Check that neither list using placeholder values has an entry with no cells
+    pred_zero_cells_mask = [sum(data['cell_BadCells']) >= 0 for data in list_pred_cl_cells]
+    list_pred_cl_cells = list(compress(list_pred_cl_cells, pred_zero_cells_mask))
+    list_tru_cl_cells = list(compress(list_tru_cl_cells, pred_zero_cells_mask))
+    true_zero_cells_mask = [sum(data['cell_BadCells']) >= 0 for data in list_tru_cl_cells]
+    list_pred_cl_cells = list(compress(list_pred_cl_cells, true_zero_cells_mask))
+    list_tru_cl_cells = list(compress(list_tru_cl_cells, true_zero_cells_mask))
     
     if target == 'energy':
         list_pred_cl_energies = [sum(x['cell_E']) for x in list_pred_cl_cells]
@@ -150,22 +162,21 @@ for i in range(len(a)):
 
 
     #matches
+    print(len(list_t_cl_es),len(list_p_cl_es))
+    print(np.array(list_t_cl_es).shape,np.array(list_p_cl_es).shape)
     total_match_energy_ratios.append(np.array(list_p_cl_es) / np.array(list_t_cl_es))
     if np.any(np.array(list_p_cl_es) / np.array(list_t_cl_es) > 50):
         print('GREATER THAN FIFTY:')
-        print('h5f',h5f)
-        print('event_no',event_no)
+        print('h5f',h5f,'event_no',event_no)
 
     total_match_eta_diff.append(np.array(list_p_cl_etas) - np.array(list_t_cl_etas))
     if np.any(np.array(list_p_cl_etas) - np.array(list_t_cl_etas) > 1.6):
         print('ETA difference GREATER THAN 1.6:')
-        print('h5f',h5f)
-        print('event_no',event_no)
+        print('h5f',h5f,'event_no',event_no)
     total_match_phi_diff.append(np.array(list_p_cl_phis) - np.array(list_t_cl_phis))
     if np.any(np.array(list_p_cl_phis) - np.array(list_t_cl_phis) < -1.9):
         print('PHI Difference LESS THAN -1.9:')
-        print('h5f',h5f)
-        print('event_no',event_no)
+        print('h5f',h5f,'event_no',event_no)
     total_match_n_diff.append(np.array(list_p_cl_ns) - np.array(list_t_cl_ns))
     total_match_pred_energy.append(list_p_cl_es)
     total_match_tru_energy.append(list_t_cl_es)
@@ -174,8 +185,7 @@ for i in range(len(a)):
     total_match_pred_phi.append(list_p_cl_phis)
     if np.any(np.array(list_p_cl_phis)  < -6):
         print('PHI Difference LESS THAN -1.9:')
-        print('h5f',h5f)
-        print('event_no',event_no)
+        print('h5f',h5f,'event_no',event_no)
         print(list_p_cl_phis)
         quit()
     total_match_tru_phi.append(list_t_cl_phis)
@@ -212,7 +222,6 @@ for i in range(len(a)):
     total_tru_phi.append(list_t_cl_phis3)
     total_pred_n.append(list_t_cl_ns3)
     total_tru_n.append(list_t_cl_ns3)
-
 
 
 
