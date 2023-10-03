@@ -11,8 +11,6 @@ import pickle
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
 from utils.utils import transform_angle, remove_nan, get_cells_from_boxes, event_cluster_estimates
 
-
-
 ########################################################################################################
 #load inference from .npy
 save_loc = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_25_large_mu/20230908-12/"
@@ -113,9 +111,6 @@ for i in range(len(a)):
                                                 pred_box_e*np.sin(pred_box_theta)*np.sin(pred_box_phi),
                                                 pred_box_e*np.cos(pred_box_theta),
                                                 m))
-
-
-
 
 
     #esd jets

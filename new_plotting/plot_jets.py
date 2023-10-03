@@ -1,5 +1,7 @@
 import numpy as np 
 import pandas as pd
+import scipy
+import math
 import os
 
 import itertools
@@ -252,10 +254,10 @@ def make_jet_plots(
     #-----------------------------------------------------------------------------------------------------------------
 
 
-    all_esdjets_pt = np.concatenate(load_object(file_to_look_in + '/' + pt_files[0] + '.pkl'))
-    all_fjets_pt = np.concatenate(load_object(file_to_look_in + '/' + pt_files[1] + '.pkl'))
-    all_tboxjets_pt = np.concatenate(load_object(file_to_look_in + '/' + pt_files[2] + '.pkl'))
-    all_pboxjets_pt = np.concatenate(load_object(file_to_look_in + '/' + pt_files[3] + '.pkl'))
+    all_esdjets_pt = np.concatenate(load_object(folder_containing_lists + '/' + pt_files[0] + '.pkl'))
+    all_fjets_pt = np.concatenate(load_object(folder_containing_lists + '/' + pt_files[1] + '.pkl'))
+    all_tboxjets_pt = np.concatenate(load_object(folder_containing_lists + '/' + pt_files[2] + '.pkl'))
+    all_pboxjets_pt = np.concatenate(load_object(folder_containing_lists + '/' + pt_files[3] + '.pkl'))
 
     pt_cut = 20_000 #20GeV
     hi_fjets_pt = all_fjets_pt[np.argwhere(all_fjets_pt>pt_cut)]
@@ -296,15 +298,15 @@ def make_jet_plots(
     # eta PLOTS
     #-----------------------------------------------------------------------------------------------------------------
 
-    esdjets_eta = load_object(file_to_look_in + '/' + eta_files[0] + '.pkl')
-    fjets_eta = load_object(file_to_look_in + '/' + eta_files[1] + '.pkl')
-    tboxjets_eta = load_object(file_to_look_in + '/' + eta_files[2] + '.pkl')
-    pboxjets_eta = load_object(file_to_look_in + '/' + eta_files[3] + '.pkl')
+    esdjets_eta = load_object(folder_containing_lists + '/' + eta_files[0] + '.pkl')
+    fjets_eta = load_object(folder_containing_lists + '/' + eta_files[1] + '.pkl')
+    tboxjets_eta = load_object(folder_containing_lists + '/' + eta_files[2] + '.pkl')
+    pboxjets_eta = load_object(folder_containing_lists + '/' + eta_files[3] + '.pkl')
 
-    all_esdjets_eta = np.concatenate(load_object(file_to_look_in + '/' + eta_files[0] + '.pkl'))
-    all_fjets_eta = np.concatenate(load_object(file_to_look_in + '/' + eta_files[1] + '.pkl'))
-    all_tboxjets_eta = np.concatenate(load_object(file_to_look_in + '/' + eta_files[2] + '.pkl'))
-    all_pboxjets_eta = np.concatenate(load_object(file_to_look_in + '/' + eta_files[3] + '.pkl'))
+    all_esdjets_eta = np.concatenate(load_object(folder_containing_lists + '/' + eta_files[0] + '.pkl'))
+    all_fjets_eta = np.concatenate(load_object(folder_containing_lists + '/' + eta_files[1] + '.pkl'))
+    all_tboxjets_eta = np.concatenate(load_object(folder_containing_lists + '/' + eta_files[2] + '.pkl'))
+    all_pboxjets_eta = np.concatenate(load_object(folder_containing_lists + '/' + eta_files[3] + '.pkl'))
 
     pt_cut = 20_000 #20GeV
     hi_fjets_eta = all_fjets_eta[np.argwhere(all_fjets_pt>pt_cut)]
@@ -345,10 +347,10 @@ def make_jet_plots(
 
 
 
-    all_esdjets_phi = np.concatenate(load_object(file_to_look_in + '/' + phi_files[0] + '.pkl'))
-    all_fjets_phi = transform_angle(np.concatenate(load_object(file_to_look_in + '/' + phi_files[1] + '.pkl')))
-    all_tboxjets_phi = transform_angle(np.concatenate(load_object(file_to_look_in + '/' + phi_files[2] + '.pkl')))
-    all_pboxjets_phi = transform_angle(np.concatenate(load_object(file_to_look_in + '/' + phi_files[3] + '.pkl')))
+    all_esdjets_phi = np.concatenate(load_object(folder_containing_lists + '/' + phi_files[0] + '.pkl'))
+    all_fjets_phi = transform_angle(np.concatenate(load_object(folder_containing_lists + '/' + phi_files[1] + '.pkl')))
+    all_tboxjets_phi = transform_angle(np.concatenate(load_object(folder_containing_lists + '/' + phi_files[2] + '.pkl')))
+    all_pboxjets_phi = transform_angle(np.concatenate(load_object(folder_containing_lists + '/' + phi_files[3] + '.pkl')))
 
     pt_cut = 20_000 #20GeV
     hi_fjets_phi = all_fjets_phi[np.argwhere(all_fjets_pt>pt_cut)]
@@ -393,8 +395,6 @@ def make_jet_plots(
     cent_tboxets_pt = all_tboxjets_pt[(all_tboxjets_eta > eta_min) & (all_tboxjets_eta < eta_max)]
     cent_pboxets_pt = all_pboxjets_pt[(all_pboxjets_eta > eta_min) & (all_pboxjets_eta < eta_max)]
 
-    print(all_fjets_pt)
-    print(cent_fjets_pt)
     fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
     n_esd, bins, _ = ax[0].hist(cent_esdjets_pt,bins=50,color='goldenrod',histtype='step',label=f'ESD Jets {len(cent_esdjets_pt)}')
     n_fj, bins, _ = ax[0].hist(cent_fjets_pt,bins=bins,color='dodgerblue',histtype='step',label=f'FJets {len(cent_fjets_pt)}')

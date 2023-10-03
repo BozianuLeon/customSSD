@@ -43,15 +43,22 @@ def make_box_metric_plots(
     
     for j in range(len(list_metric_names)):
         event_level_metric = load_object(folder_containing_lists + "/{}.pkl".format(list_metric_names[j]))
+        label = f"{len(event_level_metric)} events"
         if is_nested_list(event_level_metric):
             event_level_metric = np.concatenate(event_level_metric)
+            label = f"{len(event_level_metric)} boxes"
 
         fig, ax = plt.subplots()
-        ax.hist(event_level_metric,density=True,histtype='step',bins=50,label=f"{len(event_level_metric)}") 
-        ax.set(xlabel=list_x_labels[j],ylabel='Frequency')
+        ax.hist(event_level_metric,density=True,histtype='step',bins=50,label=label) 
+        ax.set(xlabel=list_x_labels[j],ylabel='Freq. Density')
         ax.grid(True)
         ax.legend()
         fig.savefig(save_loc+"{}.png".format(list_metric_names[j]))
         plt.close() 
     print('Finished making metric plots.')
     return 
+
+
+
+
+#make a plot of the number of truth boxes, number predicted boxes
