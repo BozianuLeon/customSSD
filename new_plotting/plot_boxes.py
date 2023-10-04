@@ -55,6 +55,22 @@ def make_box_metric_plots(
         ax.legend()
         fig.savefig(save_loc+"{}.png".format(list_metric_names[j]))
         plt.close() 
+
+
+
+    #####################################################################################################################################
+    #Plot 1, the energies of our boxes and the true clusters
+    #total:
+
+
+
+
+
+
+
+
+
+
     print('Finished making metric plots.')
     return 
 
@@ -62,3 +78,7 @@ def make_box_metric_plots(
 
 
 #make a plot of the number of truth boxes, number predicted boxes
+#jaccard index
+
+
+

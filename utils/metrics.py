@@ -31,38 +31,71 @@ def delta_n(truth_boxes, predicted_boxes):
     delta_n_objects = n_objects_per_image - n_predicted_objects_per_image
     return delta_n_objects
 
-def n_unmatched_truth(truth_boxes,predicted_boxes):
-    #how many truth boxes have no prediction "matched" to them - based on dIoU
-    #iou_mat = torchvision.ops.boxes.box_iou(truth_boxes,predicted_boxes)
-    #measure of the accuracy
-    if isinstance(truth_boxes,np.ndarray):
-        truth_boxes = torch.tensor(truth_boxes)
-    
-    if isinstance(predicted_boxes,np.ndarray):
-        predicted_boxes = torch.tensor(predicted_boxes)    
-    
-    iou_mat = torchvision.ops.boxes.distance_box_iou(truth_boxes,predicted_boxes)
-    matched_vals, matches = iou_mat.max(dim=0)
-    matched_truth_boxes_this_image = truth_boxes[matches]
 
-    matched_GT_boxes_ =  [tuple(trbox) for trbox in matched_truth_boxes_this_image.cpu().tolist()]
-    n_unique_gt_boxes_matched_with = len(list(set(matched_GT_boxes_)))
-    delta_n_matched = len(truth_boxes) - n_unique_gt_boxes_matched_with
-    
-    return delta_n_matched
+def n_matched_preds(truth_boxes,predicted_boxes,iou_thresh=0.02):
+    #calculate the number of predicted boxes lie on top of a GT box
+    iou_mat = torchvision.ops.boxes.box_iou(predicted_boxes, truth_boxes)
+    matched_vals, matches = iou_mat.max(dim=1)
+    # print('N preds',len(predicted_boxes))
+    # print('N matched preds',len(matches[matched_vals>0.01]))
+    # print('N unmatched preds',len(pboxes) - len(matches[matched_vals>0.01]))
+    #how many distinct truth boxes we are matching to. All boxes match to 1 GT?
+    #or more distributed (In practice redundant due to NMS)
+    # print('Unique truth boxes matched to',torch.unique(matches[matched_vals>0.01]))
+    return len(matches[matched_vals>iou_thresh])
 
-def n_unmatched_preds(truth_boxes,predicted_boxes):
-    #how many predicted boxes have no truth "matched" to them - based on dIoU
-    #measure of false positive rate
-    rev_iou_mat = torchvision.ops.boxes.distance_box_iou(predicted_boxes,truth_boxes)
-    _, matches = rev_iou_mat.max(dim=0)
-    matched_preds_boxes_this_image = predicted_boxes[matches]
+def n_unmatched_preds(truth_boxes,predicted_boxes,iou_thresh=0.02):
+    iou_mat = torchvision.ops.boxes.box_iou(predicted_boxes, truth_boxes)
+    matched_vals, matches = iou_mat.max(dim=1)
+    return len(predicted_boxes) - len(matches[matched_vals>iou_thresh])
 
-    matched_p_boxes_ =  [tuple(pbox) for pbox in matched_preds_boxes_this_image.cpu().tolist()]
-    n_unique_p_boxes_matched_with = len(list(set(matched_p_boxes_)))
-    delta_n_matched_preds = len(predicted_boxes) - n_unique_p_boxes_matched_with
+def n_matched_truth(truth_boxes,predicted_boxes,iou_thresh=0.02):
+    iou_matt = torchvision.ops.boxes.box_iou(truth_boxes, predicted_boxes)
+    matched_valst, matchest = iou_matt.max(dim=1)
+    return len(matchest[matched_valst>iou_thresh])
+
+def n_unmatched_truth(truth_boxes,predicted_boxes,iou_thresh=0.02):
+    iou_matt = torchvision.ops.boxes.box_iou(truth_boxes, predicted_boxes)
+    matched_valst, matchest = iou_matt.max(dim=1)
+    return len(truth_boxes) - len(matchest[matched_valst>iou_thresh])
+
+def percentage_area_covered_by_boxes(boxes,extent):
+    total_area = (extent[1] - extent[0]) * (extent[3] - extent[2])
+    box_areas = torchvision.ops.box_area(boxes)
+    return torch.sum(box_areas) / total_area
+
+# def n_unmatched_truth(truth_boxes,predicted_boxes):
+#     #how many truth boxes have no prediction "matched" to them - based on dIoU
+#     #iou_mat = torchvision.ops.boxes.box_iou(truth_boxes,predicted_boxes)
+#     #measure of the accuracy
+#     if isinstance(truth_boxes,np.ndarray):
+#         truth_boxes = torch.tensor(truth_boxes)
     
-    return delta_n_matched_preds
+#     if isinstance(predicted_boxes,np.ndarray):
+#         predicted_boxes = torch.tensor(predicted_boxes)    
+    
+#     iou_mat = torchvision.ops.boxes.distance_box_iou(truth_boxes,predicted_boxes)
+#     matched_vals, matches = iou_mat.max(dim=0)
+#     matched_truth_boxes_this_image = truth_boxes[matches]
+
+#     matched_GT_boxes_ =  [tuple(trbox) for trbox in matched_truth_boxes_this_image.cpu().tolist()]
+#     n_unique_gt_boxes_matched_with = len(list(set(matched_GT_boxes_)))
+#     delta_n_matched = len(truth_boxes) - n_unique_gt_boxes_matched_with
+    
+#     return delta_n_matched
+
+# def n_unmatched_preds(truth_boxes,predicted_boxes):
+#     #how many predicted boxes have no truth "matched" to them - based on dIoU
+#     #measure of false positive rate
+#     rev_iou_mat = torchvision.ops.boxes.distance_box_iou(predicted_boxes,truth_boxes)
+#     _, matches = rev_iou_mat.max(dim=0)
+#     matched_preds_boxes_this_image = predicted_boxes[matches]
+
+#     matched_p_boxes_ =  [tuple(pbox) for pbox in matched_preds_boxes_this_image.cpu().tolist()]
+#     n_unique_p_boxes_matched_with = len(list(set(matched_p_boxes_)))
+#     delta_n_matched_preds = len(predicted_boxes) - n_unique_p_boxes_matched_with
+    
+#     return delta_n_matched_preds
 
 
 def centre_diffs(truth_boxes,predicted_boxes,filter=False):
