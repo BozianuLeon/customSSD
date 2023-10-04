@@ -11,13 +11,14 @@ except ModuleNotFoundError:
 
 # caution: path[0] is reserved for script path (or '' in REPL)
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
-# from utils.metrics import delta_n, n_unmatched_truth, n_unmatched_preds, centre_diffs, hw_diffs, area_covered
-from utils.metrics import delta_n, n_matched_preds, n_unmatched_preds, n_matched_truth, n_unmatched_truth, percentage_total_area_covered_by_boxes, percentage_truth_area_covered
 from utils.metrics import event_cluster_estimates
 from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan
 MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
 MIN_CELLS_ETA,MAX_CELLS_ETA = -4.823496, 4.823496
 
+def save_object(obj, filename):
+    with open(filename, 'wb') as outp:  # Overwrites any existing file.
+        pickle.dump(obj, outp)
 
 
 cluster_level_results = {'n_clusters':[],
@@ -129,7 +130,7 @@ def calculate_phys_metrics(
         list_p_cl_phis_unm, list_t_cl_phis_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='phi') 
         list_p_cl_ns_unm, list_t_cl_ns_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='n_cells') 
         
-
+        cluster_level_results['n_tboxes'].append(len(list_t_cl_es_tot))
         cluster_level_results['tbox_energies'].append(list_t_cl_es_tot)
         cluster_level_results['tbox_etas'].append(list_t_cl_etas_tot)
         cluster_level_results['tbox_phis'].append(list_t_cl_phis_tot)
@@ -146,7 +147,7 @@ def calculate_phys_metrics(
         cluster_level_results['tbox_unmatch_n_cells'].append(list_t_cl_ns_unm)
 
         
-
+        cluster_level_results['n_pboxes'].append(len(list_p_cl_es_tot))
         cluster_level_results['pbox_energies'].append(list_p_cl_es_tot)
         cluster_level_results['pbox_etas'].append(list_p_cl_etas_tot)
         cluster_level_results['pbox_phis'].append(list_p_cl_phis_tot)
@@ -163,7 +164,48 @@ def calculate_phys_metrics(
         cluster_level_results['pbox_unmatch_n_cells'].append(list_p_cl_ns_unm)
 
 
+    save_loc = save_folder + "/phys_metrics/"
+    if not os.path.exists(save_loc):
+        os.makedirs(save_loc)
 
+    print('Saving the box metrics in lists...')
+    #automate this saving!
+    save_object(cluster_level_results['n_clusters'],save_loc+'n_clusters.pkl')
+    save_object(cluster_level_results['cluster_energies'], save_loc+'cluster_energies.pkl')
+    save_object(cluster_level_results['cluster_etas'], save_loc+'cluster_etas.pkl')
+    save_object(cluster_level_results['cluster_phis'],save_loc+'cluster_phis.pkl')
+    save_object(cluster_level_results['cluster_n_cells'],save_loc+'cluster_n_cells.pkl')
+    
+    save_object(cluster_level_results['n_tboxes'],save_loc+'n_tboxes.pkl')
+    save_object(cluster_level_results['tbox_energies'],save_loc+'tbox_energies.pkl')
+    save_object(cluster_level_results['tbox_etas'],save_loc+'tbox_etas.pkl')
+    save_object(cluster_level_results['tbox_phis'],save_loc+'tbox_phis.pkl')
+    save_object(cluster_level_results['tbox_n_cells'],save_loc+'tbox_n_cells.pkl')
+    save_object(cluster_level_results['n_pboxes'],save_loc+'n_pboxes.pkl')
+    save_object(cluster_level_results['pbox_energies'],save_loc+'pbox_energies.pkl')
+    save_object(cluster_level_results['pbox_etas'],save_loc+'pbox_etas.pkl')
+    save_object(cluster_level_results['pbox_phis'],save_loc+'pbox_phis.pkl')
+    save_object(cluster_level_results['pbox_n_cells'],save_loc+'pbox_n_cells.pkl')
+
+    save_object(cluster_level_results['tbox_match_energies'],save_loc+'tbox_match_energies.pkl')
+    save_object(cluster_level_results['tbox_match_etas'],save_loc+'tbox_match_etas.pkl')
+    save_object(cluster_level_results['tbox_match_phis'],save_loc+'tbox_match_phis.pkl')
+    save_object(cluster_level_results['tbox_match_n_cells'],save_loc+'tbox_match_n_cells.pkl')
+    save_object(cluster_level_results['pbox_match_energies'],save_loc+'pbox_match_energies.pkl')
+    save_object(cluster_level_results['pbox_match_etas'],save_loc+'pbox_match_etas.pkl')
+    save_object(cluster_level_results['pbox_match_phis'],save_loc+'pbox_match_phis.pkl')
+    save_object(cluster_level_results['pbox_match_n_cells'],save_loc+'pbox_match_n_cells.pkl')
+    save_object(cluster_level_results['pbox_match_energies'],save_loc+'pbox_match_energies.pkl')
+    save_object(cluster_level_results['pbox_match_energies'],save_loc+'pbox_match_energies.pkl')
+
+    save_object(cluster_level_results['tbox_unmatch_energies'],save_loc+'tbox_unmatch_energies.pkl')
+    save_object(cluster_level_results['tbox_unmatch_etas'],save_loc+'tbox_unmatch_etas.pkl')
+    save_object(cluster_level_results['tbox_unmatch_phis'],save_loc+'tbox_unmatch_phis.pkl')
+    save_object(cluster_level_results['tbox_unmatch_n_cells'],save_loc+'tbox_unmatch_n_cells.pkl')
+    save_object(cluster_level_results['pbox_unmatch_energies'],save_loc+'pbox_unmatch_energies.pkl')
+    save_object(cluster_level_results['pbox_unmatch_etas'],save_loc+'pbox_unmatch_etas.pkl')
+    save_object(cluster_level_results['pbox_unmatch_phis'],save_loc+'pbox_unmatch_phis.pkl')
+    save_object(cluster_level_results['pbox_unmatch_n_cells'],save_loc+'pbox_unmatch_n_cells.pkl')
 
 
     return

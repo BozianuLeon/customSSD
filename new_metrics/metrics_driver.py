@@ -1,5 +1,5 @@
 from make_box_metrics import calculate_box_metrics
-
+from make_phys_metrics import calculate_phys_metrics
 
 
 
@@ -10,7 +10,11 @@ save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_model_25_large_
 if __name__=="__main__":
     print('Making box metrics')
     calculate_box_metrics(folder_to_look_in,save_at,save_at)
-    print('Completed plots about 1 event\n')
+    print('Completed box metrics\n')
+
+    print('Making phys metrics')
+    calculate_phys_metrics(folder_to_look_in,save_at,save_at)
+    print('Completed [phys] metrics\n')
 
 
 

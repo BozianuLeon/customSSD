@@ -299,6 +299,8 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
         matched_vals, matches = iou_mat.max(dim=0)
         wc_truth_boxes = wc_truth_boxes[matches[np.nonzero(matched_vals)]].reshape(-1,4)
         wc_pred_boxes = wc_pred_boxes[np.nonzero(matched_vals)].reshape(-1,4)
+        wc_truth_boxes = torch.unique(wc_truth_boxes, dim=0)
+        wc_pred_boxes = torch.unique(wc_pred_boxes, dim=0)
     elif mode=='unmatch':
         iou_mat = torchvision.ops.boxes.box_iou(torch.tensor(wc_truth_boxes),torch.tensor(wc_pred_boxes))
         matched_vals, matches = iou_mat.max(dim=0)
@@ -308,6 +310,18 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
     list_pred_cl_cells = get_cells_from_boxes(wc_pred_boxes,cells)
     list_tru_cl_cells = get_cells_from_boxes(wc_truth_boxes,cells)
+    for data in list_pred_cl_cells:
+        if sum(data['cell_BadCells']) < 0:
+            print(data)
+    
+    # Check that neither list using placeholder values has an entry with no cells
+    #zero_cells_mask tells us that this box contains more than 0 cells
+    pred_zero_cells_mask = [sum(data['cell_BadCells']) >= 0 for data in list_pred_cl_cells]
+    list_pred_cl_cells = list(compress(list_pred_cl_cells, pred_zero_cells_mask))
+    # list_tru_cl_cells = list(compress(list_tru_cl_cells, pred_zero_cells_mask))
+    true_zero_cells_mask = [sum(data['cell_BadCells']) >= 0 for data in list_tru_cl_cells]
+    # list_pred_cl_cells = list(compress(list_pred_cl_cells, true_zero_cells_mask))
+    list_tru_cl_cells = list(compress(list_tru_cl_cells, true_zero_cells_mask))
     
     if target == 'energy':
         list_pred_cl_energies = [sum(x['cell_E']) for x in list_pred_cl_cells]
@@ -315,13 +329,8 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
         return list_pred_cl_energies, list_tru_cl_energies
 
     def calc_cl_eta(cl_array):
-        if sum(cl_array['cell_E'])==0:
-            print('No Energy!: ',cl_array)
         return np.dot(cl_array['cell_eta'],np.abs(cl_array['cell_E'])) / sum(np.abs(cl_array['cell_E']))
-
     def calc_cl_phi(cl_array):
-        if sum(cl_array['cell_E'])==0:
-            print('No Energy!: ',cl_array)
         return np.dot(cl_array['cell_phi'],np.abs(cl_array['cell_E'])) / sum(np.abs(cl_array['cell_E']))
 
     if target  == 'eta':
@@ -338,7 +347,6 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
         list_pred_cl_ns = [len(x) for x in list_pred_cl_cells]
         list_tru_cl_ns = [len(x) for x in list_tru_cl_cells]
         return list_pred_cl_ns, list_tru_cl_ns  
-
 
 
 
