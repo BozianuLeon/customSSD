@@ -82,7 +82,6 @@ def calculate_jet_metrics(
             h5f = h5f.decode('utf-8')
         event_no = a[i]['event_no']
 
-
         #load cells from h5
         cells_file = "/home/users/b/bozianu/work/data/pileup50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(cells_file,"r") as f:

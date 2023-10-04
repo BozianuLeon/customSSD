@@ -1,5 +1,6 @@
 from make_box_metrics import calculate_box_metrics
 from make_phys_metrics import calculate_phys_metrics
+from make_jet_metrics import calculate_jet_metrics
 
 
 
@@ -15,6 +16,10 @@ if __name__=="__main__":
     print('Making phys metrics')
     calculate_phys_metrics(folder_to_look_in,save_at,save_at)
     print('Completed [phys] metrics\n')
+
+    print('Making jet metrics')
+    calculate_jet_metrics(folder_to_look_in,save_at,save_at)
+    print('Completed jet metrics\n')
 
 
 
