@@ -59,10 +59,38 @@ def n_unmatched_truth(truth_boxes,predicted_boxes,iou_thresh=0.02):
     matched_valst, matchest = iou_matt.max(dim=1)
     return len(truth_boxes) - len(matchest[matched_valst>iou_thresh])
 
-def percentage_area_covered_by_boxes(boxes,extent):
+def percentage_total_area_covered_by_boxes(boxes,extent):
     total_area = (extent[1] - extent[0]) * (extent[3] - extent[2])
     box_areas = torchvision.ops.box_area(boxes)
     return torch.sum(box_areas) / total_area
+
+
+def intersection_area(a, b):  # returns None if rectangles don't intersect
+    dx = np.minimum(a[:, 2], b[:, 2]) - np.maximum(a[:, 0], b[:, 0])
+    dy = np.minimum(a[:, 3], b[:, 3]) - np.maximum(a[:, 1], b[:, 1])
+    int_area = np.where((dx >= 0) & (dy >= 0), dx * dy, None)
+    return int_area
+
+
+def percentage_truth_area_covered(preds,truths,iou_thresh=0.01):
+    #find the average percentage area of all truth boxes that
+    #are covered by predictions
+    #TODO: cover case of many overlapping pred boxes (mitigated by NMS)
+
+    #get matched truth and predictions
+    iou_mat = torchvision.ops.boxes.box_iou(preds, truths)
+    matched_vals, matches = iou_mat.max(dim=1)
+    matched_ts = truths[matches[matched_vals>iou_thresh]]
+    matched_ps = preds[matched_vals>iou_thresh]
+    
+    #calculate area of intersection and divide by truth box area
+    area_covered_by_each_pred = intersection_area(matched_ts,matched_ps)
+    area_each_truth = torchvision.ops.box_area(matched_ts).numpy()
+    percent_true_covered = area_covered_by_each_pred / area_each_truth
+    
+    return np.average(percent_true_covered)
+
+
 
 # def n_unmatched_truth(truth_boxes,predicted_boxes):
 #     #how many truth boxes have no prediction "matched" to them - based on dIoU

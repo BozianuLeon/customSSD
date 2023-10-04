@@ -17,41 +17,42 @@ import matplotlib
 
 
 if __name__=="__main__":
-    tboxes = torch.tensor([[ -3.8046, 1.7498,  -3.3890,  2.1706],
-                            [ -1.1313,  0.7137,  -0.5888,  1.1269],
-                            [ 2.4375, -0.4909,  3.0000,  0.0982],
-                            [-2.8500, -2.1067, -2.3500, -1.4726],
-                            [ 0.6750, -2.6047,  1.7500, -1.6199]])
-
-    pboxes = torch.tensor([[-1.0627,  0.6790, -0.1945,  1.7026],
-                            [ 0.7602, -2.5536,  1.6347, -1.6474],
-                            [ 1.2602, -2.1536,  1.8347, -1.3474],
-                            [ -4.0046, 1.5498,  -3.6890,  2.1706],
-                            [-2.9182, -2.1412, -2.2930, -1.3508]])
-
-
-    # tboxes = torch.tensor([[ 1.1125, -0.5430,  1.2125, -0.1503],
-    #                         [ 4.1313,  0.7137,  4.5888,  1.1269],
-    #                         [-4.3383, -2.8606, -3.6834, -2.2605],
-    #                         [-4.3383,  3.4226, -3.6834,  4.0227],
-    #                         [-2.8500,  4.1765, -2.3500,  4.3278],
+    # tboxes = torch.tensor([[ -3.8046, 1.7498,  -3.3890,  2.1706],
+    #                         [ -1.1313,  0.7137,  -0.5888,  1.1269],
     #                         [ 2.4375, -0.4909,  3.0000,  0.0982],
-    #                         [-1.0500,  0.7363, -0.2000,  1.7181],
     #                         [-2.8500, -2.1067, -2.3500, -1.4726],
-    #                         [ -4.0046, 1.75498,  -3.6890,  2.3706],
-    #                         [ -0.0046, 0.498,  0.6890,  0.706],
-    #                         [ 1.0046, 1.498,  1.6890,  2.2706],
     #                         [ 0.6750, -2.6047,  1.7500, -1.6199]])
 
     # pboxes = torch.tensor([[-1.0627,  0.6790, -0.1945,  1.7026],
     #                         [ 0.7602, -2.5536,  1.6347, -1.6474],
-    #                         [ 0.8676,  3.7909,  1.7102,  4.3490],
-    #                         [ 4.0911,  0.5808,  4.7361,  1.3391],
-    #                         [ 2.4046, -0.5498,  2.9890,  0.1706],
-    #                         [ 2.7046, -0.5498,  3.1890,  0.1706],
-    #                         [ 1.0046, 1.5498,  1.6890,  2.4706],
+    #                         [ 1.2602, -2.1536,  1.8347, -1.3474],
     #                         [ -4.0046, 1.5498,  -3.6890,  2.1706],
+    #                         [ 4.0911,  0.5808,  4.7361,  1.3391],
     #                         [-2.9182, -2.1412, -2.2930, -1.3508]])
+
+
+    tboxes = torch.tensor([[ 1.1125, -0.5430,  1.2125, -0.1503],
+                            [ 4.1313,  0.7137,  4.5888,  1.1269],
+                            [-4.3383, -2.8606, -3.6834, -2.2605],
+                            [-4.3383,  3.4226, -3.6834,  4.0227],
+                            [-2.8500,  4.1765, -2.3500,  4.3278],
+                            [ 2.4375, -0.4909,  3.0000,  0.0982],
+                            [-1.0500,  0.7363, -0.2000,  1.7181],
+                            [-2.8500, -2.1067, -2.3500, -1.4726],
+                            [ -4.0046, 1.75498,  -3.6890,  2.3706],
+                            [ -0.0046, 0.498,  0.6890,  0.706],
+                            [ 1.0046, 1.498,  1.6890,  2.2706],
+                            [ 0.6750, -2.6047,  1.7500, -1.6199]])
+
+    pboxes = torch.tensor([[-1.0627,  0.6790, -0.1945,  1.7026],
+                            [ 0.7602, -2.5536,  1.6347, -1.6474],
+                            [ 0.8676,  3.7909,  1.7102,  4.3490],
+                            [ 4.0911,  0.5808,  4.7361,  1.3391],
+                            [ 2.4046, -0.5498,  2.9890,  0.1706],
+                            [ 2.7046, -0.5498,  3.1890,  0.1706],
+                            [ 1.0046, 1.5498,  1.6890,  2.4706],
+                            [ -4.0046, 1.5498,  -3.6890,  2.1706],
+                            [-2.9182, -2.1412, -2.2930, -1.3508]])
 
 
     iou_mat = torchvision.ops.boxes.box_iou(pboxes, tboxes)
@@ -70,18 +71,59 @@ if __name__=="__main__":
     iou_matt = torchvision.ops.boxes.box_iou(tboxes, pboxes)
     matched_valst, matchest = iou_matt.max(dim=1)
     print()
-    print(matchest[matched_valst>0.01])
     print('N truth',len(tboxes))
     print('N matched truth',len(matchest[matched_valst>0.01]))
     print('N unmatched truth',len(tboxes) - len(matchest[matched_valst>0.01]))
     print('Unique pred boxes matched to',torch.unique(matchest[matched_valst>0.01]),len(torch.unique(matchest[matched_valst>0.01])))
+    print()
+    print()
+    print(matched_vals)
+    print(matches[matched_vals>0.01])
+    print(tboxes[matches[matched_vals>0.01]].shape)
+    print(tboxes[matches[matched_vals>0.01]])
+    print(pboxes[matched_vals>0.01])
+
+    matched_ts = tboxes[matches[matched_vals>0.01]]
+    matched_ps = pboxes[matched_vals>0.01]
+
+
+    def area1(a, b):  # returns None if rectangles don't intersect
+        dx = min(a[2], b[2]) - max(a[0], b[0])
+        dy = min(a[3], b[3]) - max(a[1], b[1])
+        if (dx>=0) and (dy>=0):
+            return dx*dy
+
+    def area(a, b):  # returns None if rectangles don't intersect
+        dx = np.minimum(a[:, 2], b[:, 2]) - np.maximum(a[:, 0], b[:, 0])
+        dy = np.minimum(a[:, 3], b[:, 3]) - np.maximum(a[:, 1], b[:, 1])
+        intersection_area = np.where((dx >= 0) & (dy >= 0), dx * dy, None)
+        return intersection_area
+    
+    area_covered_by_each_pred = area(matched_ts,matched_ps)
+    area_covered_by_overlapping_preds = area(matched_ps,matched_ps)
+
+    
+    area_each_truth = torchvision.ops.box_area(matched_ts).numpy()
+    percent_true_covered = area_covered_by_each_pred / area_each_truth
+    print(area(matched_ts,matched_ps))
+    print('areas',area_each_truth)
+    print('percent true covered',percent_true_covered)
+    print(np.average(percent_true_covered))
+    print('by hand WA',sum(percent_true_covered[g] * area_each_truth[g] / sum(area_each_truth) for g in range(len(percent_true_covered))))
+    print(np.average(percent_true_covered,weights=1/area_each_truth))
+    print(np.average(percent_true_covered,weights=area_each_truth))
+
+
+
+
+
 
     ext = [-4.82349586,  4.82349586, -6.21738815,  6.21801758]
-    print((ext[1] - ext[0]) * (ext[3] - ext[2]))
+    # print((ext[1] - ext[0]) * (ext[3] - ext[2]))
     area_check = torchvision.ops.box_area(pboxes)
-    print(area_check)
-    print(sum(area_check))
-    print(sum(area_check)/((ext[1] - ext[0]) * (ext[3] - ext[2])))
+    # print(area_check)
+    # print(sum(area_check))
+    # print(sum(area_check)/((ext[1] - ext[0]) * (ext[3] - ext[2])))
 
 
     # print(torch.unique(matches[matched_vals>0.02]),len(torch.unique(matches[matched_vals>0.02])))

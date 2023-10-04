@@ -12,7 +12,7 @@ except ModuleNotFoundError:
 # caution: path[0] is reserved for script path (or '' in REPL)
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
 # from utils.metrics import delta_n, n_unmatched_truth, n_unmatched_preds, centre_diffs, hw_diffs, area_covered
-from utils.metrics import delta_n, n_matched_preds, n_unmatched_preds, n_matched_truth, n_unmatched_truth, percentage_area_covered_by_boxes
+from utils.metrics import delta_n, n_matched_preds, n_unmatched_preds, n_matched_truth, n_unmatched_truth, percentage_total_area_covered_by_boxes, percentage_truth_area_covered
 from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan
 MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
 MIN_CELLS_ETA,MAX_CELLS_ETA = -4.823496, 4.823496
@@ -76,9 +76,10 @@ def calculate_box_metrics(
         results['n_unmatched_truth'].append(n_unmatched_truth(tees,pees))
         results['n_matched_preds'].append(n_matched_preds(tees,pees))
         results['n_unmatched_preds'].append(n_unmatched_preds(tees,pees))
-        results['percentage_total_area_covered_truth'].append(percentage_area_covered_by_boxes(tees,extent_i))
-        results['percentage_total_area_covered_preds'].append(percentage_area_covered_by_boxes(pees,extent_i))
-
+        results['percentage_total_area_covered_truth'].append(percentage_total_area_covered_by_boxes(tees,extent_i))
+        results['percentage_total_area_covered_preds'].append(percentage_total_area_covered_by_boxes(pees,extent_i))
+        results['percentage_truth_area_covered'].append(percentage_truth_area_covered(pees,tees))
+        
     return
 
 
