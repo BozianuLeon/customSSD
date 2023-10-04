@@ -1,9 +1,3 @@
-import numpy as np 
-import pandas as pd
-import os
-
-import matplotlib.pyplot as plt
-import matplotlib
 
 from plot_boxes import make_box_metric_plots
 from plot_phys import make_phys_plots
@@ -13,7 +7,7 @@ from plot_single_event import make_single_event_plot
 
 
 folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_model_25_large_mu/20230908-12/"
-save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_model_25_large_mu/"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_model_25_large_mu/"
 
 
 if __name__=="__main__":

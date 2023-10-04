@@ -56,6 +56,35 @@ if __name__=="__main__":
 
 
     iou_mat = torchvision.ops.boxes.box_iou(pboxes, tboxes)
+    print(iou_mat.shape,'tboxes: ',tboxes.shape,'pboxes: ',pboxes.shape)
+    print(iou_mat)
+
+    matched_vals, matches = iou_mat.max(dim=1)
+    wc_truth_boxes = tboxes[matches[np.nonzero(matched_vals)]].reshape(-1,4)
+    wc_pred_boxes = pboxes[np.nonzero(matched_vals)].reshape(-1,4)
+    print(wc_truth_boxes,wc_truth_boxes.shape)
+    wc_truth_boxes = torch.unique(wc_truth_boxes, dim=0)
+    wc_pred_boxes = torch.unique(wc_pred_boxes, dim=0)
+    print(wc_truth_boxes,wc_truth_boxes.shape)
+    print(wc_pred_boxes,wc_pred_boxes.shape)
+    print()
+    print()
+    unmatched_idxs = np.where(matched_vals==0)
+    wc_pred_boxes = pboxes[unmatched_idxs].reshape(-1,4)
+    wc_truth_boxes = np.delete(tboxes,matches[np.nonzero(matched_vals)],axis=0)
+    print(wc_truth_boxes,wc_truth_boxes.shape)
+    print(wc_pred_boxes,wc_pred_boxes.shape)
+
+
+
+
+
+
+
+
+
+    quit()
+    iou_mat = torchvision.ops.boxes.box_iou(pboxes, tboxes)
     print(iou_mat)
     matched_vals, matches = iou_mat.max(dim=1)
     print(matched_vals)
@@ -102,7 +131,7 @@ if __name__=="__main__":
     area_covered_by_each_pred = area(matched_ts,matched_ps)
     area_covered_by_overlapping_preds = area(matched_ps,matched_ps)
 
-    
+
     area_each_truth = torchvision.ops.box_area(matched_ts).numpy()
     percent_true_covered = area_covered_by_each_pred / area_each_truth
     print(area(matched_ts,matched_ps))
