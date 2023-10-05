@@ -5,6 +5,7 @@
 /inference
 /logs
 /dev
+/baobab_sh
 /cached*
 /inference2
 infer_real.py
