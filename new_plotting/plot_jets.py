@@ -424,3 +424,15 @@ def make_jet_plots(
 
 
     return
+
+
+
+
+
+
+folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_50k5_mu_20e/jet_metrics/"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_50k5_mu_20e/"
+if __name__=="__main__":
+    print('Making plots about boxes')
+    make_jet_plots(folder_to_look_in,save_at)
+    print('Completed plots about boxes\n')

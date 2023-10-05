@@ -239,14 +239,16 @@ def make_phys_plots(
     f.savefig(save_loc + 'total_unmatch_boxes_phi.png')
     plt.close()
 
-
-
-
-
-
     return 
 
 
 
+
+folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_50k5_mu_20e/phys_metrics/"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_50k5_mu_20e/"
+if __name__=="__main__":
+    print('Making physics plots')
+    make_phys_plots(folder_to_look_in,save_at)
+    print('Completed physics plots\n')
 
 

@@ -20,18 +20,29 @@ def is_nested_list(metric):
     if isinstance(metric, list):
         return isinstance(metric[0], list) if metric else False
 
-list_metric_names = ['total_delta_n',
-                     'total_n_unmatch_truth',
-                     'total_n_unmatch_pred',
-                     'total_area_cov',
-                     'total_centre_diff']
+list_metric_names = ['delta_n',
+                     'n_matched_preds',
+                     'n_matched_truth',
+                     'n_preds',
+                     'n_truth',
+                     'n_unmatched_preds',
+                     'n_unmatched_truth',
+                     'percentage_total_area_covered_preds',
+                     'percentage_total_area_covered_truth',
+                     'percentage_truth_area_covered'
+                     ]
 
 list_x_labels = ['Number Truth Boxes - Number Predicted',
-                 'Number Truth Boxes Missed',
-                 'Number of fake predictions',
-                 'Percentage of Matched Truth Boxes Area Covered',
-                 'L2 Distance between Truth and Prediction Box Centres']
-
+                 'Number of matched prediction boxes',
+                 'Number of matched truth boxes (TP)',
+                 'Number of predicted boxes',
+                 'Number of true boxes',
+                 'Number of Truth Boxes Missed (FN)',
+                 'Number of unmatched/fake prediction boxes (FP)',
+                 'Percentage of calorimeter included in predicted boxes (%)',   
+                 'Percentage of calorimeter included in truth boxes (%)',   
+                 'Percentage of matched truth boxes covered by predictions (%)'   
+                 ]
 
 def make_box_metric_plots(
     folder_containing_lists,
@@ -81,4 +92,9 @@ def make_box_metric_plots(
 #jaccard index
 
 
-
+folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_50k5_mu_20e/box_metrics/"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_50k5_mu_20e/"
+if __name__=="__main__":
+    print('Making plots about boxes')
+    make_box_metric_plots(folder_to_look_in,save_at)
+    print('Completed plots about boxes\n')
