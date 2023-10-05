@@ -1,6 +1,7 @@
 import torch
 import torchvision
 import numpy as np
+from itertools import compress
 
 
 def sel_device(dev):
@@ -299,14 +300,17 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
         matched_vals, matches = iou_mat.max(dim=0)
         wc_truth_boxes = wc_truth_boxes[matches[np.nonzero(matched_vals)]].reshape(-1,4)
         wc_pred_boxes = wc_pred_boxes[np.nonzero(matched_vals)].reshape(-1,4)
-        wc_truth_boxes = torch.unique(wc_truth_boxes, dim=0)
-        wc_pred_boxes = torch.unique(wc_pred_boxes, dim=0)
+        wc_truth_boxes = torch.unique(torch.tensor(wc_truth_boxes), dim=0)
+        wc_pred_boxes = torch.unique(torch.tensor(wc_pred_boxes), dim=0)
+        wc_pred_boxes = wc_pred_boxes.numpy()
+        wc_truth_boxes = wc_truth_boxes.numpy()    
     elif mode=='unmatch':
         iou_mat = torchvision.ops.boxes.box_iou(torch.tensor(wc_truth_boxes),torch.tensor(wc_pred_boxes))
         matched_vals, matches = iou_mat.max(dim=0)
         unmatched_idxs = np.where(matched_vals==0)
         wc_pred_boxes = wc_pred_boxes[unmatched_idxs].reshape(-1,4)
         wc_truth_boxes = np.delete(wc_truth_boxes,matches[np.nonzero(matched_vals)],axis=0)
+
 
     list_pred_cl_cells = get_cells_from_boxes(wc_pred_boxes,cells)
     list_tru_cl_cells = get_cells_from_boxes(wc_truth_boxes,cells)
@@ -347,7 +351,6 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
         list_pred_cl_ns = [len(x) for x in list_pred_cl_cells]
         list_tru_cl_ns = [len(x) for x in list_tru_cl_cells]
         return list_pred_cl_ns, list_tru_cl_ns  
-
 
 
 
