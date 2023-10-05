@@ -61,6 +61,7 @@ def calculate_jet_metrics(
 
 
     for i in range(len(a)):
+        # print(i)
         extent_i = a[i]['extent']
         preds = a[i]['p_boxes']
         trues = a[i]['t_boxes']
@@ -80,6 +81,8 @@ def calculate_jet_metrics(
         h5f = a[i]['h5file']
         try:
             h5f = h5f.decode('utf-8')
+        except:
+            h5f = h5f
         event_no = a[i]['event_no']
 
         #load cells from h5
@@ -106,7 +109,7 @@ def calculate_jet_metrics(
         #all TC's (greater than 5GeV)
         ESD_inputs = []
         m = 0.0 #topoclusters have 0 mass
-        for i in range(len(new_cluster_data)):
+        for i in range(len(cluster_data)):
             cl_px = float(cluster_data[i]['cl_pt'] * np.cos(cluster_data[i]['cl_phi']))
             cl_py = float(cluster_data[i]['cl_pt'] * np.sin(cluster_data[i]['cl_phi']))
             cl_pz = float(cluster_data[i]['cl_pt'] * np.sinh(cluster_data[i]['cl_eta']))

@@ -88,6 +88,8 @@ def calculate_phys_metrics(
         h5f = a[i]['h5file']
         try:
             h5f = h5f.decode('utf-8')
+        except:
+            h5f = h5f
         event_no = a[i]['event_no']
 
 
