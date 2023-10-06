@@ -104,9 +104,9 @@ def make_single_event_plot(
     f.savefig(save_loc+'/cells-img-boxes-{}.png'.format(idx))
 
     ###############################################################################################################
+    
     H_layer0_nowrap = make_image_using_cells(cells,channel=0,padding=False)
     f,ax = plt.subplots(1,1)
-
     custom_extent = [min(cells['cell_eta']),max(cells['cell_eta']),min(cells['cell_phi']),max(cells['cell_phi'])]
     ax.imshow(H_layer0_nowrap,cmap='binary_r',extent=custom_extent,origin='lower')
     for bbx in tees:
@@ -114,7 +114,7 @@ def make_single_event_plot(
         w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
         bb = matplotlib.patches.Rectangle((x,y),w,h,lw=1,ec='limegreen',fc='none')
         ax.add_patch(bb)
-
+    
     for pred_box,pred_score in zip(pees,scores):
         x,y=float(pred_box[0]),float(pred_box[1])
         w,h=float(pred_box[2])-float(pred_box[0]),float(pred_box[3])-float(pred_box[1])  
