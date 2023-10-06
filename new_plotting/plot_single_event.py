@@ -124,7 +124,12 @@ def make_single_event_plot(
 
 
 
-
+folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_50k5_mu_20e/20231005-12/"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_50k5_mu_20e/"
+if __name__=="__main__":
+    print('Making single event')
+    make_single_event_plot(folder_to_look_in,save_at)
+    print('Completed single event plots\n')
 
 
 

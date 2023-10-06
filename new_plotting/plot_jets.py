@@ -100,10 +100,13 @@ def make_jet_plots(
     save_loc = save_folder + "/jets/"
     if not os.path.exists(save_loc):
         os.makedirs(save_loc)
+    
+    log = True
 
-    pt_files = ['total_pt_esdjets','total_pt_fjets','total_pt_tboxjets','total_pt_pboxjets']
-    eta_files = ['total_eta_esdjets','total_eta_fjets','total_eta_tboxjets','total_eta_pboxjets']
-    phi_files = ['total_phi_esdjets','total_phi_fjets','total_phi_tboxjets','total_phi_pboxjets']
+    pt_files = ['esdjet_pts','fjet_pts','tboxjet_pts','pboxjet_pts']
+    eta_files = ['esdjet_etas','fjet_etas','tboxjet_etas','pboxjet_etas']
+    phi_files = ['esdjet_phis','fjet_phis','tboxjet_phis','pboxjet_phis']
+    njet_files = ['n_esdjets','n_fjets','n_tboxjets','n_pboxjets']
 
     esdjets_pt = load_object(folder_containing_lists + pt_files[0] + '.pkl')
     fjets_pt = load_object(folder_containing_lists + pt_files[1] + '.pkl')
@@ -173,7 +176,7 @@ def make_jet_plots(
     ax[2].legend(loc='lower right')
 
     plt.tight_layout()
-    f.savefig(save_loc+f'eff_plot_leading{lead_jet_pt_cut/1000:.0f}GeV.png')
+    f.savefig(save_loc+f'/eff_plot_leading{lead_jet_pt_cut/1000:.0f}GeV.png')
 
     #-----------------------------------------------------------------------------------------------------------------
     # Nth Leading Jet
@@ -245,7 +248,7 @@ def make_jet_plots(
     ax[2].legend(loc='lower right')
 
     plt.tight_layout()
-    f.savefig(save_loc+f'eff_plot_{nth_jet}leading{nth_lead_jet_pt_cut/1000:.0f}GeV.png')
+    f.savefig(save_loc+f'/eff_plot_{nth_jet}leading{nth_lead_jet_pt_cut/1000:.0f}GeV.png')
 
 
 
@@ -274,7 +277,7 @@ def make_jet_plots(
     n_pbox, bins, _ = ax[0].hist(hi_pboxets_pt,bins=bins,color='red',histtype='step',label=f'PBox Jets {len(hi_pboxets_pt)}')
     # ax[0].axvline(pt_cut,ls='--',color='red',label='pT cut')
     ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events, All Jets pT > {pt_cut/1000:.0f}GeV')
-    ax[0].set_yscale('log')
+    # ax[0].set_yscale('log')
     ax[0].grid()
     ax[0].legend()
 
@@ -290,8 +293,13 @@ def make_jet_plots(
     ax[1].set(xlabel="Jet pT (GeV)")
     ax[1].grid()
     ax[1].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
-    fig.tight_layout()
-    fig.savefig(save_loc+'jet_pt.png')
+    fig.subplots_adjust(hspace=0)
+    if log:
+        ax[0].set_yscale('log')
+        fig.savefig(save_loc + '/jet_pt_log.png')
+    else:
+        fig.savefig(save_loc + '/jet_pt.png')
+    # fig.savefig(save_loc+'/jet_pt.png')
 
 
     #-----------------------------------------------------------------------------------------------------------------
@@ -337,8 +345,13 @@ def make_jet_plots(
     ax[1].legend()
     ax[1].set(xlabel="$\eta$")
     ax[1].grid()
-    fig.tight_layout()
-    fig.savefig(save_loc+'jet_eta.png')
+    fig.subplots_adjust(hspace=0)
+    if log:
+        ax[0].set_yscale('log')
+        fig.savefig(save_loc + '/jet_eta_log.png')
+    else:
+        fig.savefig(save_loc + '/jet_eta.png')
+    # fig.savefig(save_loc+'/jet_eta.png')
 
 
     #-----------------------------------------------------------------------------------------------------------------
@@ -379,8 +392,13 @@ def make_jet_plots(
     ax[1].legend()
     ax[1].set(xlabel="$\phi$")
     ax[1].grid()
-    fig.tight_layout()
-    fig.savefig(save_loc+'jet_phi.png')
+    fig.subplots_adjust(hspace=0)
+    if log:
+        ax[0].set_yscale('log')
+        fig.savefig(save_loc + '/jet_phi_log.png')
+    else:
+        fig.savefig(save_loc + '/jet_phi.png')
+    # fig.savefig(save_loc+'/jet_phi.png')
 
 
 
@@ -391,9 +409,9 @@ def make_jet_plots(
 
     eta_min,eta_max = -2.5,2.5
     cent_fjets_pt = all_fjets_pt[(all_fjets_eta > eta_min) & (all_fjets_eta < eta_max) & (all_fjets_pt>pt_cut)]
-    cent_esdjets_pt = all_esdjets_pt[(all_esdjets_eta > eta_min) & (all_esdjets_eta < eta_max)]
-    cent_tboxets_pt = all_tboxjets_pt[(all_tboxjets_eta > eta_min) & (all_tboxjets_eta < eta_max)]
-    cent_pboxets_pt = all_pboxjets_pt[(all_pboxjets_eta > eta_min) & (all_pboxjets_eta < eta_max)]
+    cent_esdjets_pt = all_esdjets_pt[(all_esdjets_eta > eta_min) & (all_esdjets_eta < eta_max) & (all_esdjets_pt>pt_cut)]
+    cent_tboxets_pt = all_tboxjets_pt[(all_tboxjets_eta > eta_min) & (all_tboxjets_eta < eta_max) & (all_tboxjets_pt>pt_cut)]
+    cent_pboxets_pt = all_pboxjets_pt[(all_pboxjets_eta > eta_min) & (all_pboxjets_eta < eta_max) & (all_pboxjets_pt>pt_cut)]
 
     fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
     n_esd, bins, _ = ax[0].hist(cent_esdjets_pt,bins=50,color='goldenrod',histtype='step',label=f'ESD Jets {len(cent_esdjets_pt)}')
@@ -401,8 +419,8 @@ def make_jet_plots(
     n_tbox, bins, _ = ax[0].hist(cent_tboxets_pt,bins=bins,color='green',histtype='step',label=f'TBox Jets {len(cent_tboxets_pt)}')
     n_pbox, bins, _ = ax[0].hist(cent_pboxets_pt,bins=bins,color='red',histtype='step',label=f'PBox Jets {len(cent_pboxets_pt)}')
     # ax[0].axvline(pt_cut,ls='--',color='red',label='pT cut')
-    ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events Central Jets w/ eta cut [{eta_min},{eta_max}]')
-    ax[0].set_yscale('log')
+    ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events Central Jets w/ pt & eta cut {pt_cut}GeV,[{eta_min},{eta_max}]')
+    # ax[0].set_yscale('log')
     ax[0].grid(color='0.95')
     ax[0].legend()
 
@@ -418,10 +436,54 @@ def make_jet_plots(
     ax[1].set(xlabel="Jet pT (GeV)")
     ax[1].grid(color='0.95')
     ax[1].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
+    fig.subplots_adjust(hspace=0)
+    if log:
+        ax[0].set_yscale('log')
+        fig.savefig(save_loc + '/jet_pt_log_central.png')
+    else:
+        fig.savefig(save_loc + '/jet_pt_central.png')
+    # fig.savefig(save_loc+'/jet_pt_central.png')
+
+
+    #-----------------------------------------------------------------------------------------------------------------
+    # Number jets PLOTS
+    #-----------------------------------------------------------------------------------------------------------------
+
+    n_esdjets = load_object(folder_containing_lists + njet_files[0] + '.pkl')
+    n_fjets = load_object(folder_containing_lists + njet_files[1] + '.pkl')
+    n_tboxjets = load_object(folder_containing_lists + njet_files[2] + '.pkl')
+    n_pboxjets = load_object(folder_containing_lists + njet_files[3] + '.pkl')
+    max_max_n = max(max(n_esdjets),max(n_fjets),max(n_tboxjets),max(n_pboxjets))
+
+    fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
+    n_esd, bins, _ = ax[0].hist(n_esdjets,bins=40,range=(0,max_max_n),color='goldenrod',histtype='step',label=f'ESD Jets')
+    n_fj, bins, _ = ax[0].hist(n_fjets,bins=40,range=(0,max_max_n),color='dodgerblue',histtype='step',label=f'FJets')
+    n_tbox, bins, _ = ax[0].hist(n_tboxjets,bins=40,range=(0,max_max_n),color='green',histtype='step',label=f'TBox Jets')
+    n_pbox, bins, _ = ax[0].hist(n_pboxjets,bins=40,range=(0,max_max_n),color='red',histtype='step',label=f'PBox Jets')
+    # ax[0].axvline(pt_cut,ls='--',color='red',label='pT cut')
+    ax[0].set(ylabel='Freq.',title=f'Number of jets per event')
+    ax[0].grid()
+    ax[0].legend()
+
+    ratios_pbox = get_ratio(n_pbox,n_esd)
+    ratios_tbox = get_ratio(n_tbox,n_esd)
+    ratios_fj = get_ratio(n_fj,n_esd) # np.where(n_esd != 0, n_fj / n_esd, 0)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    ax[1].plot(bin_centers, ratios_tbox,color='green', label='TBox Jets',marker='_')
+    ax[1].plot(bin_centers, ratios_pbox, color='red',label='PBox Jets',marker='_')
+    ax[1].plot(bin_centers, ratios_fj, color='dodgerblue',label='FJets',marker='_')
+    ax[1].axhline(1,ls='--',color='goldenrod')
+    ax[1].legend()
+    ax[1].grid()
+    ax[1].set(xlabel="# Jets")
     fig.tight_layout()
-    fig.savefig(save_loc+'jet_cent_pt.png')
-
-
+    fig.subplots_adjust(hspace=0)
+    if log:
+        ax[0].set_yscale('log')
+        fig.savefig(save_loc + '/event_n_jets_log.png')
+    else:
+        fig.savefig(save_loc + '/event_n_jets.png')
+    # fig.savefig(save_loc+'/event_n_jets.png')
 
     return
 
@@ -433,6 +495,6 @@ def make_jet_plots(
 folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_50k5_mu_20e/jet_metrics/"
 save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_50k5_mu_20e/"
 if __name__=="__main__":
-    print('Making plots about boxes')
+    print('Making jet plots')
     make_jet_plots(folder_to_look_in,save_at)
-    print('Completed plots about boxes\n')
+    print('Completed jet plots\n')

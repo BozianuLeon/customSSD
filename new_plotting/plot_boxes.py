@@ -239,7 +239,7 @@ def make_box_metric_plots(
     #####################################################################################################################################
     #plot 5 number of unmatched boxes when n_truth boxes <50
     #####################################################################################################################################
-    #Binned PLots
+    #Binned Plots
     bind_save_loc = save_loc + "binned"
     if not os.path.exists(bind_save_loc):
         os.makedirs(bind_save_loc)    
@@ -273,7 +273,7 @@ def make_box_metric_plots(
         plt.close()
     
     #####################################################################################################################################
-    #Binned PLots
+    #Binned Plots
 
     n_match_truth_arr = np.array(n_match_truth)
     n_match_preds_arr = np.array(n_match_preds)
@@ -302,7 +302,7 @@ def make_box_metric_plots(
         plt.close()
 
     #####################################################################################################################################
-    #Binned PLots
+    #Binned Plots
 
     perc_truth_area = load_object(folder_containing_lists + '/percentage_truth_area_covered.pkl')
     perc_truth_area_arr = np.array(perc_truth_area)
