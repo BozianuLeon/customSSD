@@ -1,6 +1,7 @@
 import torch
 import torchvision
 import numpy as np
+import scipy
 from itertools import compress
 
 
@@ -354,3 +355,137 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
 
 
+
+def make_image_using_cells(cells,channel=0,padding=True):
+    #mirrors make_real_dataset.py, should return a pytorch tensor/numpy array 
+    #specify channel number to select a particular slice of the [N,86,94] tensor
+    cell_etas = cells['cell_eta']
+    cell_phis = cells['cell_phi'] 
+    cell_energy = cells['cell_E']
+    cell_sigma = cells['cell_Sigma']    
+    cell_time = cells['cell_TimeCells']   
+    cell_q = cells['cell_QCells']    
+    cell_bad = cells['cell_BadCells']    
+    cell_Esig =  cell_energy / cell_sigma      
+
+    EM_layers = [65,81,97,113,  #EM barrel
+                257,273,289,305, #EM Endcap
+                145,161, # IW EM
+                2052] #EM FCAL
+
+    HAD_layers = [2,514,1026,1538, #HEC layers
+                4100,6148, #FCAL HAD
+                65544, 73736,81928, #Tile barrel
+                131080,139272,147464, #Tile endcap
+                811016,278536,270344] #Tile gap  
+    
+    EM_indices = np.isin(cells['cell_DetCells'],EM_layers)
+    HAD_indices = np.isin(cells['cell_DetCells'],HAD_layers)
+    cell_etas_EM = cells['cell_eta'][EM_indices]
+    cell_etas_HAD = cells['cell_eta'][HAD_indices]
+    cell_phis_EM = cells['cell_phi'][EM_indices]
+    cell_phis_HAD = cells['cell_phi'][HAD_indices]
+    cell_E_EM = cells['cell_E'][EM_indices]
+    cell_E_HAD = cells['cell_E'][HAD_indices]
+    cell_Esig_EM = cell_E_EM / cells['cell_Sigma'][EM_indices]
+    cell_Esig_HAD = cell_E_HAD / cells['cell_Sigma'][HAD_indices]
+
+    bins_x = np.linspace(min(cell_etas), max(cell_etas), int((max(cell_etas) - min(cell_etas)) / 0.1 + 1))
+    bins_y = np.linspace(min(cell_phis), max(cell_phis), int((max(cell_phis) - min(cell_phis)) / ((2*np.pi)/64) + 1))
+
+    
+    H_tot, xedges, yedges, binnumber = scipy.stats.binned_statistic_2d(cell_etas, cell_phis,
+                                                        values=abs(cell_Esig),
+                                                        bins=(bins_x,bins_y),
+                                                        statistic='sum')
+
+    H_em, _, _, _ = scipy.stats.binned_statistic_2d(cell_etas_EM, cell_phis_EM,
+                                                values=abs(cell_Esig_EM),
+                                                bins=(bins_x,bins_y),
+                                                statistic='sum')
+
+    H_had, _, _, _ = scipy.stats.binned_statistic_2d(cell_etas_HAD, cell_phis_HAD,
+                                                values=abs(cell_Esig_HAD),
+                                                bins=(bins_x,bins_y),
+                                                statistic='sum')
+
+    H_max, _, _, _ = scipy.stats.binned_statistic_2d(cell_etas, cell_phis,
+                                                values=cell_Esig,
+                                                bins=(bins_x,bins_y),
+                                                statistic='max')
+
+    H_mean, _, _, _ = scipy.stats.binned_statistic_2d(cell_etas, cell_phis,
+                                                values=abs(cell_Esig),
+                                                bins=(bins_x,bins_y),
+                                                statistic='mean')
+
+    H_sigma, _, _, _ = scipy.stats.binned_statistic_2d(cell_etas, cell_phis,
+                                                values=cell_sigma,
+                                                bins=(bins_x,bins_y),
+                                                statistic='mean')
+
+    H_energy, _, _, _ = scipy.stats.binned_statistic_2d(cell_etas, cell_phis,
+                                                values=cell_energy,
+                                                bins=(bins_x,bins_y),
+                                                statistic='sum')
+
+    H_time, _, _, _ = scipy.stats.binned_statistic_2d(cell_etas, cell_phis,
+                                                values=cell_time,
+                                                bins=(bins_x,bins_y),
+                                                statistic='mean')
+
+    H_bad, _, _, _ = scipy.stats.binned_statistic_2d(cell_etas, cell_phis,
+                                                values=cell_bad,
+                                                bins=(bins_x,bins_y),
+                                                statistic='sum')
+    #transpose to correct format/shape
+    H_tot = H_tot.T
+    H_em = H_em.T
+    H_had = H_had.T
+    H_max = H_max.T
+    H_mean = H_mean.T
+    H_sigma = H_sigma.T
+    H_energy = H_energy.T
+    H_time = H_time.T
+    H_bad = H_bad.T
+    if padding:
+        repeat_frac = 0.5
+        repeat_rows = int(H_tot.shape[0]*repeat_frac)
+        one_box_height = (yedges[-1]-yedges[0])/H_tot.shape[0]
+
+        # Padding
+        H_tot  = np.pad(H_tot, ((repeat_rows,repeat_rows),(0,0)),'wrap')
+        H_em   = np.pad(H_em,  ((repeat_rows,repeat_rows),(0,0)),'wrap')
+        H_had  = np.pad(H_had, ((repeat_rows,repeat_rows),(0,0)),'wrap')
+        H_max  = np.pad(H_max, ((repeat_rows,repeat_rows),(0,0)),'wrap')
+        H_mean = np.pad(H_mean,((repeat_rows,repeat_rows),(0,0)),'wrap')
+        H_sigma = np.pad(H_sigma,((repeat_rows,repeat_rows),(0,0)),'wrap')
+        H_energy = np.pad(H_energy,((repeat_rows,repeat_rows),(0,0)),'wrap')
+        H_time = np.pad(H_time,((repeat_rows,repeat_rows),(0,0)),'wrap')
+        H_bad = np.pad(H_bad,((repeat_rows,repeat_rows),(0,0)),'wrap')
+
+    #If total cell signficance in a cell exceeds a threshold truncate 
+    truncation_threshold = 125
+    H_tot = np.where(H_tot < truncation_threshold, H_tot, truncation_threshold)
+    H_em = np.where(H_em < truncation_threshold, H_em, truncation_threshold)
+    H_had = np.where(H_had < truncation_threshold, H_had, truncation_threshold)
+
+    #Max cell significance in a pixel
+    H_max[np.isnan(H_max)] = 0
+    H_max = np.where(H_max < 4, 0, H_max) 
+    H_max = np.where(H_max > 25, 25, H_max) 
+    
+    H_mean[np.isnan(H_mean)] = 0
+    H_sigma[np.isnan(H_sigma)] = -1
+    H_time[np.isnan(H_time)] = 0
+
+    #treat the barrel and forward regions differently
+    raw_energy_thresh = 1000
+    central_H_energy = np.where(H_energy[:,10:-10]>raw_energy_thresh,H_energy[:,10:-10],0)
+    left_edge_H_energy = np.where(H_energy[:,:10]>4*raw_energy_thresh,H_energy[:,:10]/4,0)
+    right_edge_H_energy = np.where(H_energy[:,-10:]>4*raw_energy_thresh,H_energy[:,-10:]/4,0)
+    H_energy = np.hstack((left_edge_H_energy,central_H_energy,right_edge_H_energy))
+
+    H_layers = np.stack([H_tot,H_em,H_had,H_max,H_mean,H_sigma,H_energy,H_time],axis=0)
+    
+    return H_layers[channel,:,:]

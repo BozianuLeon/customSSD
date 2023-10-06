@@ -14,6 +14,9 @@ import matplotlib
 
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
 from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan, get_cells_from_boxes
+from utils.utils import make_image_using_cells
+
+
 
 
 
@@ -22,7 +25,7 @@ def make_single_event_plot(
     save_folder,
     idx=0
 ):
-    save_loc = save_folder + "/single_event/"
+    save_loc = save_folder + "/single_event/{}/".format(idx)
     if not os.path.exists(save_loc):
         os.makedirs(save_loc)
 
@@ -76,11 +79,55 @@ def make_single_event_plot(
     new_cluster_data = remove_nan(cluster_data)
     new_jet_data = remove_nan(jet_data)
 
+    #make the image as it would be input to CNN
+    H_layer0 = make_image_using_cells(cells,channel=0)
 
 
+    ###############################################################################################################
+    f,ax = plt.subplots(1,1)
+    ax.imshow(H_layer0,cmap='binary_r',extent=extent,origin='lower')
+    for bbx in tees:
+        x,y=float(bbx[0]),float(bbx[1])
+        w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
+        bb = matplotlib.patches.Rectangle((x,y),w,h,lw=1,ec='limegreen',fc='none')
+        ax.add_patch(bb)
+
+    for pred_box,pred_score in zip(pees,scores):
+        x,y=float(pred_box[0]),float(pred_box[1])
+        w,h=float(pred_box[2])-float(pred_box[0]),float(pred_box[3])-float(pred_box[1])  
+        bb = matplotlib.patches.Rectangle((x,y),w,h,lw=1.25,ec='red',fc='none')
+        ax.add_patch(bb)
+    
+    ax.set(xlabel='$\eta$',ylabel='$\phi$')
+    ax.axhline(y=min(cells['cell_phi']), color='pink', linestyle='--',lw=0.5)
+    ax.axhline(y=max(cells['cell_phi']), color='pink', linestyle='--',lw=0.5)
+    f.savefig(save_loc+'/cells-img-boxes-{}.png'.format(idx))
+
+    ###############################################################################################################
+    H_layer0_nowrap = make_image_using_cells(cells,channel=0,padding=False)
+    f,ax = plt.subplots(1,1)
+
+    custom_extent = [min(cells['cell_eta']),max(cells['cell_eta']),min(cells['cell_phi']),max(cells['cell_phi'])]
+    ax.imshow(H_layer0_nowrap,cmap='binary_r',extent=custom_extent,origin='lower')
+    for bbx in tees:
+        x,y=float(bbx[0]),float(bbx[1])
+        w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
+        bb = matplotlib.patches.Rectangle((x,y),w,h,lw=1,ec='limegreen',fc='none')
+        ax.add_patch(bb)
+
+    for pred_box,pred_score in zip(pees,scores):
+        x,y=float(pred_box[0]),float(pred_box[1])
+        w,h=float(pred_box[2])-float(pred_box[0]),float(pred_box[3])-float(pred_box[1])  
+        bb = matplotlib.patches.Rectangle((x,y),w,h,lw=1.25,ec='red',fc='none')
+        ax.add_patch(bb)
+    
+    ax.set(xlabel='$\eta$',ylabel='$\phi$')
+    ax.axhline(y=min(cells['cell_phi']), color='pink', linestyle='--',lw=0.5)
+    ax.axhline(y=max(cells['cell_phi']), color='pink', linestyle='--',lw=0.5)
+    f.savefig(save_loc+'/cells-img-boxes-nowrap-{}.png'.format(idx))
 
 
-
+    ###############################################################################################################
     f,a = plt.subplots(1,1,figsize=(8,6))
     #esd clusters
     for c in range(len(new_cluster_data)):
@@ -118,7 +165,7 @@ def make_single_event_plot(
     a.legend(handles=legend_elements, loc='best',frameon=False,bbox_to_anchor=(1, 0.5))
     # plt.subplots_adjust(right=0.7)
     f.tight_layout()
-    f.savefig(save_loc+'boxes-clusters-{}.png'.format(idx))
+    f.savefig(save_loc+'/boxes-clusters-{}.png'.format(idx))
 
     return
 
@@ -128,7 +175,7 @@ folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD_50k
 save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_50k5_mu_20e/"
 if __name__=="__main__":
     print('Making single event')
-    make_single_event_plot(folder_to_look_in,save_at)
+    make_single_event_plot(folder_to_look_in,save_at,idx=1)
     print('Completed single event plots\n')
 
 
