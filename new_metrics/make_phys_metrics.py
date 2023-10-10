@@ -27,11 +27,13 @@ cluster_level_results = {'n_clusters':[],
                          'cluster_phis':[],
                          'cluster_n_cells':[],
                          'n_tboxes':[],
+                         'num_tboxes':[],
                          'tbox_energies':[],
                          'tbox_etas':[],
                          'tbox_phis':[],
                          'tbox_n_cells':[],
                          'n_pboxes':[],
+                         'num_pboxes':[],
                          'pbox_energies':[],
                          'pbox_etas':[],
                          'pbox_phis':[],
@@ -132,7 +134,8 @@ def calculate_phys_metrics(
         list_p_cl_phis_unm, list_t_cl_phis_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='phi') 
         list_p_cl_ns_unm, list_t_cl_ns_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='n_cells') 
         
-        cluster_level_results['n_tboxes'].append(len(list_t_cl_es_tot))
+        cluster_level_results['n_tboxes'].append(len(tees))
+        cluster_level_results['num_tboxes'].append(len(list_t_cl_es_tot))
         cluster_level_results['tbox_energies'].append(list_t_cl_es_tot)
         cluster_level_results['tbox_etas'].append(list_t_cl_etas_tot)
         cluster_level_results['tbox_phis'].append(list_t_cl_phis_tot)
@@ -147,9 +150,9 @@ def calculate_phys_metrics(
         cluster_level_results['tbox_unmatch_etas'].append(list_t_cl_etas_unm)
         cluster_level_results['tbox_unmatch_phis'].append(list_t_cl_phis_unm)
         cluster_level_results['tbox_unmatch_n_cells'].append(list_t_cl_ns_unm)
-
         
-        cluster_level_results['n_pboxes'].append(len(list_p_cl_es_tot))
+        cluster_level_results['n_pboxes'].append(len(pees))
+        cluster_level_results['num_pboxes'].append(len(list_p_cl_es_tot))
         cluster_level_results['pbox_energies'].append(list_p_cl_es_tot)
         cluster_level_results['pbox_etas'].append(list_p_cl_etas_tot)
         cluster_level_results['pbox_phis'].append(list_p_cl_phis_tot)
@@ -179,11 +182,13 @@ def calculate_phys_metrics(
     save_object(cluster_level_results['cluster_n_cells'],save_loc+'cluster_n_cells.pkl')
     
     save_object(cluster_level_results['n_tboxes'],save_loc+'n_tboxes.pkl')
+    save_object(cluster_level_results['num_tboxes'],save_loc+'num_tboxes.pkl')
     save_object(cluster_level_results['tbox_energies'],save_loc+'tbox_energies.pkl')
     save_object(cluster_level_results['tbox_etas'],save_loc+'tbox_etas.pkl')
     save_object(cluster_level_results['tbox_phis'],save_loc+'tbox_phis.pkl')
     save_object(cluster_level_results['tbox_n_cells'],save_loc+'tbox_n_cells.pkl')
     save_object(cluster_level_results['n_pboxes'],save_loc+'n_pboxes.pkl')
+    save_object(cluster_level_results['num_pboxes'],save_loc+'num_pboxes.pkl')
     save_object(cluster_level_results['pbox_energies'],save_loc+'pbox_energies.pkl')
     save_object(cluster_level_results['pbox_etas'],save_loc+'pbox_etas.pkl')
     save_object(cluster_level_results['pbox_phis'],save_loc+'pbox_phis.pkl')
