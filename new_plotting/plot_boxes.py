@@ -140,19 +140,20 @@ def make_box_metric_plots(
 
     #####################################################################################################################################
     #Plot 2b, the number of unmatched predicted and true boxes
-    f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    freq_tru, bins, _ = ax[0].hist(n_unmatch_truth,bins=50,range=(0,max(n_unmatch_truth)),density=True,histtype='step',color='green',label='Truth {:.2f}$\pm${:.1f}'.format(np.mean(n_unmatch_truth),np.std(n_unmatch_truth)))
-    freq_pred, _, _ = ax[0].hist(n_unmatch_preds,bins=bins,density=True,histtype='step',color='red',label='Predictions {:.2f}$\pm${:.1f}'.format(np.mean(n_unmatch_preds),np.std(n_unmatch_preds)))
-    ax[0].grid()
-    ax[0].set(ylabel='Freq. Density',title='{} Events'.format(len(n_unmatch_truth)))
-    ax[0].legend()
+    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    f,ax = plt.subplots(1,1,figsize=(8, 6))
+    freq_tru, bins, _ = ax.hist(n_unmatch_truth,bins=50,range=(0,max(n_unmatch_truth)),density=True,histtype='step',color='green',label='Missed Truth {:.2f}$\pm${:.1f}'.format(np.mean(n_unmatch_truth),np.std(n_unmatch_truth)))
+    freq_pred, _, _ = ax.hist(n_unmatch_preds,bins=bins,density=True,histtype='step',color='red',label='Fake Predictions {:.2f}$\pm${:.1f}'.format(np.mean(n_unmatch_preds),np.std(n_unmatch_preds)))
+    ax.grid()
+    ax.set(ylabel='Freq. Density',title=r'$\bf{Unmatched}$ $\bf{Boxes}$',xlabel="Number of Unmatched Boxes (per event)")
+    ax.legend()
 
-    bin_centers = (bins[:-1] + bins[1:]) / 2
-    ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50)
-    ax[1].axhline(1,ls='--',color='green',alpha=0.5)
-    ax[1].set(xlabel="Number of Unmatched Boxes (per event)",ylabel='Ratio')
-    ax[1].grid()
-    f.subplots_adjust(hspace=0)
+    # bin_centers = (bins[:-1] + bins[1:]) / 2
+    # ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50)
+    # ax[1].axhline(1,ls='--',color='green',alpha=0.5)
+    # ax[1].set(xlabel="Number of Unmatched Boxes (per event)",ylabel='Ratio')
+    # ax[1].grid()
+    # f.subplots_adjust(hspace=0)
     f.savefig(comp_save_loc + '/unmatched_n_boxes.png')
     plt.close()
 
@@ -179,19 +180,20 @@ def make_box_metric_plots(
 
     #####################################################################################################################################
     #Plot 3b, the number of matched predicted and true boxes
-    f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    freq_tru, bins, _ = ax[0].hist(n_match_truth,bins=50,range=(0,max(n_match_truth)),density=True,histtype='step',color='green',label='Truth {:.2f}$\pm${:.1f}'.format(np.mean(n_match_truth),np.std(n_match_truth)))
-    freq_pred, _, _ = ax[0].hist(n_match_preds,bins=bins,density=True,histtype='step',color='red',label='Predictions {:.2f}$\pm${:.1f}'.format(np.mean(n_match_preds),np.std(n_match_preds)))
-    ax[0].grid()
-    ax[0].set(ylabel='Freq. Density',title='{} Events'.format(len(n_match_truth)))
-    ax[0].legend()
+    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    f,ax = plt.subplots(1,1,figsize=(8, 6))
+    freq_tru, bins, _ = ax.hist(n_match_truth,bins=50,range=(0,max(n_match_truth)),density=True,histtype='step',color='green',label='Truth {:.2f}$\pm${:.1f}'.format(np.mean(n_match_truth),np.std(n_match_truth)))
+    freq_pred, _, _ = ax.hist(n_match_preds,bins=bins,density=True,histtype='step',color='red',label='Predictions {:.2f}$\pm${:.1f}'.format(np.mean(n_match_preds),np.std(n_match_preds)))
+    ax.grid()
+    ax.set(ylabel='Freq. Density',title=r'$\bf{Matched}$ $\bf{Boxes}$',xlabel="Number of Matched Boxes (per event)")
+    ax.legend()
 
-    bin_centers = (bins[:-1] + bins[1:]) / 2
-    ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50)
-    ax[1].axhline(1,ls='--',color='green',alpha=0.5)
-    ax[1].set(xlabel="Number of Matched Boxes (per event)",ylabel='Ratio')
-    ax[1].grid()
-    f.subplots_adjust(hspace=0)
+    # bin_centers = (bins[:-1] + bins[1:]) / 2
+    # ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50)
+    # ax[1].axhline(1,ls='--',color='green',alpha=0.5)
+    # ax[1].set(xlabel="Number of Matched Boxes (per event)",ylabel='Ratio')
+    # ax[1].grid()
+    # f.subplots_adjust(hspace=0)
     f.savefig(comp_save_loc + '/matched_n_boxes.png')
     plt.close()
 
@@ -223,13 +225,13 @@ def make_box_metric_plots(
     freq_tru, bins, _ = ax[0].hist(perc_total_area_truth,bins=50,range=(0,1),density=True,histtype='step',color='green',label='Truth {:.2f}$\pm${:.1f}'.format(np.mean(perc_total_area_truth),np.std(perc_total_area_truth)))
     freq_pred, _, _ = ax[0].hist(perc_total_area_preds,bins=bins,density=True,histtype='step',color='red',label='Predictions {:.2f}$\pm${:.1f}'.format(np.mean(perc_total_area_preds),np.std(perc_total_area_preds)))
     ax[0].grid()
-    ax[0].set(ylabel='Freq.',title='{} Events'.format(len(perc_total_area_truth)))
+    ax[0].set(ylabel='Freq.',title='Percentage of total calorimeter covered by boxes')
     ax[0].legend()
 
     bin_centers = (bins[:-1] + bins[1:]) / 2
     ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50)
     ax[1].axhline(1,ls='--',color='green',alpha=0.5)
-    ax[1].set(xlabel="Percentage of calorimeter covered by boxes (%)",ylabel='Ratio')
+    ax[1].set(xlabel="Fraction of calorimeter",ylabel='Ratio')
     ax[1].grid()
     f.subplots_adjust(hspace=0)
     f.savefig(comp_save_loc + '/percentage_total_covered.png')
@@ -260,7 +262,7 @@ def make_box_metric_plots(
         freq_tru, bins, _ = ax[0].hist(n_unm_truth_many,bins=numbers_of_bins[i],range=(0,max(n_unm_truth_many)),histtype='step',color='green',label='Truth {:.2f}$\pm${:.1f}'.format(np.mean(n_unm_truth_many),np.std(n_unm_truth_many)))
         freq_pred, _, _ = ax[0].hist(n_unm_preds_many,bins=bins,histtype='step',color='red',label='Predictions {:.2f}$\pm${:.1f}'.format(np.mean(n_unm_preds_many),np.std(n_unm_preds_many)))
         ax[0].grid()
-        ax[0].set(ylabel='Freq.',title='{} Events, [{},{}] true objects '.format(len(n_unm_truth_many),binnings[i],binnings[i+1]),yscale='log')
+        ax[0].set(ylabel='Freq.',title='{} Events, [{},{}] true objects '.format(len(n_unm_truth_many),binnings[i],binnings[i+1]))
         ax[0].legend()
 
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -289,7 +291,7 @@ def make_box_metric_plots(
         freq_tru, bins, _ = ax[0].hist(n_m_truth_many,bins=numbers_of_bins[i],range=(0,max(n_m_truth_many)),histtype='step',color='green',label='Truth {:.2f}$\pm${:.1f}'.format(np.mean(n_m_truth_many),np.std(n_m_truth_many)))
         freq_pred, _, _ = ax[0].hist(n_m_preds_many,bins=bins,histtype='step',color='red',label='Predictions {:.2f}$\pm${:.1f}'.format(np.mean(n_m_preds_many),np.std(n_m_preds_many)))
         ax[0].grid()
-        ax[0].set(ylabel='Freq.',title='{} Events, [{},{}] true objects '.format(len(n_m_truth_many),binnings[i],binnings[i+1]),yscale='log')
+        ax[0].set(ylabel='Freq.',title='{} Events, [{},{}] true objects '.format(len(n_m_truth_many),binnings[i],binnings[i+1]))
         ax[0].legend()
 
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -313,11 +315,11 @@ def make_box_metric_plots(
         clusters_mask = (n_truth_arr > binnings[i]) & (n_truth_arr < binnings[i+1])
 
         mask_perc_truth_area_arr = perc_truth_area_arr[clusters_mask]
-        ax.hist(mask_perc_truth_area_arr,bins=40,range=(0,1),density=True,histtype='step',label='[{},{}] true objects, {} events'.format(binnings[i],binnings[i+1],len(mask_perc_truth_area_arr)))
+        ax.hist(mask_perc_truth_area_arr,bins=40,range=(0,1),density=True,histtype='step',label='[{},{}] true objects, {:.3f}'.format(binnings[i],binnings[i+1],np.mean(mask_perc_truth_area_arr)))
     
-    ax.hist(perc_truth_area_arr,bins=40,range=(0,1),density=True,histtype='step',lw=0.75,color='black',label='Overall {} events'.format(len(perc_truth_area_arr)))
+    ax.hist(perc_truth_area_arr,bins=40,range=(0,1),density=True,histtype='step',lw=0.75,color='black',label='Overall {} events, {:.3f}'.format(len(perc_truth_area_arr),np.mean(perc_truth_area_arr)))
     ax.grid()
-    ax.set(xlabel='Percentage of matched truth boxes covered by predictions (%)',ylabel='Freq.')
+    ax.set(xlabel='Fraction of matched truth boxes covered by predictions',ylabel='Freq. Density')
     ax.legend(fontsize='small', frameon=False)
     fig.savefig(bind_save_loc + '/perc_truth_cover_bin{}.png'.format(i))
     plt.close()

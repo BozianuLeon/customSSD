@@ -4,6 +4,7 @@ import os
 import h5py
 import sys
 import itertools
+import fastjet
 try:
     import cPickle as pickle
 except ModuleNotFoundError:
@@ -13,8 +14,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
-from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan, get_cells_from_boxes
-from utils.utils import make_image_using_cells
+from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan, transform_angle
+from utils.utils import make_image_using_cells, event_cluster_estimates
 
 
 
@@ -81,7 +82,6 @@ def make_single_event_plot(
 
     #make the image as it would be input to CNN
     H_layer0 = make_image_using_cells(cells,channel=0)
-
 
     ###############################################################################################################
     f,ax = plt.subplots(1,1)
@@ -167,6 +167,132 @@ def make_single_event_plot(
     f.tight_layout()
     f.savefig(save_loc+'/boxes-clusters-{}.png'.format(idx))
 
+    ###############################################################################################################
+
+    print('Starting fastjet procedure now...')
+
+    m = 0.0 #topoclusters have 0 mass
+    ESD_inputs = []
+    for i in range(len(new_cluster_data)):
+        cl_px = float(new_cluster_data[i]['cl_pt'] * np.cos(new_cluster_data[i]['cl_phi']))
+        cl_py = float(new_cluster_data[i]['cl_pt'] * np.sin(new_cluster_data[i]['cl_phi']))
+        cl_pz = float(new_cluster_data[i]['cl_pt'] * np.sinh(new_cluster_data[i]['cl_eta']))
+        ESD_inputs.append(fastjet.PseudoJet(cl_px,cl_py,cl_pz,m))
+
+
+    #From my predictions
+    list_p_cl_es, list_t_cl_es = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='energy')
+    list_p_cl_etas, list_t_cl_etas = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eta')
+    list_p_cl_phis, list_t_cl_phis = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='phi')
+    truth_box_inputs = []
+    for j in range(len(list_t_cl_es)):
+        truth_box_eta = list_t_cl_etas[j]
+        truth_box_phi = list_t_cl_phis[j]
+        truth_box_theta = 2*np.arctan(np.exp(-truth_box_eta))
+        truth_box_e = list_t_cl_es[j]
+        truth_box_inputs.append(fastjet.PseudoJet(truth_box_e*np.sin(truth_box_theta)*np.cos(truth_box_phi),
+                                                truth_box_e*np.sin(truth_box_theta)*np.sin(truth_box_phi),
+                                                truth_box_e*np.cos(truth_box_theta),
+                                                m))
+
+    pred_box_inputs = []                                            
+    for j in range(len(list_p_cl_es)):
+        pred_box_eta = list_p_cl_etas[j]
+        pred_box_phi = list_p_cl_phis[j]
+        pred_box_theta = 2*np.arctan(np.exp(-pred_box_eta))
+        pred_box_e = list_p_cl_es[j]
+        pred_box_inputs.append(fastjet.PseudoJet(pred_box_e*np.sin(pred_box_theta)*np.cos(pred_box_phi),
+                                                pred_box_e*np.sin(pred_box_theta)*np.sin(pred_box_phi),
+                                                pred_box_e*np.cos(pred_box_theta),
+                                                m))
+
+
+    #######################################################################################
+    jetdef = fastjet.JetDefinition(fastjet.antikt_algorithm, 0.4)
+
+    #ESD Clusters:
+    ESD_cluster_jets = fastjet.ClusterSequence(ESD_inputs, jetdef)
+    ESD_cluster_inc_jets = ESD_cluster_jets.inclusive_jets()
+
+    #Truth box clusters
+    truth_box_jets = fastjet.ClusterSequence(truth_box_inputs,jetdef)
+    truth_box_inc_jets = truth_box_jets.inclusive_jets()
+
+    #Pred box clusters
+    pred_box_jets = fastjet.ClusterSequence(pred_box_inputs,jetdef)
+    pred_box_inc_jets = pred_box_jets.inclusive_jets()
+
+
+
+    f,a = plt.subplots(1,2,figsize=(11.5,6))
+    #esd jets
+    for oj in range(len(new_jet_data)):
+        offjet = new_jet_data[oj]
+        a[1].plot(offjet['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta'],offjet['AntiKt4EMTopoJets_JetConstitScaleMomentum_phi'], markersize=25, marker='*',color='goldenrod',alpha=1.0,mew=1,markeredgecolor='k')
+
+    #fastjet jets
+    # for j in range(len(ESD_cluster_inc_jets)):
+    #     jj = ESD_cluster_inc_jets[j]
+    #     if jj.pt() > 5000:
+    #         a[1].plot(jj.eta(),transform_angle(jj.phi()), markersize=12, marker='o',alpha=.7,color='dodgerblue',markeredgecolor='k')
+    #     else:
+    #         a[1].plot(jj.eta(),transform_angle(jj.phi()), markersize=5, marker='o',alpha=.6,color='dodgerblue')
+
+    #truth box jets
+    for tbj in range(len(truth_box_inc_jets)):
+        jj = truth_box_inc_jets[tbj]
+        a[0].plot(jj.eta(),transform_angle(jj.phi()), ms=15, marker='$T$',color='limegreen',markeredgecolor='k')
+
+    #truth box jets
+    for pbj in range(len(pred_box_inc_jets)):
+        jj = pred_box_inc_jets[pbj]
+        a[0].plot(jj.eta(),transform_angle(jj.phi()), ms=15, marker='$P$',color='mediumvioletred')
+
+    #esd clusters
+    # for c in range(len(new_cluster_data)):
+    #     cc = new_cluster_data[c]
+    #     if cc['cl_E_em'] + cc['cl_E_had'] > 5000:
+    #         a[0].plot(cc['cl_eta'],cc['cl_phi'], marker='h',alpha=.65,color='plum',ms=3,markeredgecolor='k')
+    #     else:
+    #         a[0].plot(cc['cl_eta'],cc['cl_phi'], marker='h',alpha=.55,color='thistle',ms=3)
+
+    #truth boxes
+    for tbx in tees:
+        x,y=float(tbx[0]),float(tbx[1])
+        w,h=float(tbx[2])-float(tbx[0]),float(tbx[3])-float(tbx[1])  
+        bbo = matplotlib.patches.Rectangle((x,y),w,h,lw=2,ec='green',fc='none')
+        a[0].add_patch(bbo)
+
+    #box predictions
+    for pbx in pees:
+        x,y=float(pbx[0]),float(pbx[1])
+        w,h=float(pbx[2])-float(pbx[0]),float(pbx[3])-float(pbx[1])  
+        bbo = matplotlib.patches.Rectangle((x,y),w,h,lw=2,ec='red',fc='none')
+        a[0].add_patch(bbo)
+
+    a[0].axhline(y=min(cells['cell_phi']), color='r', linestyle='--')
+    a[0].axhline(y=max(cells['cell_phi']), color='r', linestyle='--')
+    a[0].grid()
+    a[0].set(xlabel='eta',ylabel='phi',xlim=(min(cells['cell_eta']), max(cells['cell_eta'])),ylim=(min(cells['cell_phi'])-3, max(cells['cell_phi'])+3))
+    a[1].axhline(y=min(cells['cell_phi']), color='r', linestyle='--')
+    a[1].axhline(y=max(cells['cell_phi']), color='r', linestyle='--')
+    a[1].grid()
+    a[1].set(xlabel='eta',ylabel='phi',xlim=(min(cells['cell_eta']), max(cells['cell_eta'])),ylim=(min(cells['cell_phi'])-3, max(cells['cell_phi'])+3))
+
+    legend_elements = [matplotlib.patches.Patch(facecolor='w', edgecolor='red',label='Model pred.'),
+                    matplotlib.patches.Patch(facecolor='w', edgecolor='green',label='Truth'),
+                    # matplotlib.lines.Line2D([],[], marker='o', color='dodgerblue', label='TopoCl Jets >5GeV',linestyle='None',markersize=10),
+                    # matplotlib.lines.Line2D([],[], marker='o', color='dodgerblue', label='TopoCl Jets <5GeV',linestyle='None',markersize=10,markeredgecolor='k'),
+                    matplotlib.lines.Line2D([],[], marker='h', color='plum', label='TopoClusters >5GeV',linestyle='None',markersize=10),
+                    matplotlib.lines.Line2D([],[], marker='h', color='plum', label='TopoClusters <5GeV',linestyle='None',markersize=10,markeredgecolor='k'),
+                    matplotlib.lines.Line2D([],[], marker='*', color='goldenrod', label='ESD Jets',linestyle='None',markersize=10),
+                    matplotlib.lines.Line2D([],[], marker='$T$', color='limegreen', label='Truth box FJets',linestyle='None',markersize=10),
+                    matplotlib.lines.Line2D([],[], marker='$P$', color='mediumvioletred', label='Pred box FJets',linestyle='None',markersize=10),]
+    a[1].legend(handles=legend_elements, loc='best',frameon=False,bbox_to_anchor=(1, 0.5))
+    # plt.subplots_adjust(right=0.7)
+    f.tight_layout()
+    f.savefig(save_loc+'/boxes-clusters-jets-{}.png'.format(idx))
+
     return
 
 
@@ -178,83 +304,3 @@ if __name__=="__main__":
     make_single_event_plot(folder_to_look_in,save_at,idx=1)
     print('Completed single event plots\n')
 
-
-
-
-
-
-
-
-
-
-# f,a = plt.subplots(1,2,figsize=(11.5,6))
-# #esd jets
-# for oj in range(len(new_jet_data)):
-#     offjet = new_jet_data[oj]
-#     a[1].plot(offjet['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta'],offjet['AntiKt4EMTopoJets_JetConstitScaleMomentum_phi'], markersize=25, marker='*',color='goldenrod',alpha=1.0,mew=1,markeredgecolor='k')
-
-# #fastjet jets
-# for j in range(len(ESD_cluster_inc_jets)):
-#     jj = ESD_cluster_inc_jets[j]
-#     if jj.pt() > 5000:
-#         a[1].plot(jj.eta(),transform_angle(jj.phi()), markersize=12, marker='o',alpha=.7,color='dodgerblue',markeredgecolor='k')
-#     else:
-#         a[1].plot(jj.eta(),transform_angle(jj.phi()), markersize=5, marker='o',alpha=.6,color='dodgerblue')
-# print()
-# #truth box jets
-# for tbj in range(len(truth_box_inc_jets)):
-#     jj = truth_box_inc_jets[tbj]
-#     a[0].plot(jj.eta(),transform_angle(jj.phi()), ms=15, marker='$T$',color='limegreen',markeredgecolor='k')
-
-# print()
-# #truth box jets
-# for pbj in range(len(pred_box_inc_jets)):
-#     jj = pred_box_inc_jets[pbj]
-#     a[0].plot(jj.eta(),transform_angle(jj.phi()), ms=15, marker='$P$',color='mediumvioletred')
-
-# #esd clusters
-# for c in range(len(new_cluster_data)):
-#     cc = new_cluster_data[c]
-#     if cc['cl_E_em'] + cc['cl_E_had'] > 5000:
-#         #a[0].plot(cc['cl_eta'],cc['cl_phi'], marker='h',alpha=.5,color='plum',ms=6)
-#         a[0].plot(cc['cl_eta'],cc['cl_phi'], marker='h',alpha=.65,color='plum',ms=3,markeredgecolor='k')
-#     else:
-#         # a[0].plot(cc['cl_eta'],cc['cl_phi'], marker='h',alpha=.45,color='thistle',ms=4)
-#         a[0].plot(cc['cl_eta'],cc['cl_phi'], marker='h',alpha=.55,color='thistle',ms=3)
-
-# #truth boxes
-# for tbx in tees:
-#     x,y=float(tbx[0]),float(tbx[1])
-#     w,h=float(tbx[2])-float(tbx[0]),float(tbx[3])-float(tbx[1])  
-#     bbo = matplotlib.patches.Rectangle((x,y),w,h,lw=2,ec='green',fc='none')
-#     a[0].add_patch(bbo)
-
-# #box predictions
-# for pbx in pees:
-#     x,y=float(pbx[0]),float(pbx[1])
-#     w,h=float(pbx[2])-float(pbx[0]),float(pbx[3])-float(pbx[1])  
-#     bbo = matplotlib.patches.Rectangle((x,y),w,h,lw=2,ec='red',fc='none')
-#     a[0].add_patch(bbo)
-
-# a[0].axhline(y=min(cells['cell_phi']), color='r', linestyle='--')
-# a[0].axhline(y=max(cells['cell_phi']), color='r', linestyle='--')
-# a[0].grid()
-# a[0].set(xlabel='eta',ylabel='phi',xlim=(min(cells['cell_eta']), max(cells['cell_eta'])),ylim=(min(cells['cell_phi'])-3, max(cells['cell_phi'])+3))
-# a[1].axhline(y=min(cells['cell_phi']), color='r', linestyle='--')
-# a[1].axhline(y=max(cells['cell_phi']), color='r', linestyle='--')
-# a[1].grid()
-# a[1].set(xlabel='eta',ylabel='phi',xlim=(min(cells['cell_eta']), max(cells['cell_eta'])),ylim=(min(cells['cell_phi'])-3, max(cells['cell_phi'])+3))
-
-# legend_elements = [matplotlib.patches.Patch(facecolor='w', edgecolor='red',label='Model pred.'),
-#                    matplotlib.patches.Patch(facecolor='w', edgecolor='green',label='Truth'),
-#                    matplotlib.lines.Line2D([],[], marker='o', color='dodgerblue', label='FJets >5GeV',linestyle='None',markersize=10),
-#                    matplotlib.lines.Line2D([],[], marker='o', color='dodgerblue', label='FJets <5GeV',linestyle='None',markersize=10,markeredgecolor='k'),
-#                    matplotlib.lines.Line2D([],[], marker='h', color='plum', label='TopoClusters >5GeV',linestyle='None',markersize=10),
-#                    matplotlib.lines.Line2D([],[], marker='h', color='plum', label='TopoClusters <5GeV',linestyle='None',markersize=10,markeredgecolor='k'),
-#                    matplotlib.lines.Line2D([],[], marker='*', color='goldenrod', label='ESD Jets',linestyle='None',markersize=10),
-#                    matplotlib.lines.Line2D([],[], marker='$T$', color='limegreen', label='Truth box FJets',linestyle='None',markersize=10),
-#                    matplotlib.lines.Line2D([],[], marker='$P$', color='mediumvioletred', label='Pred box FJets',linestyle='None',markersize=10),]
-# a[1].legend(handles=legend_elements, loc='best',frameon=False,bbox_to_anchor=(1, 0.5))
-# # plt.subplots_adjust(right=0.7)
-# f.tight_layout()
-# f.savefig('fast-box-jets{}-2.png'.format(idx))

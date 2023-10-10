@@ -96,12 +96,12 @@ def nth_leading_jet_pt(list_of_jet_energies_in_event,n):
 def make_jet_plots(
     folder_containing_lists,
     save_folder,
+    log=False,
 ):
     save_loc = save_folder + "/jets/"
     if not os.path.exists(save_loc):
         os.makedirs(save_loc)
     
-    log = False
 
     pt_files = ['esdjet_pts','fjet_pts','tboxjet_pts','pboxjet_pts']
     eta_files = ['esdjet_etas','fjet_etas','tboxjet_etas','pboxjet_etas']
@@ -152,6 +152,7 @@ def make_jet_plots(
     ax[1].legend()
 
 
+    ax[2].axvline(x=lead_jet_pt_cut,ymin=0,ymax=1,ls='--',color='red',alpha=0.3,label='Cut')
     with np.errstate(divide='ignore', invalid='ignore'):
         step_eff = get_ratio(n2_esd,n_esd)
         step_err = get_errorbars(n2_esd,n_esd)
@@ -165,17 +166,17 @@ def make_jet_plots(
     bin_centers = (bins[:-1] + bins[1:]) / 2
     bin_width = bins[1] - bins[0]
     if True:
-        ax[2].errorbar(bin_centers,step_eff,xerr=bin_width/2,yerr=step_err,elinewidth=0.4,marker='.',ls='none',label='ESD')
-        ax[2].errorbar(bin_centers,fj_eff,xerr=bin_width/2,yerr=fj_err,elinewidth=0.4,marker='.',ls='none',label='All clus.')
-        ax[2].errorbar(bin_centers,tbox_eff,xerr=bin_width/2,yerr=tbox_err,elinewidth=0.4,marker='.',ls='none',label='TBox')
-        ax[2].errorbar(bin_centers,pbox_eff,xerr=bin_width/2,yerr=pbox_err,elinewidth=0.4,marker='.',ls='none',label='PBox')
+        # ax[2].errorbar(bin_centers,step_eff,xerr=bin_width/2,yerr=step_err,elinewidth=0.4,marker='.',ls='none',label='ESD',color='goldenrod')
+        # ax[2].errorbar(bin_centers,fj_eff,xerr=bin_width/2,yerr=fj_err,elinewidth=0.4,marker='.',ls='none',label='All clus.')
+        ax[2].errorbar(bin_centers,tbox_eff,xerr=bin_width/2,yerr=tbox_err,elinewidth=0.4,marker='.',ls='none',label='TBox',color='green')
+        ax[2].errorbar(bin_centers,pbox_eff,xerr=bin_width/2,yerr=pbox_err,elinewidth=0.4,marker='.',ls='none',label='PBox',color='red')
     else:
         ax[2].errorbar(bin_centers,step_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='ESD')
         ax[2].errorbar(bin_centers,fj_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='All clus.')
         ax[2].errorbar(bin_centers,tbox_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='TBox')
         ax[2].errorbar(bin_centers,pbox_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='PBox')
-    ax[2].grid(color="0.95")
-    ax[2].set(xlabel="Leading jet pT (GeV)",ylabel='Efficiency',ylim=(-0.2,1.2))
+    ax[2].grid()
+    ax[2].set(xlabel="Leading jet pT (GeV)",ylabel='Efficiency',ylim=(-0.2,1.2),title=f'Trig. cut {lead_jet_pt_cut/1000:.0f}GeV')
     ax[2].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
     ax[2].legend(loc='lower right')
 
@@ -190,13 +191,13 @@ def make_jet_plots(
 
     #-----------------------------------------------------------------------------------------------------------------
     # Nth Leading Jet
-    nth_jet = 1
+    nth_jet = 2
     esdj_nlead_pt = np.array([nth_leading_jet_pt(x,nth_jet) for x in esdjets_pt])
     fjj_nlead_pt = np.array([nth_leading_jet_pt(y,nth_jet) for y in fjets_pt])
     tbox_nlead_pt = np.array([nth_leading_jet_pt(z,nth_jet) for z in tboxjets_pt])
     pbox_nlead_pt = np.array([nth_leading_jet_pt(z,nth_jet) for z in pboxjets_pt])
     #make a trigger decision based on ESD jet
-    nth_lead_jet_pt_cut = 500_000 # 400GeV
+    nth_lead_jet_pt_cut = 300_000 # 400GeV
     trigger_decision = np.argwhere(esdj_nlead_pt>nth_lead_jet_pt_cut).T[0]
 
     trig_decision_esd = np.argwhere(esdj_nlead_pt>nth_lead_jet_pt_cut).T[0]
@@ -204,9 +205,12 @@ def make_jet_plots(
     trig_decision_tb = np.argwhere(tbox_nlead_pt>nth_lead_jet_pt_cut).T[0]
     trig_decision_pb = np.argwhere(pbox_nlead_pt>nth_lead_jet_pt_cut).T[0]
 
+    bin_width = 25_000
+    num_bins=25
+    bins = [50_000+i*bin_width for i in range(num_bins+1)]
 
     f,ax = plt.subplots(3,1,figsize=(7.5,12))
-    n_esd,bins,_ = ax[0].hist(esdj_nlead_pt,bins=20,histtype='step',label='ESD Jet')
+    n_esd,bins,_ = ax[0].hist(esdj_nlead_pt,bins=bins,histtype='step',label='ESD Jet')
     # n_fj,_,_ = ax[0].hist(fjj_nlead_pt,bins=bins,histtype='step',label='All clus.')
     # n_tbox,_,_ = ax[0].hist(tbox_nlead_pt,bins=bins,histtype='step',label='TBox')
     # n_pbox,_,_ = ax[0].hist(pbox_nlead_pt,bins=bins,histtype='step',label='PBox')
@@ -223,6 +227,7 @@ def make_jet_plots(
     ax[1].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
     ax[1].legend()
 
+    ax[2].axvline(x=nth_lead_jet_pt_cut,ymin=0,ymax=1,ls='--',color='red',alpha=0.3,label='Cut')
     with np.errstate(divide='ignore', invalid='ignore'):
         #calculate efficiencies and errors
         step_eff = get_ratio(n2_esd,n_esd)
@@ -239,19 +244,19 @@ def make_jet_plots(
 
     bin_centers = (bins[:-1] + bins[1:]) / 2
     bin_width = bins[1] - bins[0]
-    errorbs = False
+    errorbs = True
     if errorbs:
-        ax[2].errorbar(bin_centers,step_eff,xerr=bin_width/2,yerr=step_err,elinewidth=0.4,marker='.',ls='none',label='ESD')
-        ax[2].errorbar(bin_centers,fj_eff,xerr=bin_width/2,yerr=fj_err,elinewidth=0.4,marker='.',ls='none',label='All clus.')
-        ax[2].errorbar(bin_centers,tbox_eff,xerr=bin_width/2,yerr=tbox_err,elinewidth=0.4,marker='.',ls='none',label='TBox')
-        ax[2].errorbar(bin_centers,pbox_eff,xerr=bin_width/2,yerr=pbox_err,elinewidth=0.4,marker='.',ls='none',label='PBox')
+        # ax[2].errorbar(bin_centers,step_eff,xerr=bin_width/2,yerr=step_err,elinewidth=0.4,marker='.',ls='none',label='ESD',color='goldenrod')
+        # ax[2].errorbar(bin_centers,fj_eff,xerr=bin_width/2,yerr=fj_err,elinewidth=0.4,marker='.',ls='none',label='All clus.')
+        ax[2].errorbar(bin_centers,tbox_eff,xerr=bin_width/2,yerr=tbox_err,elinewidth=0.4,marker='.',ls='none',label='TBox',color='green')
+        ax[2].errorbar(bin_centers,pbox_eff,xerr=bin_width/2,yerr=pbox_err,elinewidth=0.4,marker='.',ls='none',label='PBox',color='red')
     else:
         ax[2].errorbar(bin_centers,step_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='ESD')
         ax[2].errorbar(bin_centers,fj_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='All clus.')
         ax[2].errorbar(bin_centers,tbox_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='TBox')
         ax[2].errorbar(bin_centers,pbox_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='PBox')
     # ax[2].axvline(x=lead_jet_pt_cut,ymin=0,ymax=1,ls='--',color='red',alpha=0.3,label='Cut')
-    ax[2].grid(color="0.95")
+    ax[2].grid()
     ax[2].set(xlabel=f"${{{nth_jet}}}^{{th}}$ Leading jet pT (GeV)",ylabel='Efficiency',ylim=(-0.2,1.2))
     ax[2].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
     ax[2].legend(loc='lower right')
@@ -284,12 +289,11 @@ def make_jet_plots(
     hi_pboxets_pt = all_pboxjets_pt[np.argwhere(all_pboxjets_pt>pt_cut)]
 
 
-
     fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
-    n_esd, bins, _ = ax[0].hist(hi_esdjets_pt,bins=50,color='goldenrod',histtype='step',label=f'ESD Jets {len(hi_esdjets_pt)}')
-    n_fj, bins, _ = ax[0].hist(hi_fjets_pt,bins=bins,color='dodgerblue',histtype='step',label=f'All clus. {len(hi_fjets_pt)}')
-    n_tbox, bins, _ = ax[0].hist(hi_tboxets_pt,bins=bins,color='green',histtype='step',label=f'TBox Jets {len(hi_tboxets_pt)}')
-    n_pbox, bins, _ = ax[0].hist(hi_pboxets_pt,bins=bins,color='red',histtype='step',label=f'PBox Jets {len(hi_pboxets_pt)}')
+    n_esd, bins, _ = ax[0].hist(hi_esdjets_pt,bins=50,color='goldenrod',histtype='step',density=(not log),label=f'ESD Jets {len(hi_esdjets_pt)}')
+    # n_fj, bins, _ = ax[0].hist(hi_fjets_pt,bins=bins,color='dodgerblue',histtype='step',density=(not log),label=f'All clus. {len(hi_fjets_pt)}')
+    n_tbox, bins, _ = ax[0].hist(hi_tboxets_pt,bins=bins,color='green',histtype='step',density=(not log),label=f'TBox Jets {len(hi_tboxets_pt)}')
+    n_pbox, bins, _ = ax[0].hist(hi_pboxets_pt,bins=bins,color='red',histtype='step',density=(not log),label=f'PBox Jets {len(hi_pboxets_pt)}')
     # ax[0].axvline(pt_cut,ls='--',color='red',label='pT cut')
     ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events, All Jets pT > {pt_cut/1000:.0f}GeV')
     # ax[0].set_yscale('log')
@@ -298,9 +302,9 @@ def make_jet_plots(
 
     ratios_pbox = get_ratio(n_pbox,n_esd)
     ratios_tbox = get_ratio(n_tbox,n_esd)
-    ratios_fj = get_ratio(n_fj,n_esd) # np.where(n_esd != 0, n_fj / n_esd, 0)
+    # ratios_fj = get_ratio(n_fj,n_esd) # np.where(n_esd != 0, n_fj / n_esd, 0)
     bin_centers = (bins[:-1] + bins[1:]) / 2
-    ax[1].plot(bin_centers, ratios_fj, label='All clus.',color='dodgerblue',marker='_')
+    # ax[1].plot(bin_centers, ratios_fj, label='All clus.',color='dodgerblue',marker='_')
     ax[1].plot(bin_centers, ratios_tbox, label='TBox Jets',color='green',marker='_')
     ax[1].plot(bin_centers, ratios_pbox, label='PBox Jets',color='red',marker='_')
     ax[1].axhline(1,ls='--',color='goldenrod')
@@ -313,6 +317,7 @@ def make_jet_plots(
         ax[0].set_yscale('log')
         fig.savefig(save_loc + '/jet_pt_log.png')
     else:
+        ax[0].set(ylabel='Freq. Density')
         fig.savefig(save_loc + '/jet_pt.png')
     # fig.savefig(save_loc+'/jet_pt.png')
 
@@ -340,10 +345,10 @@ def make_jet_plots(
 
 
     fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
-    n_esd, bins, _ = ax[0].hist(hi_esdjets_eta,bins=50,color='goldenrod',histtype='step',label=f'ESD Jets {len(hi_esdjets_eta)}')
-    n_fj, bins, _ = ax[0].hist(hi_fjets_eta,bins=bins,color='dodgerblue',histtype='step',label=f'All clus. {len(hi_fjets_eta)}')
-    n_tbox, bins, _ = ax[0].hist(hi_tboxets_eta,bins=bins,color='red',histtype='step',label=f'TBox Jets {len(hi_tboxets_eta)}')
-    n_pbox, bins, _ = ax[0].hist(hi_pboxets_eta,bins=bins,color='green',histtype='step',label=f'PBox Jets {len(hi_pboxets_eta)}')
+    n_esd, bins, _ = ax[0].hist(hi_esdjets_eta,bins=50,color='goldenrod',histtype='step',density=(not log),label=f'ESD Jets {len(hi_esdjets_eta)}')
+    # n_fj, bins, _ = ax[0].hist(hi_fjets_eta,bins=bins,color='dodgerblue',histtype='step',density=(not log),label=f'All clus. {len(hi_fjets_eta)}')
+    n_tbox, bins, _ = ax[0].hist(hi_tboxets_eta,bins=bins,color='red',histtype='step',density=(not log),label=f'TBox Jets {len(hi_tboxets_eta)}')
+    n_pbox, bins, _ = ax[0].hist(hi_pboxets_eta,bins=bins,color='green',histtype='step',density=(not log),label=f'PBox Jets {len(hi_pboxets_eta)}')
     ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events, All Jets pT > {pt_cut/1000:.0f}GeV')
     # ax[0].set_yscale('log')
     ax[0].grid()
@@ -351,11 +356,11 @@ def make_jet_plots(
 
     ratios_pbox = get_ratio(n_pbox,n_esd)
     ratios_tbox = get_ratio(n_tbox,n_esd)
-    ratios_fj = get_ratio(n_fj,n_esd) # np.where(n_esd != 0, n_fj / n_esd, 0)
+    # ratios_fj = get_ratio(n_fj,n_esd) # np.where(n_esd != 0, n_fj / n_esd, 0)
     bin_centers = (bins[:-1] + bins[1:]) / 2
     ax[1].plot(bin_centers, ratios_tbox,color='green',label='TBox Jets',marker='_')
     ax[1].plot(bin_centers, ratios_pbox,color='red',label='PBox Jets',marker='_')
-    ax[1].plot(bin_centers, ratios_fj,color='dodgerblue',label='All clus.',marker='_')
+    # ax[1].plot(bin_centers, ratios_fj,color='dodgerblue',label='All clus.',marker='_')
     ax[1].axhline(1,ls='--',color='goldenrod')
     ax[1].legend()
     ax[1].set(xlabel="$\eta$")
@@ -365,6 +370,7 @@ def make_jet_plots(
         ax[0].set_yscale('log')
         fig.savefig(save_loc + '/jet_eta_log.png')
     else:
+        ax[0].set(ylabel='Freq. Density')
         fig.savefig(save_loc + '/jet_eta.png')
     # fig.savefig(save_loc+'/jet_eta.png')
 
@@ -387,10 +393,10 @@ def make_jet_plots(
     hi_pboxets_phi = all_pboxjets_phi[np.argwhere(all_pboxjets_pt>pt_cut)]
 
     fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
-    n_esd, bins, _ = ax[0].hist(hi_esdjets_phi,bins=50,color='goldenrod',histtype='step',label=f'ESD Jets {len(hi_esdjets_phi)}')
-    n_fj, bins, _ = ax[0].hist(hi_fjets_phi,bins=bins,color='dodgerblue',histtype='step',label=f'All clus. {len(hi_fjets_phi)}')
-    n_tbox, bins, _ = ax[0].hist(hi_tboxets_phi,bins=bins,color='red',histtype='step',label=f'TBox Jets {len(hi_tboxets_phi)}')
-    n_pbox, bins, _ = ax[0].hist(hi_pboxets_phi,bins=bins,color='green',histtype='step',label=f'PBox Jets {len(hi_pboxets_phi)}')
+    n_esd, bins, _ = ax[0].hist(hi_esdjets_phi,bins=50,color='goldenrod',histtype='step',density=(not log),label=f'ESD Jets {len(hi_esdjets_phi)}')
+    # n_fj, bins, _ = ax[0].hist(hi_fjets_phi,bins=bins,color='dodgerblue',histtype='step',density=(not log),label=f'All clus. {len(hi_fjets_phi)}')
+    n_tbox, bins, _ = ax[0].hist(hi_tboxets_phi,bins=bins,color='red',histtype='step',density=(not log),label=f'TBox Jets {len(hi_tboxets_phi)}')
+    n_pbox, bins, _ = ax[0].hist(hi_pboxets_phi,bins=bins,color='green',histtype='step',density=(not log),label=f'PBox Jets {len(hi_pboxets_phi)}')
     ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events, All Jets pT > {pt_cut/1000:.0f}GeV')
     # ax[0].set_yscale('log')
     ax[0].grid()
@@ -398,11 +404,11 @@ def make_jet_plots(
 
     ratios_pbox = get_ratio(n_pbox,n_esd)
     ratios_tbox = get_ratio(n_tbox,n_esd)
-    ratios_fj = get_ratio(n_fj,n_esd) # np.where(n_esd != 0, n_fj / n_esd, 0)
+    # ratios_fj = get_ratio(n_fj,n_esd) # np.where(n_esd != 0, n_fj / n_esd, 0)
     bin_centers = (bins[:-1] + bins[1:]) / 2
     ax[1].plot(bin_centers, ratios_tbox,color='green',label='TBox Jets',marker='_')
     ax[1].plot(bin_centers, ratios_pbox,color='red',label='PBox Jets',marker='_')
-    ax[1].plot(bin_centers, ratios_fj,color='dodgerblue',label='All clus.',marker='_')
+    # ax[1].plot(bin_centers, ratios_fj,color='dodgerblue',label='All clus.',marker='_')
     ax[1].axhline(1,ls='--',color='goldenrod')
     ax[1].legend()
     ax[1].set(xlabel="$\phi$")
@@ -412,6 +418,7 @@ def make_jet_plots(
         ax[0].set_yscale('log')
         fig.savefig(save_loc + '/jet_phi_log.png')
     else:
+        ax[0].set(ylabel='Freq. Density')
         fig.savefig(save_loc + '/jet_phi.png')
     # fig.savefig(save_loc+'/jet_phi.png')
 
@@ -429,12 +436,12 @@ def make_jet_plots(
     cent_pboxets_pt = all_pboxjets_pt[(all_pboxjets_eta > eta_min) & (all_pboxjets_eta < eta_max) & (all_pboxjets_pt>pt_cut)]
 
     fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
-    n_esd, bins, _ = ax[0].hist(cent_esdjets_pt,bins=50,color='goldenrod',histtype='step',label=f'ESD Jets {len(cent_esdjets_pt)}')
-    n_fj, bins, _ = ax[0].hist(cent_fjets_pt,bins=bins,color='dodgerblue',histtype='step',label=f'All clus. {len(cent_fjets_pt)}')
-    n_tbox, bins, _ = ax[0].hist(cent_tboxets_pt,bins=bins,color='green',histtype='step',label=f'TBox Jets {len(cent_tboxets_pt)}')
-    n_pbox, bins, _ = ax[0].hist(cent_pboxets_pt,bins=bins,color='red',histtype='step',label=f'PBox Jets {len(cent_pboxets_pt)}')
+    n_esd, bins, _ = ax[0].hist(cent_esdjets_pt,bins=50,color='goldenrod',histtype='step',density=(not log),label=f'ESD Jets {len(cent_esdjets_pt)}')
+    n_fj, bins, _ = ax[0].hist(cent_fjets_pt,bins=bins,color='dodgerblue',histtype='step',density=(not log),label=f'All clus. {len(cent_fjets_pt)}')
+    n_tbox, bins, _ = ax[0].hist(cent_tboxets_pt,bins=bins,color='green',histtype='step',density=(not log),label=f'TBox Jets {len(cent_tboxets_pt)}')
+    n_pbox, bins, _ = ax[0].hist(cent_pboxets_pt,bins=bins,color='red',histtype='step',density=(not log),label=f'PBox Jets {len(cent_pboxets_pt)}')
     # ax[0].axvline(pt_cut,ls='--',color='red',label='pT cut')
-    ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events Central Jets w/ pt & eta cut {pt_cut}GeV,[{eta_min},{eta_max}]')
+    ax[0].set(ylabel='Freq.',title=f'{len(esdjets_pt)} Events Central Jets w/ pt & eta cut {pt_cut/1000:.0f}GeV, [{eta_min},{eta_max}]')
     # ax[0].set_yscale('log')
     ax[0].grid(color='0.95')
     ax[0].legend()
@@ -456,6 +463,7 @@ def make_jet_plots(
         ax[0].set_yscale('log')
         fig.savefig(save_loc + '/jet_pt_log_central.png')
     else:
+        ax[0].set(ylabel='Freq. Density')
         fig.savefig(save_loc + '/jet_pt_central.png')
     # fig.savefig(save_loc+'/jet_pt_central.png')
 
@@ -471,10 +479,10 @@ def make_jet_plots(
     max_max_n = max(max(n_esdjets),max(n_fjets),max(n_tboxjets),max(n_pboxjets))
 
     fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [3, 1]})
-    n_esd, bins, _ = ax[0].hist(n_esdjets,bins=40,range=(0,max_max_n),color='goldenrod',histtype='step',label=f'ESD Jets')
-    n_fj, bins, _ = ax[0].hist(n_fjets,bins=40,range=(0,max_max_n),color='dodgerblue',histtype='step',label=f'All clus.')
-    n_tbox, bins, _ = ax[0].hist(n_tboxjets,bins=40,range=(0,max_max_n),color='green',histtype='step',label=f'TBox Jets')
-    n_pbox, bins, _ = ax[0].hist(n_pboxjets,bins=40,range=(0,max_max_n),color='red',histtype='step',label=f'PBox Jets')
+    n_esd, bins, _ = ax[0].hist(n_esdjets,bins=40,range=(0,max_max_n),density=(not log),color='goldenrod',histtype='step',label=f'ESD Jets')
+    # n_fj, bins, _ = ax[0].hist(n_fjets,bins=40,range=(0,max_max_n),density=(not log),color='dodgerblue',histtype='step',label=f'All clus.')
+    n_tbox, bins, _ = ax[0].hist(n_tboxjets,bins=40,range=(0,max_max_n),density=(not log),color='green',histtype='step',label=f'TBox Jets')
+    n_pbox, bins, _ = ax[0].hist(n_pboxjets,bins=40,range=(0,max_max_n),density=(not log),color='red',histtype='step',label=f'PBox Jets')
     # ax[0].axvline(pt_cut,ls='--',color='red',label='pT cut')
     ax[0].set(ylabel='Freq.',title=f'Number of jets per event')
     ax[0].grid()
@@ -482,11 +490,11 @@ def make_jet_plots(
 
     ratios_pbox = get_ratio(n_pbox,n_esd)
     ratios_tbox = get_ratio(n_tbox,n_esd)
-    ratios_fj = get_ratio(n_fj,n_esd) # np.where(n_esd != 0, n_fj / n_esd, 0)
+    # ratios_fj = get_ratio(n_fj,n_esd) # np.where(n_esd != 0, n_fj / n_esd, 0)
     bin_centers = (bins[:-1] + bins[1:]) / 2
     ax[1].plot(bin_centers, ratios_tbox,color='green', label='TBox Jets',marker='_')
     ax[1].plot(bin_centers, ratios_pbox, color='red',label='PBox Jets',marker='_')
-    ax[1].plot(bin_centers, ratios_fj, color='dodgerblue',label='All clus.',marker='_')
+    # ax[1].plot(bin_centers, ratios_fj, color='dodgerblue',label='All clus.',marker='_')
     ax[1].axhline(1,ls='--',color='goldenrod')
     ax[1].legend()
     ax[1].grid()
@@ -497,8 +505,10 @@ def make_jet_plots(
         ax[0].set_yscale('log')
         fig.savefig(save_loc + '/event_n_jets_log.png')
     else:
+        ax[0].set(ylabel='Freq. Density')
         fig.savefig(save_loc + '/event_n_jets.png')
     # fig.savefig(save_loc+'/event_n_jets.png')
+
 
     return
 
@@ -512,4 +522,5 @@ save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_50k5_mu_20e/"
 if __name__=="__main__":
     print('Making jet plots')
     make_jet_plots(folder_to_look_in,save_at)
+    make_jet_plots(folder_to_look_in,save_at,log=True)
     print('Completed jet plots\n')
