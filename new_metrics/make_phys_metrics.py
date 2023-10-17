@@ -29,30 +29,36 @@ cluster_level_results = {'n_clusters':[],
                          'n_tboxes':[],
                          'num_tboxes':[],
                          'tbox_energies':[],
+                         'tbox_eT':[],
                          'tbox_etas':[],
                          'tbox_phis':[],
                          'tbox_n_cells':[],
                          'n_pboxes':[],
                          'num_pboxes':[],
                          'pbox_energies':[],
+                         'pbox_eT':[],
                          'pbox_etas':[],
                          'pbox_phis':[],
                          'pbox_n_cells':[],
 
                          'tbox_match_energies':[],
+                         'tbox_match_eT':[],
                          'tbox_match_etas':[],
                          'tbox_match_phis':[],
                          'tbox_match_n_cells':[],
                          'pbox_match_energies':[],
+                         'pbox_match_eT':[],
                          'pbox_match_etas':[],
                          'pbox_match_phis':[],
                          'pbox_match_n_cells':[],
 
                          'tbox_unmatch_energies':[],
+                         'tbox_unmatch_eT':[],
                          'tbox_unmatch_etas':[],
                          'tbox_unmatch_phis':[],
                          'tbox_unmatch_n_cells':[],
                          'pbox_unmatch_energies':[],
+                         'pbox_unmatch_eT':[],
                          'pbox_unmatch_etas':[],
                          'pbox_unmatch_phis':[],
                          'pbox_unmatch_n_cells':[],
@@ -118,18 +124,21 @@ def calculate_phys_metrics(
 
         #total
         list_p_cl_es_tot, list_t_cl_es_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='energy')
+        list_p_cl_eT_tot, list_t_cl_eT_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='eT')
         list_p_cl_etas_tot, list_t_cl_etas_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='eta')
         list_p_cl_phis_tot, list_t_cl_phis_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='phi') 
         list_p_cl_ns_tot, list_t_cl_ns_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='n_cells') 
 
         #matched
         list_p_cl_es, list_t_cl_es = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='energy')
+        list_p_cl_eT, list_t_cl_eT = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eT')
         list_p_cl_etas, list_t_cl_etas = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eta')
         list_p_cl_phis, list_t_cl_phis = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='phi')
         list_p_cl_ns, list_t_cl_ns = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='n_cells')
 
         #unmatched
         list_p_cl_es_unm, list_t_cl_es_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='energy')
+        list_p_cl_eT_unm, list_t_cl_eT_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='eT')
         list_p_cl_etas_unm, list_t_cl_etas_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='eta')
         list_p_cl_phis_unm, list_t_cl_phis_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='phi') 
         list_p_cl_ns_unm, list_t_cl_ns_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='n_cells') 
@@ -137,16 +146,19 @@ def calculate_phys_metrics(
         cluster_level_results['n_tboxes'].append(len(tees))
         cluster_level_results['num_tboxes'].append(len(list_t_cl_es_tot))
         cluster_level_results['tbox_energies'].append(list_t_cl_es_tot)
+        cluster_level_results['tbox_eT'].append(list_t_cl_eT_tot)
         cluster_level_results['tbox_etas'].append(list_t_cl_etas_tot)
         cluster_level_results['tbox_phis'].append(list_t_cl_phis_tot)
         cluster_level_results['tbox_n_cells'].append(list_t_cl_ns_tot)
 
         cluster_level_results['tbox_match_energies'].append(list_t_cl_es)
+        cluster_level_results['tbox_match_eT'].append(list_t_cl_eT)
         cluster_level_results['tbox_match_etas'].append(list_t_cl_etas)
         cluster_level_results['tbox_match_phis'].append(list_t_cl_phis)
         cluster_level_results['tbox_match_n_cells'].append(list_t_cl_ns)
 
         cluster_level_results['tbox_unmatch_energies'].append(list_t_cl_es_unm)
+        cluster_level_results['tbox_unmatch_eT'].append(list_t_cl_eT_unm)
         cluster_level_results['tbox_unmatch_etas'].append(list_t_cl_etas_unm)
         cluster_level_results['tbox_unmatch_phis'].append(list_t_cl_phis_unm)
         cluster_level_results['tbox_unmatch_n_cells'].append(list_t_cl_ns_unm)
@@ -154,16 +166,19 @@ def calculate_phys_metrics(
         cluster_level_results['n_pboxes'].append(len(pees))
         cluster_level_results['num_pboxes'].append(len(list_p_cl_es_tot))
         cluster_level_results['pbox_energies'].append(list_p_cl_es_tot)
+        cluster_level_results['pbox_eT'].append(list_p_cl_eT_tot)
         cluster_level_results['pbox_etas'].append(list_p_cl_etas_tot)
         cluster_level_results['pbox_phis'].append(list_p_cl_phis_tot)
         cluster_level_results['pbox_n_cells'].append(list_p_cl_ns_tot)
 
         cluster_level_results['pbox_match_energies'].append(list_p_cl_es)
+        cluster_level_results['pbox_match_eT'].append(list_p_cl_eT)
         cluster_level_results['pbox_match_etas'].append(list_p_cl_etas)
         cluster_level_results['pbox_match_phis'].append(list_p_cl_phis)
         cluster_level_results['pbox_match_n_cells'].append(list_p_cl_ns)
 
         cluster_level_results['pbox_unmatch_energies'].append(list_p_cl_es_unm)
+        cluster_level_results['pbox_unmatch_eT'].append(list_p_cl_eT_unm)
         cluster_level_results['pbox_unmatch_etas'].append(list_p_cl_etas_unm)
         cluster_level_results['pbox_unmatch_phis'].append(list_p_cl_phis_unm)
         cluster_level_results['pbox_unmatch_n_cells'].append(list_p_cl_ns_unm)
@@ -184,32 +199,37 @@ def calculate_phys_metrics(
     save_object(cluster_level_results['n_tboxes'],save_loc+'n_tboxes.pkl')
     save_object(cluster_level_results['num_tboxes'],save_loc+'num_tboxes.pkl')
     save_object(cluster_level_results['tbox_energies'],save_loc+'tbox_energies.pkl')
+    save_object(cluster_level_results['tbox_eT'],save_loc+'tbox_eT.pkl')
     save_object(cluster_level_results['tbox_etas'],save_loc+'tbox_etas.pkl')
     save_object(cluster_level_results['tbox_phis'],save_loc+'tbox_phis.pkl')
     save_object(cluster_level_results['tbox_n_cells'],save_loc+'tbox_n_cells.pkl')
+    
     save_object(cluster_level_results['n_pboxes'],save_loc+'n_pboxes.pkl')
     save_object(cluster_level_results['num_pboxes'],save_loc+'num_pboxes.pkl')
     save_object(cluster_level_results['pbox_energies'],save_loc+'pbox_energies.pkl')
+    save_object(cluster_level_results['pbox_eT'],save_loc+'pbox_eT.pkl')
     save_object(cluster_level_results['pbox_etas'],save_loc+'pbox_etas.pkl')
     save_object(cluster_level_results['pbox_phis'],save_loc+'pbox_phis.pkl')
     save_object(cluster_level_results['pbox_n_cells'],save_loc+'pbox_n_cells.pkl')
 
     save_object(cluster_level_results['tbox_match_energies'],save_loc+'tbox_match_energies.pkl')
+    save_object(cluster_level_results['tbox_match_eT'],save_loc+'tbox_match_eT.pkl')
     save_object(cluster_level_results['tbox_match_etas'],save_loc+'tbox_match_etas.pkl')
     save_object(cluster_level_results['tbox_match_phis'],save_loc+'tbox_match_phis.pkl')
     save_object(cluster_level_results['tbox_match_n_cells'],save_loc+'tbox_match_n_cells.pkl')
     save_object(cluster_level_results['pbox_match_energies'],save_loc+'pbox_match_energies.pkl')
+    save_object(cluster_level_results['pbox_match_eT'],save_loc+'pbox_match_eT.pkl')
     save_object(cluster_level_results['pbox_match_etas'],save_loc+'pbox_match_etas.pkl')
     save_object(cluster_level_results['pbox_match_phis'],save_loc+'pbox_match_phis.pkl')
     save_object(cluster_level_results['pbox_match_n_cells'],save_loc+'pbox_match_n_cells.pkl')
-    save_object(cluster_level_results['pbox_match_energies'],save_loc+'pbox_match_energies.pkl')
-    save_object(cluster_level_results['pbox_match_energies'],save_loc+'pbox_match_energies.pkl')
 
     save_object(cluster_level_results['tbox_unmatch_energies'],save_loc+'tbox_unmatch_energies.pkl')
+    save_object(cluster_level_results['tbox_unmatch_eT'],save_loc+'tbox_unmatch_eT.pkl')
     save_object(cluster_level_results['tbox_unmatch_etas'],save_loc+'tbox_unmatch_etas.pkl')
     save_object(cluster_level_results['tbox_unmatch_phis'],save_loc+'tbox_unmatch_phis.pkl')
     save_object(cluster_level_results['tbox_unmatch_n_cells'],save_loc+'tbox_unmatch_n_cells.pkl')
     save_object(cluster_level_results['pbox_unmatch_energies'],save_loc+'pbox_unmatch_energies.pkl')
+    save_object(cluster_level_results['pbox_unmatch_eT'],save_loc+'pbox_unmatch_eT.pkl')
     save_object(cluster_level_results['pbox_unmatch_etas'],save_loc+'pbox_unmatch_etas.pkl')
     save_object(cluster_level_results['pbox_unmatch_phis'],save_loc+'pbox_unmatch_phis.pkl')
     save_object(cluster_level_results['pbox_unmatch_n_cells'],save_loc+'pbox_unmatch_n_cells.pkl')

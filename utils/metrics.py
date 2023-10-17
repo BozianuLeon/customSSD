@@ -307,6 +307,11 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
         list_tru_cl_phis = [calc_cl_phi(x) for x in list_tru_cl_cells]
         return list_pred_cl_phis, list_tru_cl_phis
     
+    if target == 'eT' or 'et':
+        list_pred_cl_et = [sum(x['cell_E'])/np.cosh(calc_cl_eta(x)) for x in list_pred_cl_cells]
+        list_tru_cl_et = [sum(x['cell_E'])/np.cosh(calc_cl_eta(x)) for x in list_tru_cl_cells]
+        return list_pred_cl_et, list_tru_cl_et
+    
     if target == 'n_cells':
         list_pred_cl_ns = [len(x) for x in list_pred_cl_cells]
         list_tru_cl_ns = [len(x) for x in list_tru_cl_cells]
