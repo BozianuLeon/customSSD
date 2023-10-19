@@ -245,6 +245,19 @@ def area_covered(truth_boxes,predicted_boxes,filter=False):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match',target='energy'):
     #arguments are:
     #pred_boxes, model output, no augmentation/wrap checking [n_preds,4] NO WRAP CHECK

@@ -229,49 +229,50 @@ def wrap_check_truth(boxes,ymin,ymax):
 
 
 def get_cells_from_boxes(boxes,cells):
+    print('Hello here')
     #boxes in xyxy
     ymin,ymax = min(cells['cell_phi']),max(cells['cell_phi'])
 
     list_o_cells = []
     for i in range(len(boxes)):
         box_i = boxes[i]
-        x_condition = np.logical_and.reduce((cells['cell_eta']>box_i[0], cells['cell_eta']<box_i[2]))
+        eta_min,phi_min,eta_max,phi_max = box_i
+        x_condition = np.logical_and.reduce((cells['cell_eta']>=eta_min, cells['cell_eta']<=eta_max))
         #need a check that the corners are inside the true extent:
         #here's where we need to break boxes in 2
 
-        if (box_i[1] < ymin) and (box_i[3] > ymin):
+        #box straddles bottom of image
+        if (phi_min < ymin) and (phi_max > ymin):
             modded_box_i = box_i + np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
-            bottom_out = max(box_i[1],ymin)
             top_out = min(modded_box_i[3],ymax)
-            y_condtion1 = np.logical_and.reduce((cells['cell_phi']>bottom_out,cells['cell_phi']<box_i[3]))
-            y_condtion2 = np.logical_and.reduce((cells['cell_phi']>modded_box_i[1],cells['cell_phi']<top_out))
+            y_condtion1 = np.logical_and.reduce((cells['cell_phi']>=ymin, cells['cell_phi']<=phi_max))
+            y_condtion2 = np.logical_and.reduce((cells['cell_phi']>=modded_box_i[1], cells['cell_phi']<=top_out))
             y_cond = np.logical_or(y_condtion1,y_condtion2)
 
-        
-        elif (box_i[3] > ymax) and (box_i[1] < ymax):
+        #box straddles top of image
+        elif (phi_max > ymax) and (phi_min < ymax):
             modded_box_i = box_i - np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
-            top_top = max(box_i[3],ymax)
             bottom_bottom = min(modded_box_i[1],ymin)
-            y_condtion1 = np.logical_and.reduce((cells['cell_phi'] > box_i[1],cells['cell_phi'] < top_top))
-            y_condtion2 = np.logical_and.reduce((cells['cell_phi'] > bottom_bottom,cells['cell_phi'] < modded_box_i[3]))
+            y_condtion1 = np.logical_and.reduce((cells['cell_phi'] >= phi_min, cells['cell_phi'] <= ymax))
+            y_condtion2 = np.logical_and.reduce((cells['cell_phi'] >= bottom_bottom, cells['cell_phi'] <= modded_box_i[3]))
             y_cond = np.logical_or(y_condtion1,y_condtion2)
 
-
-        elif (box_i[1] < ymin):
+        #box is completely above top
+        elif (phi_max < ymin):
             modded_box_i = box_i + np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
-            y_cond = np.logical_and.reduce((cells['cell_phi']>modded_box_i[1], cells['cell_phi']>modded_box_i[3]))
+            y_cond = np.logical_and.reduce((cells['cell_phi']>=modded_box_i[1], cells['cell_phi']>=modded_box_i[3]))
 
 
-        elif (box_i[3] > ymax):
+        elif (phi_min > ymax):
             modded_box_i = box_i - np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
-            y_cond = np.logical_and.reduce((cells['cell_phi']>modded_box_i[1], cells['cell_phi']>modded_box_i[3]))
-
+            y_cond = np.logical_and.reduce((cells['cell_phi']>=modded_box_i[1], cells['cell_phi']>=modded_box_i[3]))
 
         else:
-            y_cond = np.logical_and.reduce((cells['cell_phi']>box_i[1], cells['cell_phi']<box_i[3])) #multiple conditions #could use np.all(x,axis)
+            y_cond = np.logical_and.reduce((cells['cell_phi']>=phi_min, cells['cell_phi']<=phi_max)) #multiple conditions #could use np.all(x,axis)
         
         tot_cond = np.logical_and(x_condition,y_cond)
         cells_here = cells[np.where(tot_cond)]
+        print('cells shape',cells_here.shape)
         #guard against boxes containing no cells!
         if not len(cells_here)==0:
             list_o_cells.append(cells_here)
