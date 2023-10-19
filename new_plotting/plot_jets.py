@@ -133,12 +133,12 @@ def make_jet_plots(
     trig_decision_pb = np.argwhere(pbox_lead_pt>lead_jet_pt_cut).T[0]
 
     bin_width = 10_000
-    num_bins=45
+    num_bins=40
     bins = [250_000+i*bin_width for i in range(num_bins+1)]
 
-    f,ax = plt.subplots(3,1,figsize=(7.5,12))
+    f,ax = plt.subplots(3,1,figsize=(6.5,12))
     n_esd,bins,_ = ax[0].hist(esdj_lead_pt,bins=bins,histtype='step',label='ESD Jet')
-    ax[0].set(xlabel="Leading jet pT (GeV)",ylabel='Freq.',title=f'Before {lead_jet_pt_cut/1000:.0f}GeV Cut')
+    ax[0].set(xlabel="Leading EMTopo (Offline) jet pT (GeV)",ylabel='Freq.',title=f'Before {lead_jet_pt_cut/1000:.0f}GeV Cut')
     ax[0].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
     ax[0].legend()
 
@@ -147,10 +147,9 @@ def make_jet_plots(
     n2_tbox,_,_ = ax[1].hist(esdj_lead_pt[trig_decision_tb],bins=bins,histtype='step',label='TBox')
     n2_pbox,_,_ = ax[1].hist(esdj_lead_pt[trig_decision_pb],bins=bins,histtype='step',label='PBox')
     ax[1].axvline(x=lead_jet_pt_cut,ymin=0,ymax=1,ls='--',color='red',alpha=0.3,label='Cut')
-    ax[1].set(xlabel="Leading jet pT (GeV)",ylabel='Freq.',title=f'After {lead_jet_pt_cut/1000:.0f}GeV Cut')
+    ax[1].set(xlabel="Leading EMTopo (Offline) jet pT (GeV)",ylabel='Freq.',title=f'After {lead_jet_pt_cut/1000:.0f}GeV Cut')
     ax[1].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
     ax[1].legend()
-
 
     ax[2].axvline(x=lead_jet_pt_cut,ymin=0,ymax=1,ls='--',color='red',alpha=0.3,label='Cut')
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -176,9 +175,12 @@ def make_jet_plots(
         ax[2].errorbar(bin_centers,tbox_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='TBox')
         ax[2].errorbar(bin_centers,pbox_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='PBox')
     ax[2].grid()
-    ax[2].set(xlabel="Leading jet pT (GeV)",ylabel='Efficiency',ylim=(-0.2,1.2),title=f'Trig. cut {lead_jet_pt_cut/1000:.0f}GeV')
+    ax[2].set(xlabel="Leading EMTopo (Offline) jet pT (GeV)",ylabel='Efficiency',ylim=(-0.2,1.2),title=f'Trig. cut {lead_jet_pt_cut/1000:.0f}GeV')
     ax[2].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
-    ax[2].legend(loc='lower right')
+    ax[2].xaxis.label.set_fontsize(18)
+    ax[2].yaxis.label.set_fontsize(18)
+    ax[2].legend(loc='lower right',fontsize=18)
+    # ax[2].legend().set_fontsize(18)
 
     plt.tight_layout()
     if log:
@@ -209,12 +211,12 @@ def make_jet_plots(
     num_bins=25
     bins = [50_000+i*bin_width for i in range(num_bins+1)]
 
-    f,ax = plt.subplots(3,1,figsize=(7.5,12))
+    f,ax = plt.subplots(3,1,figsize=(6.5,12))
     n_esd,bins,_ = ax[0].hist(esdj_nlead_pt,bins=bins,histtype='step',label='ESD Jet')
     # n_fj,_,_ = ax[0].hist(fjj_nlead_pt,bins=bins,histtype='step',label='All clus.')
     # n_tbox,_,_ = ax[0].hist(tbox_nlead_pt,bins=bins,histtype='step',label='TBox')
     # n_pbox,_,_ = ax[0].hist(pbox_nlead_pt,bins=bins,histtype='step',label='PBox')
-    ax[0].set(xlabel=f"${{{nth_jet}}}^{{th}}$ Leading jet pT (GeV)",ylabel='Freq.',title=f'Before {nth_lead_jet_pt_cut/1000:.0f}GeV Cut')
+    ax[0].set(xlabel=f"${{{nth_jet}}}^{{th}}$ Leading EMTopo (Offline) jet pT (GeV)",ylabel='Freq.',title=f'Before {nth_lead_jet_pt_cut/1000:.0f}GeV Cut')
     ax[0].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
     ax[0].legend()
 
@@ -223,7 +225,7 @@ def make_jet_plots(
     n2_tbox,_,_ = ax[1].hist(esdj_nlead_pt[trig_decision_tb],bins=bins,histtype='step',label='TBox')
     n2_pbox,_,_ = ax[1].hist(esdj_nlead_pt[trig_decision_pb],bins=bins,histtype='step',label='PBox')
     ax[1].axvline(x=nth_lead_jet_pt_cut,ymin=0,ymax=1,ls='--',color='red',alpha=0.3,label='Cut')
-    ax[1].set(xlabel=f"${{{nth_jet}}}^{{th}}$ Leading jet pT (GeV)",ylabel='Freq.',title=f'After {nth_lead_jet_pt_cut/1000:.0f}GeV Cut')
+    ax[1].set(xlabel=f"${{{nth_jet}}}^{{th}}$ Leading EMTopo (Offline) jet pT (GeV)",ylabel='Freq.',title=f'After {nth_lead_jet_pt_cut/1000:.0f}GeV Cut')
     ax[1].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
     ax[1].legend()
 
@@ -257,9 +259,12 @@ def make_jet_plots(
         ax[2].errorbar(bin_centers,pbox_eff,xerr=bin_width/2,elinewidth=0.4,marker='.',ls='none',label='PBox')
     # ax[2].axvline(x=lead_jet_pt_cut,ymin=0,ymax=1,ls='--',color='red',alpha=0.3,label='Cut')
     ax[2].grid()
-    ax[2].set(xlabel=f"${{{nth_jet}}}^{{th}}$ Leading jet pT (GeV)",ylabel='Efficiency',ylim=(-0.2,1.2))
+    ax[2].set(xlabel=f"${{{nth_jet}}}^{{th}}$ Leading EMTopo (Offline) jet pT (GeV)",ylabel='Efficiency',ylim=(-0.2,1.2))
     ax[2].xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x / 1000)))
     ax[2].legend(loc='lower right')
+    ax[2].xaxis.label.set_fontsize(18)
+    ax[2].yaxis.label.set_fontsize(18)
+    ax[2].legend(loc='lower right',fontsize=18)
 
     plt.tight_layout()
     if log:
