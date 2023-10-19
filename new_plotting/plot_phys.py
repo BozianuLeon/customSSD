@@ -553,7 +553,6 @@ def make_phys_plots(
             os.makedirs(cent_save_loc)
         
         eta_1,eta_2,eta_3,eta_4 = eta_region
-
         # clus_eta_mask = (total_clus_etas > eta_min) & (total_clus_etas < eta_max)
         clus_eta_mask = ((total_clus_etas > eta_1) & (total_clus_etas < eta_2) )| ((total_clus_etas > eta_3) & (total_clus_etas < eta_4))
         tbox_eta_mask = ((total_tru_etas > eta_1) & (total_tru_etas < eta_2)) | ((total_tru_etas > eta_3) & (total_tru_etas < eta_4))
@@ -589,8 +588,8 @@ def make_phys_plots(
 
         f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
         n_clus, bins, _ = ax[0].hist(cent_clus_obs,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(cent_clus_obs)))
-        n_pbox, _, _ = ax[0].hist(cent_tboxes_obs,bins=bins,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(cent_tboxes_obs)))
-        n_tbox, _, _ = ax[0].hist(cent_pboxes_obs,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(cent_pboxes_obs)))
+        n_pbox, _, _ = ax[0].hist(cent_pboxes_obs,bins=bins,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(cent_tboxes_obs)))
+        n_tbox, _, _ = ax[0].hist(cent_tboxes_obs,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(cent_pboxes_obs)))
         ax[0].grid()
         ax[0].set(ylabel='Freq.',title=title)
         ax[0].legend()
@@ -673,27 +672,20 @@ def make_phys_plots(
             title = f'Matched Cluster/Box Transverse energy in central [{eta_3},{eta_4}] region'
             xlab = f'$E_T$'
         
-        include_tc=True
+
 
         f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-        if include_tc:
-            n_clus, bins, _ = ax[0].hist(cent_clus_obs,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(cent_clus_obs)))
-            n_pbox, _, _ = ax[0].hist(cent_tboxes_obs,bins=bins,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(cent_tboxes_obs)))
-            n_tbox, _, _ = ax[0].hist(cent_pboxes_obs,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(cent_pboxes_obs)))
-        else:
-            n_pbox, bins, _ = ax[0].hist(cent_pboxes_obs,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(cent_pboxes_obs)))
-            n_tbox, _, _ = ax[0].hist(cent_tboxes_obs,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(cent_tboxes_obs)))    
+        n_clus, bins, _ = ax[0].hist(cent_clus_obs,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(cent_clus_obs)))
+        n_pbox, _, _ = ax[0].hist(cent_pboxes_obs,bins=bins,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(cent_tboxes_obs)))
+        n_tbox, _, _ = ax[0].hist(cent_tboxes_obs,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(cent_pboxes_obs)))
         ax[0].grid()
         ax[0].set(ylabel='Freq.',title=title)
         ax[0].legend()
 
         bin_centers = (bins[:-1] + bins[1:]) / 2
-        if include_tc:
-            ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
-            ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
-        else:
-            ax[1].scatter(bin_centers, get_ratio(n_pbox,n_tbox), label='PBox Clusters',marker='_',color='red',s=50)
-            ax[1].axhline(1,ls='--',color='green',alpha=0.5)
+
+        ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
+        ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
         ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
         ax[1].set(xlabel=xlab,ylabel='Ratio')
         ax[1].grid()
@@ -729,25 +721,25 @@ def make_phys_plots(
         if observable_name=='energy':
             cent_tboxes_obs = total_unmatch_tru_energy[tbox_eta_mask]/1000
             cent_pboxes_obs = total_unmatch_pred_energy[pbox_eta_mask]/1000
-            title = f'Matched Cluster/Box Energies in central [{eta_3},{eta_4}] region'
+            title = f'Unmatched Cluster/Box Energies in central [{eta_3},{eta_4}] region'
             xlab = f'Cluster energy (GeV)'
             
         elif observable_name=='eta':
             cent_tboxes_obs = total_unmatch_tru_eta[tbox_eta_mask]
             cent_pboxes_obs = total_unmatch_pred_eta[pbox_eta_mask]
-            title = f'Matched Cluster/Box eta in central [{eta_3},{eta_4}] region'
+            title = f'Unmatched Cluster/Box eta in central [{eta_3},{eta_4}] region'
             xlab = f'eta'
             
         elif observable_name=='phi':
             cent_tboxes_obs = total_unmatch_tru_phi[tbox_eta_mask]
             cent_pboxes_obs = total_unmatch_pred_phi[pbox_eta_mask]
-            title = f'Matched Cluster/Box phi in central [{eta_3},{eta_4}] region'
+            title = f'Unmatched Cluster/Box phi in central [{eta_3},{eta_4}] region'
             xlab = f'phi'
             
         elif observable_name=='eT':
             cent_tboxes_obs = total_unmatch_tru_eT[tbox_eta_mask]/1000
             cent_pboxes_obs = total_unmatch_pred_eT[pbox_eta_mask]/1000
-            title = f'Matched Cluster/Box Transverse energy in central [{eta_3},{eta_4}] region'
+            title = f'Unmatched Cluster/Box Transverse energy in central [{eta_3},{eta_4}] region'
             xlab = f'$E_T$'
         
 
@@ -774,233 +766,93 @@ def make_phys_plots(
         plt.close()
 
     phys_plots_eta_bins_unmatched([-1.4,0.0,0.0,1.4], 'energy', save_loc)
-    phys_plots_eta_bins_unmatched([-3.2,-1.4,1.4,3.2], 'energy', save_loc)
     phys_plots_eta_bins_unmatched([-1.4,0.0,0.0,1.4], 'eta', save_loc)
-    phys_plots_eta_bins_unmatched([-3.2,-1.4,1.4,3.2], 'eta', save_loc)
     phys_plots_eta_bins_unmatched([-1.4,0.0,0.0,1.4], 'eT', save_loc)
-    phys_plots_eta_bins_unmatched([-3.2,-1.4,1.4,3.2], 'eT', save_loc)
-
-
-
-    # #total
-    # cent_clus_e = total_clus_energies[(total_clus_etas > eta_min) & (total_clus_etas < eta_max)]
-    # cent_clus_eta = total_clus_etas[(total_clus_etas > eta_min) & (total_clus_etas < eta_max)]
-    # cent_clus_phi = total_clus_phis[(total_clus_etas > eta_min) & (total_clus_etas < eta_max)]
-    # cent_clus_eT = total_clus_eT[(total_clus_etas > eta_min) & (total_clus_etas < eta_max)]
-
-
-
-    # cent_tboxes_e = total_tru_energies[(total_tru_etas > eta_min) & (total_tru_etas < eta_max)]
-    # cent_pboxes_e = total_pred_energies[(total_pred_etas > eta_min) & (total_pred_etas < eta_max)]
-    # cent_tboxes_eta = total_tru_etas[(total_tru_etas > eta_min) & (total_tru_etas < eta_max)]
-    # cent_pboxes_eta = total_pred_etas[(total_pred_etas > eta_min) & (total_pred_etas < eta_max)]
-    # cent_tboxes_phi = total_tru_phis[(total_tru_etas > eta_min) & (total_tru_etas < eta_max)]
-    # cent_pboxes_phi = total_pred_phis[(total_pred_etas > eta_min) & (total_pred_etas < eta_max)]
-    # cent_tboxes_eT = total_tru_eT[(total_tru_etas > eta_min) & (total_tru_etas < eta_max)]
-    # cent_pboxes_eT = total_pred_eT[(total_pred_etas > eta_min) & (total_pred_etas < eta_max)]
-
-    # #matched
-    # cent_match_tboxes_e = total_match_tru_energy[(total_match_tru_eta > eta_min) & (total_match_tru_eta < eta_max)]
-    # cent_match_pboxes_e = total_match_pred_energy[(total_match_pred_eta > eta_min) & (total_match_pred_eta < eta_max)]
     
-    # #unmatched
-    # cent_unmatch_tboxes_e = total_unmatch_tru_energy[(total_unmatch_tru_eta > eta_min) & (total_unmatch_tru_eta < eta_max)]
-    # cent_unmatch_pboxes_e = total_unmatch_pred_energy[(total_unmatch_pred_eta > eta_min) & (total_unmatch_pred_eta < eta_max)]
-    # cent_unmatch_tboxes_eT = total_unmatch_tru_eT[(total_unmatch_tru_eta > eta_min) & (total_unmatch_tru_eta < eta_max)]
-    # cent_unmatch_pboxes_eT = total_unmatch_pred_eT[(total_unmatch_pred_eta > eta_min) & (total_unmatch_pred_eta < eta_max)]
-    # cent_unmatch_tboxes_phi = total_unmatch_tru_phi[(total_unmatch_tru_eta > eta_min) & (total_unmatch_tru_eta < eta_max)]
-    # cent_unmatch_pboxes_phi = total_unmatch_pred_phi[(total_unmatch_pred_eta > eta_min) & (total_unmatch_pred_eta < eta_max)]
+    phys_plots_eta_bins_unmatched([-3.2,-1.4,1.4,3.2], 'energy', save_loc)
+    phys_plots_eta_bins_unmatched([-3.2,-1.4,1.4,3.2], 'eT', save_loc)
+    phys_plots_eta_bins_unmatched([-3.2,-1.4,1.4,3.2], 'eta', save_loc)
+
+    phys_plots_eta_bins_unmatched([-5.0,-3.2,3.2,5.0], 'eT', save_loc)
+    phys_plots_eta_bins_unmatched([-5.0,-3.2,3.2,5.0], 'energy', save_loc)
+    phys_plots_eta_bins_unmatched([-5.0,-3.2,3.2,5.0], 'eta', save_loc)
+    phys_plots_eta_bins_unmatched([-5.0,-3.2,3.2,5.0], 'phi', save_loc)
 
 
 
-    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    # n_clus, bins, _ = ax[0].hist(cent_clus_e/1000,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(cent_clus_e)))
-    # n_pbox, _, _ = ax[0].hist(cent_tboxes_e/1000,bins=bins,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(cent_tboxes_e)))
-    # n_tbox, _, _ = ax[0].hist(cent_pboxes_e/1000,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(cent_pboxes_e)))
-    # ax[0].grid()
-    # ax[0].set(ylabel='Freq.',title=f'Cluster/Box Energies in central [{eta_min},{eta_max}] region')
-    # ax[0].legend()
+    def phys_box_plots_eta_bins(eta_region, observable_name, save_loc):
+        cent_save_loc = save_loc + "/central/"
+        if not os.path.exists(cent_save_loc):
+            os.makedirs(cent_save_loc)
+        
+        eta_1,eta_2,eta_3,eta_4 = eta_region
 
-    # bin_centers = (bins[:-1] + bins[1:]) / 2
-    # ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
-    # ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
-    # ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
-    # ax[1].set(xlabel=f"Cluster Energy (GeV)",ylabel='Ratio')
-    # ax[1].grid()
-    # f.subplots_adjust(hspace=0)
-    # if log:
-    #     ax[0].set(yscale='log')
-    #     f.savefig(save_loc + '/central_cluster_boxes_energy_log.png')
-    # else:
-    #     ax[0].set(ylabel='Freq. Density')
-    #     f.savefig(save_loc + '/central_cluster_boxes_energy.png')
-    # plt.close()
+        # clus_eta_mask = (total_clus_etas > eta_min) & (total_clus_etas < eta_max)
+        clus_eta_mask = ((total_clus_etas > eta_1) & (total_clus_etas < eta_2) )| ((total_clus_etas > eta_3) & (total_clus_etas < eta_4))
+        tbox_eta_mask = ((total_tru_etas > eta_1) & (total_tru_etas < eta_2)) | ((total_tru_etas > eta_3) & (total_tru_etas < eta_4))
+        pbox_eta_mask = ((total_pred_etas > eta_1) & (total_pred_etas < eta_2)) | ((total_pred_etas > eta_3) & (total_pred_etas < eta_4))
 
+        if observable_name=='energy':
+            cent_clus_obs = total_clus_energies[clus_eta_mask]/1000
+            cent_tboxes_obs = total_tru_energies[tbox_eta_mask]/1000
+            cent_pboxes_obs = total_pred_energies[pbox_eta_mask]/1000
+            title = f'Cluster/Box Energies in central [{eta_3},{eta_4}] region'
+            xlab = f'Cluster energy (GeV)'
+            
+        elif observable_name=='eta':
+            cent_clus_obs = total_clus_etas[clus_eta_mask]
+            cent_tboxes_obs = total_tru_etas[tbox_eta_mask]
+            cent_pboxes_obs = total_pred_etas[pbox_eta_mask]
+            title = f'Cluster/Box eta in central [{eta_3},{eta_4}] region'
+            xlab = f'eta'
+            
+        elif observable_name=='phi':
+            cent_clus_obs = total_clus_phis[clus_eta_mask]
+            cent_tboxes_obs = total_tru_phis[tbox_eta_mask]
+            cent_pboxes_obs = total_pred_phis[pbox_eta_mask]
+            title = f'Cluster/Box phi in central [{eta_3},{eta_4}] region'
+            xlab = f'phi'
+            
+        elif observable_name=='eT':
+            cent_clus_obs = total_clus_eT[clus_eta_mask]/1000
+            cent_tboxes_obs = total_tru_eT[tbox_eta_mask]/1000
+            cent_pboxes_obs = total_pred_eT[pbox_eta_mask]/1000
+            title = f'Cluster/Box Transverse energy in central [{eta_3},{eta_4}] region'
+            xlab = f'$E_T$'
 
-    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    # n_pbox, bins, _ = ax[0].hist(cent_match_tboxes_e/1000,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(cent_match_tboxes_e)))
-    # n_tbox, _, _ = ax[0].hist(cent_match_pboxes_e/1000,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(cent_match_pboxes_e)))
-    # ax[0].grid()
-    # ax[0].set(ylabel='Freq.',title=f'Matched Box Energies in central [{eta_min},{eta_max}] region')
-    # ax[0].legend()
+        f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+        n_pbox, bins, _ = ax[0].hist(cent_pboxes_obs,bins=75,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(cent_tboxes_obs)))
+        n_clus, _, _ = ax[0].hist(cent_clus_obs,bins=bins,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(cent_clus_obs)))
+        n_tbox, _, _ = ax[0].hist(cent_tboxes_obs,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(cent_pboxes_obs)))
+        ax[0].grid()
+        ax[0].set(ylabel='Freq.',title=title)
+        ax[0].legend()
 
-    # bin_centers = (bins[:-1] + bins[1:]) / 2
-    # ax[1].scatter(bin_centers, get_ratio(n_pbox,n_tbox), label='PBox Clusters',marker='_',color='red',s=50)
-    # ax[1].axhline(1,ls='--',color='green',alpha=0.5)
-    # ax[1].set(xlabel=f"Cluster Energy (GeV)",ylabel='Ratio')
-    # ax[1].grid()
-    # f.subplots_adjust(hspace=0)
-    # if log:
-    #     ax[0].set(yscale='log')
-    #     f.savefig(save_loc + '/central_match_boxes_energy_log.png')
-    # else:
-    #     ax[0].set(ylabel='Freq. Density')
-    #     f.savefig(save_loc + '/central_match_boxes_energy.png')
-    # plt.close()
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+        ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
+        ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
+        ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
+        ax[1].set(xlabel=xlab,ylabel='Ratio')
+        ax[1].grid()
+        f.subplots_adjust(hspace=0)
+        if log:
+            ax[0].set(yscale='log')
+            f.savefig(cent_save_loc + f'/central_boxes_eta{eta_4}_{observable_name}_log.png')
+        else:
+            ax[0].set(ylabel='Freq. Density')
+            f.savefig(cent_save_loc + f'/central_boxes_eta{eta_4}_{observable_name}.png')
+        plt.close()
+    
 
-    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    # n_pbox, bins, _ = ax[0].hist(cent_unmatch_tboxes_e/1000,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(cent_unmatch_tboxes_e)))
-    # n_tbox, _, _ = ax[0].hist(cent_unmatch_pboxes_e/1000,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(cent_unmatch_pboxes_e)))
-    # ax[0].grid()
-    # ax[0].set(ylabel='Freq.',title=f'Unmatched Box Energies in central [{eta_min},{eta_max}] region')
-    # ax[0].legend()
+    phys_box_plots_eta_bins([-1.4,0.0,0.0,1.4], 'energy', save_loc)
+    phys_box_plots_eta_bins([-1.4,0.0,0.0,1.4], 'eT', save_loc)
+    phys_box_plots_eta_bins([-1.4,0.0,0.0,1.4], 'eta', save_loc)
+    phys_box_plots_eta_bins([-1.4,0.0,0.0,1.4], 'phi', save_loc)
 
-    # bin_centers = (bins[:-1] + bins[1:]) / 2
-    # ax[1].scatter(bin_centers, get_ratio(n_pbox,n_tbox), label='PBox Clusters',marker='_',color='red',s=50)
-    # ax[1].axhline(1,ls='--',color='green',alpha=0.5)
-    # ax[1].set(xlabel=f"Cluster Energy (GeV)",ylabel='Ratio')
-    # ax[1].grid()
-    # f.subplots_adjust(hspace=0)
-    # if log:
-    #     ax[0].set(yscale='log')
-    #     f.savefig(save_loc + '/central_unmatch_boxes_energy_log.png')
-    # else:
-    #     ax[0].set(ylabel='Freq. Density')
-    #     f.savefig(save_loc + '/central_unmatch_boxes_energy.png')
-    # plt.close()
-
-
-
-
-
-    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    # n_clus, bins, _ = ax[0].hist(cent_clus_eta,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_energies)))
-    # n_pbox, _, _ = ax[0].hist(cent_tboxes_eta,bins=bins,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_pred_energies)))
-    # n_tbox, _, _ = ax[0].hist(cent_pboxes_eta,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_tru_energies)))
-    # ax[0].grid()
-    # ax[0].set(ylabel='Freq.',title=f'Cluster/Box Eta in central [{eta_min},{eta_max}] region')
-    # ax[0].legend()
-
-    # bin_centers = (bins[:-1] + bins[1:]) / 2
-    # ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
-    # ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
-    # ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
-    # ax[1].set(xlabel=f"Eta",ylabel='Ratio')
-    # ax[1].grid()
-    # f.subplots_adjust(hspace=0)
-    # if log:
-    #     ax[0].set(yscale='log')
-    #     f.savefig(save_loc + '/central_cluster_boxes_eta_log.png')
-    # else:
-    #     ax[0].set(ylabel='Freq. Density')
-    #     f.savefig(save_loc + '/central_cluster_boxes_eta.png')
-    # plt.close()
-
-
-    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    # n_clus, bins, _ = ax[0].hist(cent_clus_phi,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_energies)))
-    # n_pbox, _, _ = ax[0].hist(cent_tboxes_phi,bins=bins,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_pred_energies)))
-    # n_tbox, _, _ = ax[0].hist(cent_pboxes_phi,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_tru_energies)))
-    # ax[0].grid()
-    # ax[0].set(ylabel='Freq.',title=f'Cluster/Box Phi in central [{eta_min},{eta_max}] region')
-    # ax[0].legend()
-
-    # bin_centers = (bins[:-1] + bins[1:]) / 2
-    # ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
-    # ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
-    # ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
-    # ax[1].set(xlabel=f"Phi",ylabel='Ratio')
-    # ax[1].grid()
-    # f.subplots_adjust(hspace=0)
-    # if log:
-    #     ax[0].set(yscale='log')
-    #     f.savefig(save_loc + '/central_cluster_boxes_phi_log.png')
-    # else:
-    #     ax[0].set(ylabel='Freq. Density')
-    #     f.savefig(save_loc + '/central_cluster_boxes_phi.png')
-    # plt.close()
-
-
-    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    # n_clus, bins, _ = ax[0].hist(cent_clus_eT/1000,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_energies)))
-    # n_pbox, _, _ = ax[0].hist(cent_tboxes_eT/1000,bins=bins,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_pred_energies)))
-    # n_tbox, _, _ = ax[0].hist(cent_pboxes_eT/1000,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_tru_energies)))
-    # ax[0].grid()
-    # ax[0].set(ylabel='Freq.',title=f'Cluster/Box Transverse Energy in central [{eta_min},{eta_max}] region')
-    # ax[0].legend()
-
-    # bin_centers = (bins[:-1] + bins[1:]) / 2
-    # ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
-    # ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
-    # ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
-    # ax[1].set(xlabel=f"$E_T$ (GeV)",ylabel='Ratio')
-    # ax[1].grid()
-    # f.subplots_adjust(hspace=0)
-    # if log:
-    #     ax[0].set(yscale='log')
-    #     f.savefig(save_loc + '/central_cluster_boxes_eT_log.png')
-    # else:
-    #     ax[0].set(ylabel='Freq. Density')
-    #     f.savefig(save_loc + '/central_cluster_boxes_eT.png')
-    # plt.close()
-
-
-
-
-    # #more unmatched
-    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    # n_pbox, bins, _ = ax[0].hist(cent_unmatch_tboxes_eT/1000,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_match_pred_energy)))
-    # n_tbox, _, _ = ax[0].hist(cent_unmatch_pboxes_eT/1000,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_match_tru_energy)))
-    # ax[0].grid()
-    # ax[0].set(ylabel='Freq.',title=f'Unmatched Box Transverse Energy in central [{eta_min},{eta_max}] region')
-    # ax[0].legend()
-
-    # bin_centers = (bins[:-1] + bins[1:]) / 2
-    # ax[1].scatter(bin_centers, get_ratio(n_pbox,n_tbox), label='PBox Clusters',marker='_',color='red',s=50)
-    # ax[1].axhline(1,ls='--',color='green',alpha=0.5)
-    # ax[1].set(xlabel=f"Cluster $E_T$ (GeV)",ylabel='Ratio')
-    # ax[1].grid()
-    # f.subplots_adjust(hspace=0)
-    # if log:
-    #     ax[0].set(yscale='log')
-    #     f.savefig(save_loc + '/central_unmatch_boxes_eT_log.png')
-    # else:
-    #     ax[0].set(ylabel='Freq. Density')
-    #     f.savefig(save_loc + '/central_unmatch_boxes_eT.png')
-    # plt.close()
-
-    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    # n_pbox, bins, _ = ax[0].hist(cent_unmatch_tboxes_phi,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_match_pred_energy)))
-    # n_tbox, _, _ = ax[0].hist(cent_unmatch_pboxes_phi,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_match_tru_energy)))
-    # ax[0].grid()
-    # ax[0].set(ylabel='Freq.',title=f'Unmatched Box Phi in central [{eta_min},{eta_max}] region')
-    # ax[0].legend()
-
-    # bin_centers = (bins[:-1] + bins[1:]) / 2
-    # ax[1].scatter(bin_centers, get_ratio(n_pbox,n_tbox), label='PBox Clusters',marker='_',color='red',s=50)
-    # ax[1].axhline(1,ls='--',color='green',alpha=0.5)
-    # ax[1].set(xlabel=f"Cluster phi",ylabel='Ratio')
-    # ax[1].grid()
-    # f.subplots_adjust(hspace=0)
-    # if log:
-    #     ax[0].set(yscale='log')
-    #     f.savefig(save_loc + '/central_unmatch_boxes_phi_log.png')
-    # else:
-    #     ax[0].set(ylabel='Freq. Density')
-    #     f.savefig(save_loc + '/central_unmatch_boxes_phi.png')
-    # plt.close()
-
-
+    phys_box_plots_eta_bins([-3.2,-1.4,1.4,3.2], 'energy', save_loc)
+    phys_box_plots_eta_bins([-3.2,-1.4,1.4,3.2], 'eT', save_loc)
+    phys_box_plots_eta_bins([-3.2,-1.4,1.4,3.2], 'eta', save_loc)
+    phys_box_plots_eta_bins([-3.2,-1.4,1.4,3.2], 'phi', save_loc)
 
     #####################################################################################################################################
     #Number of clusters/tboxes/pboxes in the event
