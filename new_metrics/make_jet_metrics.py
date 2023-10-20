@@ -86,12 +86,14 @@ def calculate_jet_metrics(
         event_no = a[i]['event_no']
 
         #load cells from h5
-        cells_file = "/home/users/b/bozianu/work/data/pileup50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
+        # cells_file = "/home/users/b/bozianu/work/data/pileup50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
+        cells_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(cells_file,"r") as f:
             h5group = f["caloCells"]
             cells = h5group["2d"][event_no]
 
-        clusters_file = "/home/users/b/bozianu/work/data/pileup50k/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
+        # clusters_file = "/home/users/b/bozianu/work/data/pileup50k/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
+        clusters_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(clusters_file,"r") as f:
             cl_data = f["caloCells"] 
             event_data = cl_data["1d"][event_no]
@@ -99,7 +101,8 @@ def calculate_jet_metrics(
             cluster_data = remove_nan(cluster_data)
             cluster_data = cluster_data[cluster_data['cl_E_em']+cluster_data['cl_E_had']>5000]
 
-        jets_file = "/home/users/b/bozianu/work/data/pileup50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(h5f)
+        # jets_file = "/home/users/b/bozianu/work/data/pileup50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(h5f)
+        jets_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/jets/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(jets_file,"r") as f:
             j_data = f["caloCells"]
             jet_data = j_data["2d"][event_no]
