@@ -12,114 +12,7 @@ import json
 import scipy
 
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
-from utils.utils import remove_nan
-
-
-
-def phi_mod2pi(phis):
-    repeated_phis = np.copy(phis)
-    mask = repeated_phis >= 0
-
-    repeated_phis[mask] -= 2*np.pi
-    repeated_phis[~mask] += 2*np.pi
-    return repeated_phis
-
-
-def clip_boxes_to_image(boxes, extent):
-    #https://detectron2.readthedocs.io/en/latest/_modules/torchvision/ops/boxes.html
-    boxes = torchvision.ops.box_convert(boxes,'xywh','xyxy')
-
-    dim = boxes.dim()
-    boxes_x = boxes[..., 0::2]
-    boxes_y = boxes[..., 1::2]
-    xmin,xmax,ymin,ymax = extent
-
-    if torchvision._is_tracing():
-        boxes_x = torch.max(boxes_x, torch.tensor(xmin, dtype=boxes.dtype, device=boxes.device))
-        boxes_x = torch.min(boxes_x, torch.tensor(xmax, dtype=boxes.dtype, device=boxes.device))
-        boxes_y = torch.max(boxes_y, torch.tensor(ymin, dtype=boxes.dtype, device=boxes.device))
-        boxes_y = torch.min(boxes_y, torch.tensor(ymax, dtype=boxes.dtype, device=boxes.device))
-    else:
-        boxes_x = boxes_x.clamp(min=xmin, max=xmax)
-        boxes_y = boxes_y.clamp(min=ymin, max=ymax)
-
-    clipped_boxes = torch.stack((boxes_x, boxes_y), dim=dim)
-    clipped_boxes = clipped_boxes.reshape(boxes.shape)
-    #ensure that the new clipped boxes satisfy height requirements
-    #remember here we're in xyxy coords
-    heights = (clipped_boxes[:,3]-clipped_boxes[:,1])
-    final_boxes_xyxy = clipped_boxes[heights>0.1]
-    final_boxes = torchvision.ops.box_convert(final_boxes_xyxy, 'xyxy','xywh')
-    return final_boxes
-
-
-
-
-def union(boxa,boxb):
-    x = min(boxa[0], boxb[0])
-    y = min(boxa[1], boxb[1])
-    w = max(boxa[0]+boxa[2], boxb[0]+boxb[2]) - x
-    h = max(boxa[1]+boxa[3], boxb[1]+boxb[3]) - y
-    return (x,y,w,h)
-
-def intersection(boxa,boxb):
-    x = max(boxa[0], boxb[0])
-    y = max(boxa[1], boxb[1])
-    w = min(boxa[0]+boxa[2], boxb[0]+boxb[2]) - x
-    h = min(boxa[1]+boxa[3], boxb[1]+boxb[3]) - y
-    if w<0 or h<0:
-        return ()
-    return (x,y,w,h)
-
-
-
-
-def merge_rectangles(boxes, max_size=(1.5, 1.5)):
-
-    def contains(rect_a, rect_b):
-        x1a, y1a, w1a, h1a = rect_a
-        x1b, y1b, w1b, h1b = rect_b
-        x2a, y2a = x1a + w1a, y1a + h1a
-        x2b, y2b = x1b + w1b, y1b + h1b
-        return x1a <= x1b and y1a <= y1b and x2a >= x2b and y2a >= y2b
-
-    new_boxes = list(boxes)  
-    merged_boxes = []  
-    failed_merge = []  
-
-    while new_boxes:
-        ra = new_boxes[0]  # Select the first rectangle for comparison
-        new_boxes = new_boxes[1:]  # Remove the first rectangle from the list
-
-        mask = [intersection(ra, rb) != () for rb in new_boxes]
-        merged_mask = not any(mask)  # True if ra has no intersections with any remaining rectangles
-
-        if not merged_mask:
-            rb_idx = mask.index(True)  # Find the index of the first intersecting rectangle (rb)
-            rb = new_boxes[rb_idx]  # Select the intersecting rectangle
-
-            new_boxes = new_boxes[:rb_idx] + new_boxes[rb_idx + 1:]  # Remove rb from the list of rectangles
-
-            merged_box = union(ra, rb)  # Merge ra and rb
-            if max_size is None or (merged_box[2] <= max_size[0] and merged_box[3] <= max_size[1]):
-                new_boxes.append(merged_box)  # Append the merged rectangle if it meets the size constraint
-            else:
-                failed_merge.append(ra)  # Add ra and rb to the failed_merge list if they exceed max_size
-                failed_merge.append(rb)
-        else:
-            merged_boxes.append(ra)  # Add ra to merged_boxes if no intersections were found
-
-    # Combine merged_boxes and failed_merge before checking for rectangles contained by larger rectangles
-    all_rectangles = np.concatenate((merged_boxes, failed_merge)) if failed_merge else merged_boxes
-
-    # Check for rectangles entirely contained
-    final_boxes = []
-    for box in all_rectangles:
-        if not any(contains(rb, box) for rb in all_rectangles if not np.array_equal(rb, box)):
-            final_boxes.append(box)
-
-    return final_boxes
-
+from utils.utils import remove_nan, phi_mod2pi, clip_boxes_to_image, merge_rectangles
 
 
 
@@ -266,8 +159,8 @@ for file_no in file_nos[::-1]:
 
     cells_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(file_no)
     clusters_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(file_no)
-    jets_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/jets/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(file_no)
-    chunk_size = 50
+    jets_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(file_no)
+    chunk_size = 100
 
     with h5py.File(clusters_file,"r") as f1:
         cl_data1 = f1["caloCells"] 
@@ -277,22 +170,19 @@ for file_no in file_nos[::-1]:
     chunk_counter = 0
     for i in range(int(n_events_in_file/chunk_size)):
         print('\tLoading chunk {}/{}'.format(chunk_counter,int(n_events_in_file/chunk_size)))
-
         with h5py.File(cells_file,"r") as f:
             h5group = f["caloCells"]       
             #convert to numpy arrays in chun sizes
             events = h5group["1d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
             cells = h5group["2d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
-
         with h5py.File(clusters_file,"r") as f:
             cl_data = f["caloCells"] 
-            event_data = cl_data["1d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
+            # event_data = cl_data["1d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
             cluster_data = cl_data["2d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
             cluster_cell_data = cl_data["3d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
-
         with h5py.File(jets_file,"r") as f:
             j_data = f["caloCells"]
-            event_data = j_data["1d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
+            # event_data = j_data["1d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
             jet_data = j_data["2d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
 
         #now we'll look at each event individually
@@ -416,7 +306,6 @@ for file_no in file_nos[::-1]:
             # Saving, now we save all H_* as a layer in one tensor
             # when we want to access only EM layers, just take that slice out of the sing .pt
             print('\t\tSaving image {}, id: {}, adding to dictionary...'.format(global_counter,unique_file_chunk_event_no))
-            # overall_save_path = "/srv/beegfs/scratch/shares/atlas_caloM/pileup50k/imgs/"
             overall_save_path = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cell_images/"
             H_layers = np.stack([H_tot,H_em,H_had,H_max,H_mean,H_sigma,H_energy,H_time],axis=0)
             H_layers_tensor = torch.tensor(H_layers)
@@ -433,7 +322,7 @@ for file_no in file_nos[::-1]:
             GT_jet_boxes[:,2] = (H_tot.shape[1]) * GT_jet_boxes[:,2]/(extent[1] - extent[0])
             GT_jet_boxes[:,3] = (H_tot.shape[0]) * GT_jet_boxes[:,3]/(extent[3] - extent[2])
 
-            examine_one_image(overall_save_path+"cell-image-tensor-{}.pt".format(unique_file_chunk_event_no),GT_cluster_boxes)
+            # examine_one_image(overall_save_path+"cell-image-tensor-{}.pt".format(unique_file_chunk_event_no),GT_cluster_boxes)
 
             annotation_dict[global_counter] = {
                 "image":{
@@ -475,11 +364,10 @@ for file_no in file_nos[::-1]:
 
 
             global_counter += 1
-
         chunk_counter += 1
 
 
-print('Saving json annotations file...')
+print('Saving cluster json annotations file...')
 with open('/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cluster5GeV_annotations.json','w') as json_file:
     json.dump(annotation_dict,json_file)
 

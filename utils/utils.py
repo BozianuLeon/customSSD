@@ -70,7 +70,6 @@ def remove_nan(array):
     return array[good_indices]
 
 
-
 def transform_angle(angle):
     #maps angle to [-pi,pi]
     angle %= 2 * np.pi  # Map angle to [0, 2π]
@@ -88,84 +87,111 @@ def phi_mod2pi(phis):
 
 
 
-def xyxy2cxcywh(xy):
-    """
-    Convert bounding boxes from boundary coordinates (x_min, y_min, x_max, y_max) to center-size coordinates (c_x, c_y, w, h)
-    Input xy: bounding boxes in boundary coordinates, a tensor of size (n_boxes, 4)
-    Return: bounding boxes in center-size coordinates, a tensor of size (n_boxes, 4)
-    """
-    return torch.cat([(xy[:, 2:] + xy[:, :2]) / 2, xy[:, 2:] - xy[:, :2]], dim=1)  
 
-def cxcywh2xyxy(cxcy):
-    """
-    Convert bounding boxes from center-size coordinates (c_x, c_y, w, h) to boundary coordinates (x_min, y_min, x_max, y_max).
-    Input cxcy: bounding boxes in center-size coordinates, a tensor of size (n_boxes, 4)
-    Return: bounding boxes in boundary coordinates, a tensor of size (n_boxes, 4)
-    """
-    return torch.cat([cxcy[:, :2] - (cxcy[:, 2:] / 2), cxcy[:, :2] + (cxcy[:, 2:] / 2)], dim=1)  
+#########################################################################################################################################################
+# Making cell images / dataset
+#########################################################################################################################################################
+def clip_boxes_to_image(boxes, extent):
+    #https://detectron2.readthedocs.io/en/latest/_modules/torchvision/ops/boxes.html
+    boxes = torchvision.ops.box_convert(boxes,'xywh','xyxy')
 
-def xy_to_cxcy(xy):
-    """
-    Convert bounding boxes from boundary coordinates (x_min, y_min, x_max, y_max) to center-size coordinates (c_x, c_y, w, h).
-    :param xy: bounding boxes in boundary coordinates, a tensor of size (n_boxes, 4)
-    :return: bounding boxes in center-size coordinates, a tensor of size (n_boxes, 4)
-    """
-    return torch.cat([(xy[:, 2:] + xy[:, :2]) / 2,  # c_x, c_y
-                      xy[:, 2:] - xy[:, :2]], 1)  # w, h
+    dim = boxes.dim()
+    boxes_x = boxes[..., 0::2]
+    boxes_y = boxes[..., 1::2]
+    xmin,xmax,ymin,ymax = extent
 
+    if torchvision._is_tracing():
+        boxes_x = torch.max(boxes_x, torch.tensor(xmin, dtype=boxes.dtype, device=boxes.device))
+        boxes_x = torch.min(boxes_x, torch.tensor(xmax, dtype=boxes.dtype, device=boxes.device))
+        boxes_y = torch.max(boxes_y, torch.tensor(ymin, dtype=boxes.dtype, device=boxes.device))
+        boxes_y = torch.min(boxes_y, torch.tensor(ymax, dtype=boxes.dtype, device=boxes.device))
+    else:
+        boxes_x = boxes_x.clamp(min=xmin, max=xmax)
+        boxes_y = boxes_y.clamp(min=ymin, max=ymax)
 
-def cxcy_to_xy(cxcy):
-    """
-    Convert bounding boxes from center-size coordinates (c_x, c_y, w, h) to boundary coordinates (x_min, y_min, x_max, y_max).
-    :param cxcy: bounding boxes in center-size coordinates, a tensor of size (n_boxes, 4)
-    :return: bounding boxes in boundary coordinates, a tensor of size (n_boxes, 4)
-    """
-    return torch.cat([cxcy[:, :2] - (cxcy[:, 2:] / 2),  # x_min, y_min
-                      cxcy[:, :2] + (cxcy[:, 2:] / 2)], 1)  # x_max, y_max
-
-
-def cxcy_to_gcxgcy(cxcy, priors_cxcy):
-    """
-    Encode bounding boxes (that are in center-size form) w.r.t. the corresponding prior boxes (that are in center-size form).
-    For the center coordinates, find the offset with respect to the prior box, and scale by the size of the prior box.
-    For the size coordinates, scale by the size of the prior box, and convert to the log-space.
-    In the model, we are predicting bounding box coordinates in this encoded form.
-    :param cxcy: bounding boxes in center-size coordinates, a tensor of size (n_priors, 4)
-    :param priors_cxcy: prior boxes with respect to which the encoding must be performed, a tensor of size (n_priors, 4)
-    :return: encoded bounding boxes, a tensor of size (n_priors, 4)
-    """
-
-    # The 10 and 5 below are referred to as 'variances' in the original Caffe repo, completely empirical
-    # They are for some sort of numerical conditioning, for 'scaling the localization gradient'
-    # See https://github.com/weiliu89/caffe/issues/155
-    # prior_widths = priors_cxcy[:,2]
-    # prior_heights = priors_cxcy[:,3]
-    # print('In the encode step\n Priors:', priors_cxcy.shape,torch.count_nonzero(prior_widths),torch.count_nonzero(prior_heights),'\n',priors_cxcy)
-    # print('trues?',cxcy.shape,cxcy)
-    return torch.cat([(cxcy[:, :2] - priors_cxcy[:, :2]) / (priors_cxcy[:, 2:] / 10),  # g_c_x, g_c_y
-                      torch.log(cxcy[:, 2:] / priors_cxcy[:, 2:]) * 5], 1)  # g_w, g_h
-
-
-
-def gcxgcy_to_cxcy(gcxgcy, priors_cxcy):
-    """
-    Decode bounding box coordinates predicted by the model, since they are encoded in the form mentioned above.
-    They are decoded into center-size coordinates.
-    This is the inverse of the function above.
-    :param gcxgcy: encoded bounding boxes, i.e. output of the model, a tensor of size (n_priors, 4)
-    :param priors_cxcy: prior boxes with respect to which the encoding is defined, a tensor of size (n_priors, 4)
-    :return: decoded bounding boxes in center-size form, a tensor of size (n_priors, 4)
-    """
-
-    return torch.cat([gcxgcy[:, :2] * priors_cxcy[:, 2:] / 10 + priors_cxcy[:, :2],  # c_x, c_y
-                      torch.exp(gcxgcy[:, 2:] / 5) * priors_cxcy[:, 2:]], 1)  # w, h
+    clipped_boxes = torch.stack((boxes_x, boxes_y), dim=dim)
+    clipped_boxes = clipped_boxes.reshape(boxes.shape)
+    #ensure that the new clipped boxes satisfy height requirements
+    #remember here we're in xyxy coords
+    heights = (clipped_boxes[:,3]-clipped_boxes[:,1])
+    final_boxes_xyxy = clipped_boxes[heights>0.1]
+    final_boxes = torchvision.ops.box_convert(final_boxes_xyxy, 'xyxy','xywh')
+    return final_boxes
 
 
 
 
+def union(boxa,boxb):
+    x = min(boxa[0], boxb[0])
+    y = min(boxa[1], boxb[1])
+    w = max(boxa[0]+boxa[2], boxb[0]+boxb[2]) - x
+    h = max(boxa[1]+boxa[3], boxb[1]+boxb[3]) - y
+    return (x,y,w,h)
+
+def intersection(boxa,boxb):
+    x = max(boxa[0], boxb[0])
+    y = max(boxa[1], boxb[1])
+    w = min(boxa[0]+boxa[2], boxb[0]+boxb[2]) - x
+    h = min(boxa[1]+boxa[3], boxb[1]+boxb[3]) - y
+    if w<0 or h<0:
+        return ()
+    return (x,y,w,h)
 
 
 
+def merge_rectangles(boxes, max_size=(1.5, 1.5)):
+
+    def contains(rect_a, rect_b):
+        x1a, y1a, w1a, h1a = rect_a
+        x1b, y1b, w1b, h1b = rect_b
+        x2a, y2a = x1a + w1a, y1a + h1a
+        x2b, y2b = x1b + w1b, y1b + h1b
+        return x1a <= x1b and y1a <= y1b and x2a >= x2b and y2a >= y2b
+
+    new_boxes = list(boxes)  
+    merged_boxes = []  
+    failed_merge = []  
+
+    while new_boxes:
+        ra = new_boxes[0]  # Select the first rectangle for comparison
+        new_boxes = new_boxes[1:]  # Remove the first rectangle from the list
+
+        mask = [intersection(ra, rb) != () for rb in new_boxes]
+        merged_mask = not any(mask)  # True if ra has no intersections with any remaining rectangles
+
+        if not merged_mask:
+            rb_idx = mask.index(True)  # Find the index of the first intersecting rectangle (rb)
+            rb = new_boxes[rb_idx]  # Select the intersecting rectangle
+
+            new_boxes = new_boxes[:rb_idx] + new_boxes[rb_idx + 1:]  # Remove rb from the list of rectangles
+
+            merged_box = union(ra, rb)  # Merge ra and rb
+            if max_size is None or (merged_box[2] <= max_size[0] and merged_box[3] <= max_size[1]):
+                new_boxes.append(merged_box)  # Append the merged rectangle if it meets the size constraint
+            else:
+                failed_merge.append(ra)  # Add ra and rb to the failed_merge list if they exceed max_size
+                failed_merge.append(rb)
+        else:
+            merged_boxes.append(ra)  # Add ra to merged_boxes if no intersections were found
+
+    # Combine merged_boxes and failed_merge before checking for rectangles contained by larger rectangles
+    all_rectangles = np.concatenate((merged_boxes, failed_merge)) if failed_merge else merged_boxes
+
+    # Check for rectangles entirely contained
+    final_boxes = []
+    for box in all_rectangles:
+        if not any(contains(rb, box) for rb in all_rectangles if not np.array_equal(rb, box)):
+            final_boxes.append(box)
+
+    return final_boxes
+
+
+
+
+
+#########################################################################################################################################################
+# Interpreting inference
+#########################################################################################################################################################
 
 def wrap_check_NMS(boxes,scores,ymin,ymax,threshold=0.35):
     #we now need a function that removes duplicates, ie the boxes we put into the padded region
@@ -355,7 +381,9 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
         return list_pred_cl_ns, list_tru_cl_ns  
 
 
-
+#########################################################################################################################################################
+# Useful for plotting
+#########################################################################################################################################################
 
 def make_image_using_cells(cells,channel=0,padding=True):
     #mirrors make_real_dataset.py, should return a pytorch tensor/numpy array 
