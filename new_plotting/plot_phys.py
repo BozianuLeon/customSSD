@@ -41,6 +41,9 @@ def make_phys_plots(
     save_loc = save_folder + "/phys/"
     if not os.path.exists(save_loc):
         os.makedirs(save_loc)
+    save_loc1 = save_folder + "/phys/energy/"
+    if not os.path.exists(save_loc1):
+        os.makedirs(save_loc1)
 
     #####################################################################################################################################
     #Plot 1, the energies of our boxes and the true clusters
@@ -66,10 +69,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_cluster_boxes_energy_log.png')
+        f.savefig(save_loc1 + '/total_cluster_boxes_energy_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_cluster_boxes_energy.png')
+        f.savefig(save_loc1 + '/total_cluster_boxes_energy.png')
     plt.close()
 
 
@@ -90,10 +93,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_boxes_energy_log.png')
+        f.savefig(save_loc1 + '/total_boxes_energy_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_boxes_energy.png')
+        f.savefig(save_loc1 + '/total_boxes_energy.png')
     plt.close()
 
 
@@ -115,10 +118,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_match_boxes_energy_log.png')
+        f.savefig(save_loc1 + '/total_match_boxes_energy_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_match_boxes_energy.png')
+        f.savefig(save_loc1 + '/total_match_boxes_energy.png')
     plt.close()
 
 
@@ -141,15 +144,20 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_unmatch_boxes_energy_log.png')
+        f.savefig(save_loc1 + '/total_unmatch_boxes_energy_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_unmatch_boxes_energy.png')
+        f.savefig(save_loc1 + '/total_unmatch_boxes_energy.png')
     plt.close()
 
 
     #####################################################################################################################################
     #Plot 2, the etas of our boxes and the true clusters
+
+    save_loc2 = save_folder + "/phys/eta/"
+    if not os.path.exists(save_loc2):
+        os.makedirs(save_loc2)
+
     #total
     total_clus_etas = np.concatenate(load_object(folder_containing_lists + '/cluster_etas.pkl'))
     total_pred_etas = np.concatenate(load_object(folder_containing_lists + '/tbox_etas.pkl'))
@@ -173,10 +181,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_cluster_boxes_eta_log.png')
+        f.savefig(save_loc2 + '/total_cluster_boxes_eta_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_cluster_boxes_eta.png')
+        f.savefig(save_loc2 + '/total_cluster_boxes_eta.png')
     # f.savefig(save_loc + '/total_cluster_boxes_eta.png')
     plt.close()
 
@@ -200,10 +208,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_match_boxes_eta_log.png')
+        f.savefig(save_loc2 + '/total_match_boxes_eta_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_match_boxes_eta.png')
+        f.savefig(save_loc2 + '/total_match_boxes_eta.png')
     # f.savefig(save_loc + '/total_match_boxes_eta.png')
     plt.close()
 
@@ -227,10 +235,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_unmatch_boxes_eta_log.png')
+        f.savefig(save_loc2 + '/total_unmatch_boxes_eta_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_unmatch_boxes_eta.png')
+        f.savefig(save_loc2 + '/total_unmatch_boxes_eta.png')
     # f.savefig(save_loc + '/total_unmatch_boxes_eta.png')
     plt.close()
 
@@ -238,6 +246,12 @@ def make_phys_plots(
 
     #####################################################################################################################################
     #Plot 3, the phis of our boxes and the true clusters
+
+    save_loc3 = save_folder + "/phys/phi/"
+    if not os.path.exists(save_loc3):
+        os.makedirs(save_loc3)
+
+
     #total
     total_clus_phis = np.concatenate(load_object(folder_containing_lists + '/cluster_phis.pkl'))
     total_pred_phis = np.concatenate(load_object(folder_containing_lists + '/tbox_phis.pkl'))
@@ -261,10 +275,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_cluster_boxes_phi_log.png')
+        f.savefig(save_loc3 + '/total_cluster_boxes_phi_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_cluster_boxes_phi.png')
+        f.savefig(save_loc3 + '/total_cluster_boxes_phi.png')
     # f.savefig(save_loc + '/total_cluster_boxes_phi.png')
     plt.close()
 
@@ -288,10 +302,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_match_boxes_phi_log.png')
+        f.savefig(save_loc3 + '/total_match_boxes_phi_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_match_boxes_phi.png')
+        f.savefig(save_loc3 + '/total_match_boxes_phi.png')
     # f.savefig(save_loc + 'total_match_boxes_phi.png')
     plt.close()
 
@@ -315,10 +329,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_unmatch_boxes_phi_log.png')
+        f.savefig(save_loc3 + '/total_unmatch_boxes_phi_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_unmatch_boxes_phi.png')
+        f.savefig(save_loc3 + '/total_unmatch_boxes_phi.png')
     # f.savefig(save_loc + 'total_unmatch_boxes_phi.png')
     plt.close()
 
@@ -326,6 +340,11 @@ def make_phys_plots(
 
     #####################################################################################################################################
     #Plot 4, the number of cells in our boxes and the true clusters
+
+    save_loc4 = save_folder + "/phys/n_cells/"
+    if not os.path.exists(save_loc4):
+        os.makedirs(save_loc4)
+
     #total
     total_clus_n_cells = np.concatenate(load_object(folder_containing_lists + '/cluster_n_cells.pkl'))
     total_pred_n_cells = np.concatenate(load_object(folder_containing_lists + '/tbox_n_cells.pkl'))
@@ -349,10 +368,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_cluster_boxes_n_cells_log.png')
+        f.savefig(save_loc4 + '/total_cluster_boxes_n_cells_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_cluster_boxes_n_cells.png')
+        f.savefig(save_loc4 + '/total_cluster_boxes_n_cells.png')
     # f.savefig(save_loc + '/total_cluster_boxes_n_cells.png')
     plt.close()
 
@@ -374,10 +393,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_boxes_n_cells_log.png')
+        f.savefig(save_loc4 + '/total_boxes_n_cells_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_boxes_n_cells.png')
+        f.savefig(save_loc4 + '/total_boxes_n_cells.png')
     plt.close()
 
 
@@ -400,10 +419,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_match_boxes_n_cells_log.png')
+        f.savefig(save_loc4 + '/total_match_boxes_n_cells_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_match_boxes_n_cells.png')
+        f.savefig(save_loc4 + '/total_match_boxes_n_cells.png')
     # f.savefig(save_loc + 'total_match_boxes_n_cells.png')
     plt.close()
 
@@ -427,10 +446,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_unmatch_boxes_n_cells_log.png')
+        f.savefig(save_loc4 + '/total_unmatch_boxes_n_cells_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_unmatch_boxes_n_cells.png')
+        f.savefig(save_loc4 + '/total_unmatch_boxes_n_cells.png')
     # f.savefig(save_loc + 'total_unmatch_boxes_n_cells.png')
     plt.close()
 
@@ -460,10 +479,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_cluster_boxes_eT_log.png')
+        f.savefig(save_loc1 + '/total_cluster_boxes_eT_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_cluster_boxes_eT.png')
+        f.savefig(save_loc1 + '/total_cluster_boxes_eT.png')
     plt.close()
 
 
@@ -484,10 +503,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_boxes_eT_log.png')
+        f.savefig(save_loc1 + '/total_boxes_eT_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_boxes_eT.png')
+        f.savefig(save_loc1 + '/total_boxes_eT.png')
     plt.close()
 
 
@@ -509,10 +528,10 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_match_boxes_eT_log.png')
+        f.savefig(save_loc1 + '/total_match_boxes_eT_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_match_boxes_eT.png')
+        f.savefig(save_loc1 + '/total_match_boxes_eT.png')
     plt.close()
 
 
@@ -535,14 +554,16 @@ def make_phys_plots(
     f.subplots_adjust(hspace=0)
     if log:
         ax[0].set(yscale='log')
-        f.savefig(save_loc + '/total_unmatch_boxes_eT_log.png')
+        f.savefig(save_loc1 + '/total_unmatch_boxes_eT_log.png')
     else:
         ax[0].set(ylabel='Freq. Density')
-        f.savefig(save_loc + '/total_unmatch_boxes_eT.png')
+        f.savefig(save_loc1 + '/total_unmatch_boxes_eT.png')
     plt.close()
 
 
 
+    #####################################################################################################################################
+    #####################################################################################################################################
     #####################################################################################################################################
     #Now only looking at central boxes [-2,2]
     eta_min,eta_max = -2.0, 2.0  
@@ -610,7 +631,6 @@ def make_phys_plots(
         plt.close()
         
 
-
     phys_plots_eta_bins([-1.4,0.0,0.0,1.4], 'energy', save_loc)
     phys_plots_eta_bins([-1.4,0.0,0.0,1.4], 'eT', save_loc)
     phys_plots_eta_bins([-1.4,0.0,0.0,1.4], 'eta', save_loc)
@@ -631,8 +651,7 @@ def make_phys_plots(
     phys_plots_eta_bins([-2.5,-2.1,2.1,2.5], 'eta', save_loc)
     phys_plots_eta_bins([-2.5,-2.1,2.1,2.5], 'phi', save_loc)
 
-
-
+    #####################################################################################################################################
     ##Matched
     def phys_plots_eta_bins_matched(eta_region, observable_name, save_loc):
         cent_save_loc = save_loc + "/central/matched/"
@@ -699,7 +718,6 @@ def make_phys_plots(
         plt.close()
 
 
-
     phys_plots_eta_bins_matched([-1.4,0.0,0.0,1.4], 'energy', save_loc)
     phys_plots_eta_bins_matched([-3.2,-1.4,1.4,3.2], 'energy', save_loc)
     phys_plots_eta_bins_matched([-1.4,0.0,0.0,1.4], 'eta', save_loc)
@@ -707,7 +725,7 @@ def make_phys_plots(
     phys_plots_eta_bins_matched([-1.4,0.0,0.0,1.4], 'eT', save_loc)
     phys_plots_eta_bins_matched([-3.2,-1.4,1.4,3.2], 'eT', save_loc)
 
-
+    #####################################################################################################################################
     ##UnMatched
     def phys_plots_eta_bins_unmatched(eta_region, observable_name, save_loc):
         cent_save_loc = save_loc + "/central/unmatched/"
@@ -768,7 +786,7 @@ def make_phys_plots(
     phys_plots_eta_bins_unmatched([-1.4,0.0,0.0,1.4], 'energy', save_loc)
     phys_plots_eta_bins_unmatched([-1.4,0.0,0.0,1.4], 'eta', save_loc)
     phys_plots_eta_bins_unmatched([-1.4,0.0,0.0,1.4], 'eT', save_loc)
-    
+
     phys_plots_eta_bins_unmatched([-3.2,-1.4,1.4,3.2], 'energy', save_loc)
     phys_plots_eta_bins_unmatched([-3.2,-1.4,1.4,3.2], 'eT', save_loc)
     phys_plots_eta_bins_unmatched([-3.2,-1.4,1.4,3.2], 'eta', save_loc)
@@ -778,16 +796,13 @@ def make_phys_plots(
     phys_plots_eta_bins_unmatched([-5.0,-3.2,3.2,5.0], 'eta', save_loc)
     phys_plots_eta_bins_unmatched([-5.0,-3.2,3.2,5.0], 'phi', save_loc)
 
-
-
+    #####################################################################################################################################
     def phys_box_plots_eta_bins(eta_region, observable_name, save_loc):
         cent_save_loc = save_loc + "/central/"
         if not os.path.exists(cent_save_loc):
             os.makedirs(cent_save_loc)
         
         eta_1,eta_2,eta_3,eta_4 = eta_region
-
-        # clus_eta_mask = (total_clus_etas > eta_min) & (total_clus_etas < eta_max)
         clus_eta_mask = ((total_clus_etas > eta_1) & (total_clus_etas < eta_2) )| ((total_clus_etas > eta_3) & (total_clus_etas < eta_4))
         tbox_eta_mask = ((total_tru_etas > eta_1) & (total_tru_etas < eta_2)) | ((total_tru_etas > eta_3) & (total_tru_etas < eta_4))
         pbox_eta_mask = ((total_pred_etas > eta_1) & (total_pred_etas < eta_2)) | ((total_pred_etas > eta_3) & (total_pred_etas < eta_4))
@@ -853,6 +868,8 @@ def make_phys_plots(
     phys_box_plots_eta_bins([-3.2,-1.4,1.4,3.2], 'eT', save_loc)
     phys_box_plots_eta_bins([-3.2,-1.4,1.4,3.2], 'eta', save_loc)
     phys_box_plots_eta_bins([-3.2,-1.4,1.4,3.2], 'phi', save_loc)
+
+
 
     #####################################################################################################################################
     #Number of clusters/tboxes/pboxes in the event
