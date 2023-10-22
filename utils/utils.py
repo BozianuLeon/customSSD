@@ -255,7 +255,6 @@ def wrap_check_truth(boxes,ymin,ymax):
 
 
 def get_cells_from_boxes(boxes,cells):
-    print('Hello here')
     #boxes in xyxy
     ymin,ymax = min(cells['cell_phi']),max(cells['cell_phi'])
 
@@ -298,7 +297,6 @@ def get_cells_from_boxes(boxes,cells):
         
         tot_cond = np.logical_and(x_condition,y_cond)
         cells_here = cells[np.where(tot_cond)]
-        print('cells shape',cells_here.shape)
         #guard against boxes containing no cells!
         if not len(cells_here)==0:
             list_o_cells.append(cells_here)
