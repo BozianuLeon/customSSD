@@ -18,11 +18,11 @@ from utils.utils import remove_nan, phi_mod2pi, clip_boxes_to_image, merge_recta
 
 def get_cluster_bounding_boxes(cluster_data,cells,event_no,extent):
     clusters = cluster_data[event_no][['cl_E_em', 'cl_E_had', 'cl_cell_n', 'cl_eta', 'cl_phi', 'cl_pt', 'cl_time']]
-    clusters = remove_nan(clusters) #remove nan padding
+    # clusters = remove_nan(clusters) #remove nan padding
     cluster_cells = cluster_cell_data[event_no]
-
-    filtered_clusters = clusters[(clusters['cl_E_em']+clusters['cl_E_had']) > 5000]
-    filtered_cluster_cells = cluster_cells[(clusters['cl_E_em']+clusters['cl_E_had']) > 5000]
+    mask1 = (clusters['cl_E_em']+clusters['cl_E_had']) > 5000
+    filtered_clusters = clusters[mask1]
+    filtered_cluster_cells = cluster_cells[mask1]
 
     #loop over filtered clusters in this event 
     box_list = []
