@@ -333,6 +333,17 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
 
 def n_clusters_per_box(truth_boxes,cluster_data):
+    # this function should tell us how many topoclusters are inside each truth box
+    clusters_xy = stu(cluster_data[['cl_eta','cl_phi']])
+    contained_mask = (clusters_xy[:, 0] >= x_min-0.01) & (clusters_xy[:, 0] <= x_max+0.01) & (clusters_xy[:, 1] >= y_min-0.01) & (clusters_xy[:, 1] <= y_max+0.01)
+    
+    return
+
+
+def clusters_in_box_E_diff(truth_boxes,cluster_data):
+    # this function should compare the truth boxes to ALL clusters contained within them
+    # this used the cell_Ids of clusters (NOT cl_cell_ information)
+
     
     return
 
