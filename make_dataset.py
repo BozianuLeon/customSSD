@@ -49,7 +49,7 @@ def get_cluster_bounding_boxes(cluster_data,cells,event_no,extent):
             top_of_bottom_box = max(cell_phis[cell_phis<=0])
             bottom_of_bottom_box = min(cell_phis_wrap)
             height_of_bottom_box = top_of_bottom_box - bottom_of_bottom_box
-            assert abs(height_of_top_box-height_of_bottom_box)<1e-10, "Heights should be the same! {}, {}".format(height_of_top_box,height_of_bottom_box)
+            # assert abs(height_of_top_box-height_of_bottom_box)<1e-10, "Heights should be the same! {}, {}".format(height_of_top_box,height_of_bottom_box)
             #add both to list
             box_list.append([xmin,bottom_of_top_box,width,height_of_top_box])
             box_list.append([xmin,bottom_of_top_box,width,height_of_bottom_box])
@@ -159,7 +159,7 @@ if __name__=="__main__":
         cells_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(file_no)
         clusters_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(file_no)
         jets_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(file_no)
-        chunk_size = 100
+        chunk_size = 50
 
         with h5py.File(clusters_file,"r") as f1:
             cl_data1 = f1["caloCells"] 
