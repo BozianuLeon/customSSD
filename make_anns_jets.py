@@ -43,10 +43,8 @@ def get_jet_bounding_boxes(jet_data,event_no,extent,min_max_tuple):
             else:
                 box_list.append([xmin,ymin,WIDTH,HEIGHT])
 
-            tensor_of_boxes = torch.tensor(box_list)
-            boxes_xyxy_tensor = torchvision.ops.box_convert(tensor_of_boxes,'xywh','xyxy')
-            clipped_boxes_xyxy = clip_boxes_to_image(boxes_xyxy_tensor,extent)
-            clipped_boxes = torchvision.ops.box_convert(clipped_boxes_xyxy, 'xyxy','xywh')
+        tensor_of_boxes = torch.tensor(box_list)
+        clipped_boxes = clip_boxes_to_image(tensor_of_boxes,extent) # Custom from detectron + xywh->xyxy->xywh
 
     else:
         print('NO JETS IN THIS EVENT',len(real_jets))
@@ -56,7 +54,26 @@ def get_jet_bounding_boxes(jet_data,event_no,extent,min_max_tuple):
 
 
 
+def examine_one_image(path,boxes_array,extent):
+    #code to plot the calorimeter + cluster bboxes 
+    #boxes should be in x,y,w,h 
+    print('Examining one image, then exiting.')
+    loaded_tensor = torch.load(path)
 
+    f,ax = plt.subplots()
+    ii = ax.imshow(loaded_tensor[0],cmap='binary_r')
+    # ax.hlines([-np.pi,np.pi],-3,3,color='red',ls='dashed')
+    # ax.hlines([-1.9396086193266369,1.940238044375465],-3,3,color='orange',ls='dashed')
+    for bbx in boxes_array:
+        bb = matplotlib.patches.Rectangle((bbx[0],bbx[1]),bbx[2],bbx[3],lw=1,ec='limegreen',fc='none')
+        ax.add_patch(bb)
+    cbar = f.colorbar(ii,ax=ax)
+    cbar.ax.get_yaxis().labelpad = 10
+    cbar.set_label('cell significance', rotation=90)
+    ax.set(xlabel='eta',ylabel='phi')
+    f.savefig('example-make-jet.png')
+    plt.close()
+    quit()
 
 
 
@@ -118,7 +135,6 @@ if __name__=="__main__":
         repeat_frac = 0.5
         repeat_rows = int(H_tot.shape[0]*repeat_frac)
         one_box_height = (yedges[-1]-yedges[0])/H_tot.shape[0]
-
         # Padding
         H_tot  = np.pad(H_tot, ((repeat_rows,repeat_rows),(0,0)),'wrap')
 
@@ -138,7 +154,6 @@ if __name__=="__main__":
 
                 extent = (xedges[0],xedges[-1],yedges[0]-(repeat_rows*one_box_height),yedges[-1]+(repeat_rows*one_box_height))
                 GT_jet_boxes = get_jet_bounding_boxes(jet_data, event_no, extent, (min(cell_phis),max(cell_phis)))
-                    
 
                 # Saving, now we save all H_* as a layer in one tensor
                 # when we want to access only EM layers, just take that slice out of the sing .pt
@@ -147,12 +162,14 @@ if __name__=="__main__":
                 # H_layers = np.stack([H_tot,H_em,H_had,H_max,H_mean,H_sigma,H_energy,H_time],axis=0)
                 # H_layers_tensor = torch.tensor(H_layers)
                 # torch.save(H_layers_tensor,overall_save_path+"cell-image-tensor-{}.pt".format(unique_file_chunk_event_no))
-
+                print('GT_jet_boxes\n',GT_jet_boxes)
                 #  we'll need to scale the boxes by num bins and x/y range
                 GT_jet_boxes[:,0] = (H_tot.shape[1]) * (GT_jet_boxes[:,0]-extent[0])/(extent[1] - extent[0])
                 GT_jet_boxes[:,1] = (H_tot.shape[0]) * (GT_jet_boxes[:,1]-extent[2])/(extent[3] - extent[2])
                 GT_jet_boxes[:,2] = (H_tot.shape[1]) * GT_jet_boxes[:,2]/(extent[1] - extent[0])
                 GT_jet_boxes[:,3] = (H_tot.shape[0]) * GT_jet_boxes[:,3]/(extent[3] - extent[2])
+
+                # examine_one_image(overall_save_path+"cell-image-tensor-{}.pt".format(unique_file_chunk_event_no),GT_jet_boxes,extent)
 
                 annotation_dict_jet[global_counter] = {
                     "image":{

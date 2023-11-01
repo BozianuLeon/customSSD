@@ -63,7 +63,7 @@ def get_cluster_bounding_boxes(cluster_data,cells,event_no,extent):
             box_list.append([xmin,bottom_of_new_box,width,height])
 
     tensor_of_boxes = torch.tensor(box_list)
-    clipped_boxes = clip_boxes_to_image(tensor_of_boxes,extent) #custom from detectron + xywh->xyxy->xywh
+    clipped_boxes = clip_boxes_to_image(tensor_of_boxes,extent) # custom from detectron + xywh->xyxy->xywh
     merged_boxes = merge_rectangles(clipped_boxes.tolist()) #merge overlapping/contained boxes, taking the union
 
     return np.array(merged_boxes)
@@ -86,6 +86,24 @@ def examine_one_image(path,boxes_array):
     cbar.set_label('cell significance', rotation=90)
     ax.set(xlabel='eta',ylabel='phi')
     f.savefig('examine-1.png')
+    plt.close()
+    quit()
+
+def examine_one_image2(path,boxes_array,extent):
+    #code to plot the calorimeter + cluster bboxes 
+    #boxes should be in x,y,w,h 
+    print('Examining one image, then exiting.')
+    loaded_tensor = torch.load(path)
+    f,ax = plt.subplots()
+    ii = ax.imshow(loaded_tensor[3],cmap='binary_r',extent=extent,origin='lower')
+    for bbx in boxes_array:
+        bb = matplotlib.patches.Rectangle((bbx[0],bbx[1]),bbx[2],bbx[3],lw=1,ec='limegreen',fc='none')
+        ax.add_patch(bb)
+    cbar = f.colorbar(ii,ax=ax)
+    cbar.ax.get_yaxis().labelpad = 10
+    cbar.set_label('cell significance', rotation=90)
+    ax.set(xlabel='eta',ylabel='phi')
+    f.savefig('examine-1b.png')
     plt.close()
     quit()
 
@@ -151,9 +169,9 @@ if __name__=="__main__":
                 repeat_frac = 0.5
                 repeat_rows = int(H_tot.shape[0]*repeat_frac)
                 one_box_height = (yedges[-1]-yedges[0])/H_tot.shape[0]
+                H_tot  = np.pad(H_tot, ((repeat_rows,repeat_rows),(0,0)),'wrap')
 
                 extent = (xedges[0],xedges[-1],yedges[0]-(repeat_rows*one_box_height),yedges[-1]+(repeat_rows*one_box_height))                                          
-
                 GT_cluster_boxes = get_cluster_bounding_boxes(cluster_data,cells,event_no,extent)
                     
                 # Saving, now we save all H_* as a layer in one tensor
@@ -163,6 +181,7 @@ if __name__=="__main__":
                 # H_layers = np.stack([H_tot,H_em,H_had,H_max,H_mean,H_sigma,H_energy,H_time],axis=0)
                 # H_layers_tensor = torch.tensor(H_layers)
                 # torch.save(H_layers_tensor,overall_save_path+"cell-image-tensor-{}.pt".format(unique_file_chunk_event_no))
+                # examine_one_image2(overall_save_path+"cell-image-tensor-{}.pt".format(unique_file_chunk_event_no),GT_cluster_boxes,extent)
 
                 #  we'll need to scale the boxes by num bins and x/y range
                 GT_cluster_boxes[:,0] = (H_tot.shape[1]) * (GT_cluster_boxes[:,0]-extent[0])/(extent[1] - extent[0])
