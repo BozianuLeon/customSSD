@@ -162,7 +162,6 @@ if __name__=="__main__":
                 # H_layers = np.stack([H_tot,H_em,H_had,H_max,H_mean,H_sigma,H_energy,H_time],axis=0)
                 # H_layers_tensor = torch.tensor(H_layers)
                 # torch.save(H_layers_tensor,overall_save_path+"cell-image-tensor-{}.pt".format(unique_file_chunk_event_no))
-                print('GT_jet_boxes\n',GT_jet_boxes)
                 #  we'll need to scale the boxes by num bins and x/y range
                 GT_jet_boxes[:,0] = (H_tot.shape[1]) * (GT_jet_boxes[:,0]-extent[0])/(extent[1] - extent[0])
                 GT_jet_boxes[:,1] = (H_tot.shape[0]) * (GT_jet_boxes[:,1]-extent[2])/(extent[3] - extent[2])
