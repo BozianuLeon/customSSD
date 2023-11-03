@@ -338,8 +338,10 @@ def make_box_metric_plots(
 #jaccard index
 
 
-folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_50k5_mu_20e/box_metrics/"
-save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_50k5_mu_20e/"
+folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/box_metrics/"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD1_50k5_mu_15e/"
+
+
 if __name__=="__main__":
     print('Making plots about boxes')
     make_box_metric_plots(folder_to_look_in,save_at)
