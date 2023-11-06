@@ -86,6 +86,9 @@ def phi_mod2pi(phis):
     return repeated_phis
 
 
+#########################################################################################################################################################
+# Model Requirements
+#########################################################################################################################################################
 def xyxy2cxcywh(xy):
     """
     Convert bounding boxes from boundary coordinates (x_min, y_min, x_max, y_max) to center-size coordinates (c_x, c_y, w, h)

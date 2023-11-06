@@ -11,7 +11,6 @@ except ModuleNotFoundError:
 
 # caution: path[0] is reserved for script path (or '' in REPL)
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
-# from utils.metrics import delta_n, n_unmatched_truth, n_unmatched_preds, centre_diffs, hw_diffs, area_covered
 from utils.metrics import delta_n, n_matched_preds, n_unmatched_preds, n_matched_truth, n_unmatched_truth, percentage_total_area_covered_by_boxes, percentage_truth_area_covered
 from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan
 MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
@@ -40,7 +39,7 @@ def calculate_box_metrics(
     folder_containing_struc_array,
     save_folder,
 ):
-
+    wc = False # wrap check before calc metrics 
     with open(folder_containing_struc_array + "/struc_array.npy", 'rb') as f:
         a = np.load(f)
 
@@ -53,18 +52,20 @@ def calculate_box_metrics(
         pees = preds[np.where(preds[:,0] > 0)]
         tees = trues[np.where(trues[:,0] > 0)]
 
-        pees = torch.tensor(pees)
-        tees = torch.tensor(tees)
-
         #make boxes cover extent
         tees[:,(0,2)] = (tees[:,(0,2)]*(extent_i[1]-extent_i[0]))+extent_i[0]
         tees[:,(1,3)] = (tees[:,(1,3)]*(extent_i[3]-extent_i[2]))+extent_i[2]
 
         pees[:,(0,2)] = (pees[:,(0,2)]*(extent_i[1]-extent_i[0]))+extent_i[0]
         pees[:,(1,3)] = (pees[:,(1,3)]*(extent_i[3]-extent_i[2]))+extent_i[2]
-        # wc_pred_boxes = wrap_check_NMS(pees,scores,MIN_CELLS_PHI,MAX_CELLS_PHI,threshold=0.2)
-        # wc_truth_boxes = wrap_check_truth(tees,MIN_CELLS_PHI,MAX_CELLS_PHI)
-  
+        if wc:
+            pees = wrap_check_NMS(pees,scores,MIN_CELLS_PHI,MAX_CELLS_PHI,threshold=0.2)
+            tees = wrap_check_truth(tees,MIN_CELLS_PHI,MAX_CELLS_PHI)
+
+        pees = torch.tensor(pees)
+        tees = torch.tensor(tees)
+        print(i)
+
         #store the results
         results['n_truth'].append(len(tees))
         results['n_preds'].append(len(pees))
@@ -78,7 +79,8 @@ def calculate_box_metrics(
         results['percentage_truth_area_covered'].append(percentage_truth_area_covered(pees,tees))
 
 
-    save_loc = save_folder + "/box_metrics/"
+    save_loc = save_folder + "/box_metrics_wc/" if wc else save_folder + "/box_metrics/"
+
     if not os.path.exists(save_loc):
         os.makedirs(save_loc)
 

@@ -84,14 +84,18 @@ def calculate_phys_metrics(
 
         pees = preds[np.where(preds[:,0] > 0)]
         tees = trues[np.where(trues[:,0] > 0)]
-        pees = torch.tensor(pees)
-        tees = torch.tensor(tees)
 
+        #make boxes cover extent
         tees[:,(0,2)] = (tees[:,(0,2)]*(extent_i[1]-extent_i[0]))+extent_i[0]
         tees[:,(1,3)] = (tees[:,(1,3)]*(extent_i[3]-extent_i[2]))+extent_i[2]
         pees[:,(0,2)] = (pees[:,(0,2)]*(extent_i[1]-extent_i[0]))+extent_i[0]
         pees[:,(1,3)] = (pees[:,(1,3)]*(extent_i[3]-extent_i[2]))+extent_i[2]
 
+        #wrap check boxes here
+        pees = wrap_check_NMS(pees,scores,MIN_CELLS_PHI,MAX_CELLS_PHI,threshold=0.2)
+        tees = wrap_check_truth(tees,MIN_CELLS_PHI,MAX_CELLS_PHI)
+        print(i)
+        
         #get the cells
         h5f = a[i]['h5file']
         try:
@@ -125,25 +129,25 @@ def calculate_phys_metrics(
         cluster_level_results['cluster_n_cells'].append(cluster_data['cl_cell_n'].tolist())
 
         #total
-        list_p_cl_es_tot, list_t_cl_es_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='energy')
-        list_p_cl_eT_tot, list_t_cl_eT_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='eT')
-        list_p_cl_etas_tot, list_t_cl_etas_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='eta')
-        list_p_cl_phis_tot, list_t_cl_phis_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='phi') 
-        list_p_cl_ns_tot, list_t_cl_ns_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='n_cells') 
+        list_p_cl_es_tot, list_t_cl_es_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='energy',wc=True)
+        list_p_cl_eT_tot, list_t_cl_eT_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='eT',wc=True)
+        list_p_cl_etas_tot, list_t_cl_etas_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='eta',wc=True)
+        list_p_cl_phis_tot, list_t_cl_phis_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='phi',wc=True)
+        list_p_cl_ns_tot, list_t_cl_ns_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='n_cells',wc=True)
 
         #matched
-        list_p_cl_es, list_t_cl_es = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='energy')
-        list_p_cl_eT, list_t_cl_eT = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eT')
-        list_p_cl_etas, list_t_cl_etas = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eta')
-        list_p_cl_phis, list_t_cl_phis = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='phi')
-        list_p_cl_ns, list_t_cl_ns = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='n_cells')
+        list_p_cl_es, list_t_cl_es = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='energy',wc=True)
+        list_p_cl_eT, list_t_cl_eT = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eT',wc=True)
+        list_p_cl_etas, list_t_cl_etas = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eta',wc=True)
+        list_p_cl_phis, list_t_cl_phis = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='phi',wc=True)
+        list_p_cl_ns, list_t_cl_ns = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='n_cells',wc=True)
 
         #unmatched
-        list_p_cl_es_unm, list_t_cl_es_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='energy')
-        list_p_cl_eT_unm, list_t_cl_eT_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='eT')
-        list_p_cl_etas_unm, list_t_cl_etas_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='eta')
-        list_p_cl_phis_unm, list_t_cl_phis_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='phi') 
-        list_p_cl_ns_unm, list_t_cl_ns_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='n_cells') 
+        list_p_cl_es_unm, list_t_cl_es_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='energy',wc=True)
+        list_p_cl_eT_unm, list_t_cl_eT_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='eT',wc=True)
+        list_p_cl_etas_unm, list_t_cl_etas_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='eta',wc=True)
+        list_p_cl_phis_unm, list_t_cl_phis_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='phi',wc=True)
+        list_p_cl_ns_unm, list_t_cl_ns_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='n_cells',wc=True)
         
         cluster_level_results['n_tboxes'].append(len(tees))
         cluster_level_results['num_tboxes'].append(len(list_t_cl_es_tot))

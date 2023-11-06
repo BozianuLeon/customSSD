@@ -255,15 +255,19 @@ def area_covered(truth_boxes,predicted_boxes,filter=False):
 
 
 
-def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match',target='energy'):
+def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match',target='energy',wc=False):
     #arguments are:
     #pred_boxes, model output, no augmentation/wrap checking [n_preds,4] NO WRAP CHECK
     #truth_boxes, from .npy file, [n_objs, 4]
     #mode, tells us whether we should look at matched predictions, unmatched, or all (None) ['match','unmatch']
     #target, cluster statistic to check ['energy','eta','phi']
+    #wc, if the boxes have been wrap checked before this function
 
-    wc_pred_boxes = wrap_check_NMS(pred_boxes,scores,min(cells['cell_phi']),max(cells['cell_phi']),threshold=0.2)
-    wc_truth_boxes = wrap_check_truth(truth_boxes,min(cells['cell_phi']),max(cells['cell_phi']))
+    wc_pred_boxes = pred_boxes
+    wc_truth_boxes = truth_boxes
+    if not wc:
+        wc_pred_boxes = wrap_check_NMS(pred_boxes,scores,min(cells['cell_phi']),max(cells['cell_phi']),threshold=0.2)
+        wc_truth_boxes = wrap_check_truth(truth_boxes,min(cells['cell_phi']),max(cells['cell_phi']))
 
     if mode=='match':
         iou_mat = torchvision.ops.boxes.box_iou(torch.tensor(wc_truth_boxes),torch.tensor(wc_pred_boxes))
@@ -334,6 +338,7 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
 def n_clusters_per_box(truth_boxes,cluster_data):
     # this function should tell us how many topoclusters are inside each truth box
+    # find the number of clusters that make up each truth box.
     clusters_xy = stu(cluster_data[['cl_eta','cl_phi']])
     contained_mask = (clusters_xy[:, 0] >= x_min-0.01) & (clusters_xy[:, 0] <= x_max+0.01) & (clusters_xy[:, 1] >= y_min-0.01) & (clusters_xy[:, 1] <= y_max+0.01)
     
