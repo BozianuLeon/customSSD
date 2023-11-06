@@ -123,132 +123,143 @@ def percentage_truth_area_covered(preds,truths,iou_thresh=0.01):
 #     return delta_n_matched_preds
 
 
-def centre_diffs(truth_boxes,predicted_boxes,filter=False):
-    if filter:
-        iou = torchvision.ops.boxes.box_iou(truth_boxes,predicted_boxes)
-        matched_vals, matches = iou.max(dim=0)
-        filtered_matches = matches[matched_vals>0]
-        matched_truth_boxes_this_image = truth_boxes[filtered_matches]
-        predicted_boxes = predicted_boxes[matched_vals>0]
+# def centre_diffs(truth_boxes,predicted_boxes,filter=False):
+#     if filter:
+#         iou = torchvision.ops.boxes.box_iou(truth_boxes,predicted_boxes)
+#         matched_vals, matches = iou.max(dim=0)
+#         filtered_matches = matches[matched_vals>0]
+#         matched_truth_boxes_this_image = truth_boxes[filtered_matches]
+#         predicted_boxes = predicted_boxes[matched_vals>0]
 
-    elif filter=='rad':
-        pcentres = (pboxes[:,2:] + pboxes[:,:2]) * 0.5
-        tcentres = (tboxes[:,2:] + tboxes[:,:2]) * 0.5
-        dist_mat = np.linalg.norm((pcentres[:,None] - tcentres), axis=-1)
-        thresh_mat = np.where(dist_mat < 0.4, dist_mat, 0).reshape(len(pboxes),len(tboxes))
-        first_dim,second_dim = np.nonzero(thresh_mat)
-        predicted_boxes = predicted_boxes[first_dim]
-        matched_truth_boxes_this_image = truth_boxes[second_dim]
+#     elif filter=='rad':
+#         pcentres = (pboxes[:,2:] + pboxes[:,:2]) * 0.5
+#         tcentres = (tboxes[:,2:] + tboxes[:,:2]) * 0.5
+#         dist_mat = np.linalg.norm((pcentres[:,None] - tcentres), axis=-1)
+#         thresh_mat = np.where(dist_mat < 0.4, dist_mat, 0).reshape(len(pboxes),len(tboxes))
+#         first_dim,second_dim = np.nonzero(thresh_mat)
+#         predicted_boxes = predicted_boxes[first_dim]
+#         matched_truth_boxes_this_image = truth_boxes[second_dim]
 
-    else:
-        #distance between the centre of predicted box and its "closest" (matched) truth box
-        iou_mat = torchvision.ops.boxes.distance_box_iou(truth_boxes,predicted_boxes)
-        matched_vals, matches = iou_mat.max(dim=0)
-        matched_truth_boxes_this_image = truth_boxes[matches]
-
-
-    #turn into cx, cy, w, h coords
-    tru_cxcywh = xy_to_cxcy(matched_truth_boxes_this_image)
-    det_cxcywh = xy_to_cxcy(predicted_boxes)
-
-    #squared L2 norm for difference in centers
-    cxcy_diff = torch.sqrt(torch.sum((tru_cxcywh[:,:2]-det_cxcywh[:,:2])**2,dim=1))
-    return cxcy_diff.tolist()
+#     else:
+#         #distance between the centre of predicted box and its "closest" (matched) truth box
+#         iou_mat = torchvision.ops.boxes.distance_box_iou(truth_boxes,predicted_boxes)
+#         matched_vals, matches = iou_mat.max(dim=0)
+#         matched_truth_boxes_this_image = truth_boxes[matches]
 
 
+#     #turn into cx, cy, w, h coords
+#     tru_cxcywh = xy_to_cxcy(matched_truth_boxes_this_image)
+#     det_cxcywh = xy_to_cxcy(predicted_boxes)
 
-def hw_diffs(truth_boxes,predicted_boxes,ratio=False,filter=False):
-    #distance between the centre of predicted box and its "closest" (matched) truth box
-    #returns two lists of the differences in height and width
+#     #squared L2 norm for difference in centers
+#     cxcy_diff = torch.sqrt(torch.sum((tru_cxcywh[:,:2]-det_cxcywh[:,:2])**2,dim=1))
+#     return cxcy_diff.tolist()
 
-    if filter:
-        iou = torchvision.ops.boxes.box_iou(truth_boxes,predicted_boxes)
-        matched_vals, matches = iou.max(dim=0)
-        filtered_matches = matches[matched_vals>0]
-        matched_truth_boxes_this_image = truth_boxes[filtered_matches]
-        predicted_boxes = predicted_boxes[matched_vals>0]
 
-    elif filter=='rad':
-        pcentres = (pboxes[:,2:] + pboxes[:,:2]) * 0.5
-        tcentres = (tboxes[:,2:] + tboxes[:,:2]) * 0.5
-        dist_mat = np.linalg.norm((pcentres[:,None] - tcentres), axis=-1)
-        thresh_mat = np.where(dist_mat < 0.4, dist_mat, 0).reshape(len(pboxes),len(tboxes))
-        first_dim,second_dim = np.nonzero(thresh_mat)
-        predicted_boxes = predicted_boxes[first_dim]
-        matched_truth_boxes_this_image = truth_boxes[second_dim]
 
-    else:
-        #distance between the centre of predicted box and its "closest" (matched) truth box
-        iou_mat = torchvision.ops.boxes.distance_box_iou(truth_boxes,predicted_boxes)
-        matched_vals, matches = iou_mat.max(dim=0)
-        matched_truth_boxes_this_image = truth_boxes[matches]
+# def hw_diffs(truth_boxes,predicted_boxes,ratio=False,filter=False):
+#     #distance between the centre of predicted box and its "closest" (matched) truth box
+#     #returns two lists of the differences in height and width
 
-    if len(matched_truth_boxes_this_image) != 0:
-        #turn into cx, cy, w, h coords
-        tru_cxcywh = xy_to_cxcy(matched_truth_boxes_this_image)
-        det_cxcywh = xy_to_cxcy(predicted_boxes)
+#     if filter:
+#         iou = torchvision.ops.boxes.box_iou(truth_boxes,predicted_boxes)
+#         matched_vals, matches = iou.max(dim=0)
+#         filtered_matches = matches[matched_vals>0]
+#         matched_truth_boxes_this_image = truth_boxes[filtered_matches]
+#         predicted_boxes = predicted_boxes[matched_vals>0]
 
-        if ratio:
-            #ratio of truth/predicted
-            w_diff = tru_cxcywh[:,2]/det_cxcywh[:,2]
-            h_diff = tru_cxcywh[:,3]/det_cxcywh[:,3]
-        else:
-            #difference
-            w_diff = tru_cxcywh[:,2] - det_cxcywh[:,2]
-            h_diff = tru_cxcywh[:,3] - det_cxcywh[:,3]
+#     elif filter=='rad':
+#         pcentres = (pboxes[:,2:] + pboxes[:,:2]) * 0.5
+#         tcentres = (tboxes[:,2:] + tboxes[:,:2]) * 0.5
+#         dist_mat = np.linalg.norm((pcentres[:,None] - tcentres), axis=-1)
+#         thresh_mat = np.where(dist_mat < 0.4, dist_mat, 0).reshape(len(pboxes),len(tboxes))
+#         first_dim,second_dim = np.nonzero(thresh_mat)
+#         predicted_boxes = predicted_boxes[first_dim]
+#         matched_truth_boxes_this_image = truth_boxes[second_dim]
 
-        return h_diff.tolist(), w_diff.tolist()
+#     else:
+#         #distance between the centre of predicted box and its "closest" (matched) truth box
+#         iou_mat = torchvision.ops.boxes.distance_box_iou(truth_boxes,predicted_boxes)
+#         matched_vals, matches = iou_mat.max(dim=0)
+#         matched_truth_boxes_this_image = truth_boxes[matches]
+
+#     if len(matched_truth_boxes_this_image) != 0:
+#         #turn into cx, cy, w, h coords
+#         tru_cxcywh = xy_to_cxcy(matched_truth_boxes_this_image)
+#         det_cxcywh = xy_to_cxcy(predicted_boxes)
+
+#         if ratio:
+#             #ratio of truth/predicted
+#             w_diff = tru_cxcywh[:,2]/det_cxcywh[:,2]
+#             h_diff = tru_cxcywh[:,3]/det_cxcywh[:,3]
+#         else:
+#             #difference
+#             w_diff = tru_cxcywh[:,2] - det_cxcywh[:,2]
+#             h_diff = tru_cxcywh[:,3] - det_cxcywh[:,3]
+
+#         return h_diff.tolist(), w_diff.tolist()
     
-    else:
-        return [0]
+#     else:
+#         return [0]
 
 
-def area_covered(truth_boxes,predicted_boxes,filter=False):
-    #calculate the area of matched! truth boxes covered by our predictions
-    #as a fraction of the true area
-    if filter:
-        iou = torchvision.ops.boxes.box_iou(truth_boxes,predicted_boxes)
-        matched_vals, matches = iou.max(dim=0)
-        filtered_matches = matches[matched_vals>0]
-        matched_truth_boxes_this_image = truth_boxes[filtered_matches]
-        predicted_boxes = predicted_boxes[matched_vals>0]
+# def area_covered(truth_boxes,predicted_boxes,filter=False):
+#     #calculate the area of matched! truth boxes covered by our predictions
+#     #as a fraction of the true area
+#     if filter:
+#         iou = torchvision.ops.boxes.box_iou(truth_boxes,predicted_boxes)
+#         matched_vals, matches = iou.max(dim=0)
+#         filtered_matches = matches[matched_vals>0]
+#         matched_truth_boxes_this_image = truth_boxes[filtered_matches]
+#         predicted_boxes = predicted_boxes[matched_vals>0]
         
-    elif filter=='rad':
-        pcentres = (pboxes[:,2:] + pboxes[:,:2]) * 0.5
-        tcentres = (tboxes[:,2:] + tboxes[:,:2]) * 0.5
-        dist_mat = np.linalg.norm((pcentres[:,None] - tcentres), axis=-1)
-        thresh_mat = np.where(dist_mat < 0.4, dist_mat, 0).reshape(len(pboxes),len(tboxes))
-        first_dim,second_dim = np.nonzero(thresh_mat)
-        predicted_boxes = predicted_boxes[first_dim]
-        matched_truth_boxes_this_image = truth_boxes[second_dim]
+#     elif filter=='rad':
+#         pcentres = (pboxes[:,2:] + pboxes[:,:2]) * 0.5
+#         tcentres = (tboxes[:,2:] + tboxes[:,:2]) * 0.5
+#         dist_mat = np.linalg.norm((pcentres[:,None] - tcentres), axis=-1)
+#         thresh_mat = np.where(dist_mat < 0.4, dist_mat, 0).reshape(len(pboxes),len(tboxes))
+#         first_dim,second_dim = np.nonzero(thresh_mat)
+#         predicted_boxes = predicted_boxes[first_dim]
+#         matched_truth_boxes_this_image = truth_boxes[second_dim]
 
-    else:
-        #distance between the centre of predicted box and its "closest" (matched) truth box
-        iou_mat = torchvision.ops.boxes.distance_box_iou(truth_boxes,predicted_boxes)
-        matched_vals, matches = iou_mat.max(dim=0)
-        matched_truth_boxes_this_image = truth_boxes[matches]
+#     else:
+#         #distance between the centre of predicted box and its "closest" (matched) truth box
+#         iou_mat = torchvision.ops.boxes.distance_box_iou(truth_boxes,predicted_boxes)
+#         matched_vals, matches = iou_mat.max(dim=0)
+#         matched_truth_boxes_this_image = truth_boxes[matches]
 
-    true_area_covered = []
-    for gt_box, pred_box in zip(matched_truth_boxes_this_image,predicted_boxes):
-        dx = min(gt_box[2],pred_box[2]) - max(gt_box[0],pred_box[0])
-        dy = min(gt_box[3],pred_box[3]) - max(gt_box[1],pred_box[1])
-        if (dx>0) and (dy>0):
-            area_of_intersection = dx*dy
-            area_of_truth = (gt_box[2]-gt_box[0])*(gt_box[3]-gt_box[1])
-            true_area_covered.append(area_of_intersection.item()/area_of_truth.item())
+#     true_area_covered = []
+#     for gt_box, pred_box in zip(matched_truth_boxes_this_image,predicted_boxes):
+#         dx = min(gt_box[2],pred_box[2]) - max(gt_box[0],pred_box[0])
+#         dy = min(gt_box[3],pred_box[3]) - max(gt_box[1],pred_box[1])
+#         if (dx>0) and (dy>0):
+#             area_of_intersection = dx*dy
+#             area_of_truth = (gt_box[2]-gt_box[0])*(gt_box[3]-gt_box[1])
+#             true_area_covered.append(area_of_intersection.item()/area_of_truth.item())
 
-    return torch.mean(torch.tensor(true_area_covered))
-
-
+#     return torch.mean(torch.tensor(true_area_covered))
 
 
 
 
 
 
+def weighted_circular_mean(phi_values, energy_values):
+    """
+    Calculate the weighted circular mean (average) of a list of angles.
+    Handles the periodicity of phi correctly. http://palaeo.spb.ru/pmlibrary/pmbooks/mardia&jupp_2000.pdf
 
+    :param phi_values: List of angles in radians
+    :param energy_values: List of weights corresponding to each phi value
+    :return: Weighted circular mean in radians
+    """
+    if len(phi_values) != len(energy_values):
+        raise ValueError("phi_values and energy_values must have the same length")
 
-
+    weighted_sin_sum = np.sum(energy_values * np.sin(phi_values))
+    weighted_cos_sum = np.sum(energy_values * np.cos(phi_values))
+    weighted_circular_mean = np.arctan2(weighted_sin_sum, weighted_cos_sum)
+    return weighted_circular_mean
 
 
 
@@ -288,17 +299,15 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
     list_pred_cl_cells = get_cells_from_boxes(wc_pred_boxes,cells)
     list_tru_cl_cells = get_cells_from_boxes(wc_truth_boxes,cells)
-    for data in list_pred_cl_cells:
-        if sum(data['cell_BadCells']) < 0:
-            print(data)
+    # for data in list_pred_cl_cells:
+    #     if sum(data['cell_BadCells']) < 0:
+    #         print(data)
     
     # Check that neither list using placeholder values has an entry with no cells
-    #zero_cells_mask tells us that this box contains more than 0 cells
+    # zero_cells_mask tells us that this box contains more than 0 cells
     pred_zero_cells_mask = [sum(data['cell_BadCells']) >= 0 for data in list_pred_cl_cells]
     list_pred_cl_cells = list(compress(list_pred_cl_cells, pred_zero_cells_mask))
-    # list_tru_cl_cells = list(compress(list_tru_cl_cells, pred_zero_cells_mask))
     true_zero_cells_mask = [sum(data['cell_BadCells']) >= 0 for data in list_tru_cl_cells]
-    # list_pred_cl_cells = list(compress(list_pred_cl_cells, true_zero_cells_mask))
     list_tru_cl_cells = list(compress(list_tru_cl_cells, true_zero_cells_mask))
     
     if target == 'energy':
@@ -308,8 +317,9 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
     def calc_cl_eta(cl_array):
         return np.dot(cl_array['cell_eta'],np.abs(cl_array['cell_E'])) / sum(np.abs(cl_array['cell_E']))
-    def calc_cl_phi(cl_array):
-        return np.dot(cl_array['cell_phi'],np.abs(cl_array['cell_E'])) / sum(np.abs(cl_array['cell_E']))
+    def calc_cl_phi(cl_array): 
+        # return np.dot(cl_array['cell_phi'],np.abs(cl_array['cell_E'])) / sum(np.abs(cl_array['cell_E']))
+        return weighted_circular_mean(cl_array['cell_phi'],cl_array['cell_E'])
 
     if target  == 'eta':
         list_pred_cl_etas = [calc_cl_eta(x) for x in list_pred_cl_cells]
@@ -358,14 +368,56 @@ def clusters_in_box_E_diff(truth_boxes,cluster_data):
 
 
 
+if __name__=="__main__":
+
+    def circular_mean(angles):
+        """
+        Calculate the circular mean (average) of a list of angles.
+        Handles the periodicity of angles correctly.
+        
+        :param angles: List of angles in radians
+        :return: Circular mean in radians
+        """
+        sin_sum = np.sum(np.sin(angles))
+        cos_sum = np.sum(np.cos(angles))
+        circular_mean = np.arctan2(sin_sum, cos_sum)
+        return circular_mean
+
+    # Example usage:
+    phi_values = [0.2, 3.0, 2.8, -2.9, 3.1, -3.05, -3.15, 2.9]
+    average_phi = circular_mean(phi_values)
+    print(f"Average phi: {average_phi}")
+    phi_values = [3.1, -3.1, 2.8, -2.8, 3.0, -3.0]
+    average_phi = circular_mean(phi_values)
+    print(f"Average phi: {average_phi}",np.pi)
+
+    def weighted_circular_mean(phi_values, energy_values):
+        """
+        Calculate the weighted circular mean (average) of a list of angles.
+        Handles the periodicity of angles correctly. http://palaeo.spb.ru/pmlibrary/pmbooks/mardia&jupp_2000.pdf
+
+        :param phi_values: List of angles in radians
+        :param energy_values: List of weights corresponding to each phi value
+        :return: Weighted circular mean in radians
+        """
+        if len(phi_values) != len(energy_values):
+            raise ValueError("phi_values and energy_values must have the same length")
+
+        weighted_sin_sum = np.sum(energy_values * np.sin(phi_values))
+        weighted_cos_sum = np.sum(energy_values * np.cos(phi_values))
+        weighted_circular_mean = np.arctan2(weighted_sin_sum, weighted_cos_sum)
+        return weighted_circular_mean
+    
+    energy_values = [2.0, 4.0, 2.0, 4.0, 2.0, 4.0]
+    weighted_average_phi = weighted_circular_mean(phi_values, energy_values)
+    print(f"Weighted Average phi: {weighted_average_phi}") 
 
 
 
 
 
 
-
-
+quit()
 
 
 
