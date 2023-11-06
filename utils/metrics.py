@@ -264,6 +264,81 @@ def weighted_circular_mean(phi_values, energy_values):
 
 
 
+def grab_cells_from_boxes(pred_boxes,scores,truth_boxes,cells,mode='match',wc=False):
+    # arguments are:
+    # pred_boxes, model output, no augmentation/wrap checking [n_preds,4] NO WRAP CHECK
+    # truth_boxes, from .npy file, [n_objs, 4]
+    # mode, tells us whether we should look at matched predictions, unmatched, or all (None) ['match','unmatch']
+    # wc, if the boxes have been wrap checked before this function
+
+    wc_pred_boxes = pred_boxes
+    wc_truth_boxes = truth_boxes
+    if not wc:
+        wc_pred_boxes = wrap_check_NMS(pred_boxes,scores,min(cells['cell_phi']),max(cells['cell_phi']),threshold=0.2)
+        wc_truth_boxes = wrap_check_truth(truth_boxes,min(cells['cell_phi']),max(cells['cell_phi']))
+
+    if mode=='match':
+        iou_mat = torchvision.ops.boxes.box_iou(torch.tensor(wc_truth_boxes),torch.tensor(wc_pred_boxes))
+        matched_vals, matches = iou_mat.max(dim=0)
+        wc_truth_boxes = wc_truth_boxes[matches[np.nonzero(matched_vals)]].reshape(-1,4)
+        wc_pred_boxes = wc_pred_boxes[np.nonzero(matched_vals)].reshape(-1,4)
+        wc_truth_boxes = torch.unique(torch.tensor(wc_truth_boxes), dim=0)
+        wc_pred_boxes = torch.unique(torch.tensor(wc_pred_boxes), dim=0)
+        wc_pred_boxes = wc_pred_boxes.numpy()
+        wc_truth_boxes = wc_truth_boxes.numpy()    
+    elif mode=='unmatch':
+        iou_mat = torchvision.ops.boxes.box_iou(torch.tensor(wc_truth_boxes),torch.tensor(wc_pred_boxes))
+        matched_vals, matches = iou_mat.max(dim=0)
+        unmatched_idxs = np.where(matched_vals==0)
+        wc_pred_boxes = wc_pred_boxes[unmatched_idxs].reshape(-1,4)
+        wc_truth_boxes = np.delete(wc_truth_boxes,matches[np.nonzero(matched_vals)],axis=0)
+
+    list_pred_cl_cells = get_cells_from_boxes(wc_pred_boxes,cells)
+    list_tru_cl_cells = get_cells_from_boxes(wc_truth_boxes,cells)   
+
+    # Check that neither list using placeholder values has an entry with no cells
+    # zero_cells_mask tells us that this box contains more than 0 cells
+    pred_zero_cells_mask = [sum(data['cell_BadCells']) >= 0 for data in list_pred_cl_cells]
+    list_pred_cl_cells = list(compress(list_pred_cl_cells, pred_zero_cells_mask))
+    true_zero_cells_mask = [sum(data['cell_BadCells']) >= 0 for data in list_tru_cl_cells]
+    list_tru_cl_cells = list(compress(list_tru_cl_cells, true_zero_cells_mask))
+
+    return list_pred_cl_cells, list_tru_cl_cells
+
+
+
+def extract_physics_variables(list_pred_box_cells, list_tru_box_cells, target='energy'):
+    if target == 'energy':
+        list_pred_cl_energies = [sum(x['cell_E']) for x in list_pred_box_cells]
+        list_tru_cl_energies = [sum(x['cell_E']) for x in list_tru_box_cells]
+        return list_pred_cl_energies, list_tru_cl_energies
+
+    def calc_cl_eta(cl_array):
+        return np.dot(cl_array['cell_eta'],np.abs(cl_array['cell_E'])) / sum(np.abs(cl_array['cell_E']))
+    def calc_cl_phi(cl_array): 
+        # return np.dot(cl_array['cell_phi'],np.abs(cl_array['cell_E'])) / sum(np.abs(cl_array['cell_E']))
+        return weighted_circular_mean(cl_array['cell_phi'],cl_array['cell_E'])
+
+    if target  == 'eta':
+        list_pred_cl_etas = [calc_cl_eta(x) for x in list_pred_box_cells]
+        list_tru_cl_etas = [calc_cl_eta(x) for x in list_tru_box_cells]
+        return list_pred_cl_etas, list_tru_cl_etas
+    
+    if target == 'phi':
+        list_pred_cl_phis = [calc_cl_phi(x) for x in list_pred_box_cells]
+        list_tru_cl_phis = [calc_cl_phi(x) for x in list_tru_box_cells]
+        return list_pred_cl_phis, list_tru_cl_phis
+    
+    if target == 'eT' or 'et':
+        list_pred_cl_et = [sum(x['cell_E'])/np.cosh(calc_cl_eta(x)) for x in list_pred_box_cells]
+        list_tru_cl_et = [sum(x['cell_E'])/np.cosh(calc_cl_eta(x)) for x in list_tru_box_cells]
+        return list_pred_cl_et, list_tru_cl_et
+    
+    if target == 'n_cells':
+        list_pred_cl_ns = [len(x) for x in list_pred_box_cells]
+        list_tru_cl_ns = [len(x) for x in list_tru_box_cells]
+        return list_pred_cl_ns, list_tru_cl_ns  
+
 
 
 def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match',target='energy',wc=False):
@@ -417,7 +492,6 @@ if __name__=="__main__":
 
 
 
-quit()
 
 
 
