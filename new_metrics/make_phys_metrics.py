@@ -8,11 +8,12 @@ try:
     import cPickle as pickle
 except ModuleNotFoundError:
     import pickle
-
-# caution: path[0] is reserved for script path (or '' in REPL)
+# caution: path[0] is reserved for script path 
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
-from utils.metrics import event_cluster_estimates
 from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan
+from utils.metrics import grab_cells_from_boxes, extract_physics_variables
+from utils.metrics import event_cluster_estimates
+
 MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
 MIN_CELLS_ETA,MAX_CELLS_ETA = -4.823496, 4.823496
 
@@ -66,7 +67,6 @@ cluster_level_results = {'n_clusters':[],
 
 
 
-
 def calculate_phys_metrics(
     folder_containing_struc_array,
     save_folder,
@@ -106,13 +106,11 @@ def calculate_phys_metrics(
 
 
         #load cells from h5
-        # cells_file = "/home/users/b/bozianu/work/data/pileup50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         cells_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(cells_file,"r") as f:
             h5group = f["caloCells"]
             cells = h5group["2d"][event_no]
 
-        # clusters_file = "/home/users/b/bozianu/work/data/pileup50k/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         clusters_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(clusters_file,"r") as f:
             cl_data = f["caloCells"] 
@@ -121,33 +119,39 @@ def calculate_phys_metrics(
             cluster_data = remove_nan(cluster_data)
             cluster_data = cluster_data[cluster_data['cl_E_em']+cluster_data['cl_E_had']>5000]
 
-
+        #truth cluster info
         cluster_level_results['n_clusters'].append(len(cluster_data['cl_eta'].tolist()))
         cluster_level_results['cluster_energies'].append((cluster_data['cl_E_em']+cluster_data['cl_E_had']).tolist())
         cluster_level_results['cluster_etas'].append(cluster_data['cl_eta'].tolist())
         cluster_level_results['cluster_phis'].append(cluster_data['cl_phi'].tolist())
         cluster_level_results['cluster_n_cells'].append(cluster_data['cl_cell_n'].tolist())
 
+        #get the cells inside the wrap checked prediction and truth boxes for all, matched and unmatched cases
+        total_list_pred_cells, total_list_tru_cells = grab_cells_from_boxes(pees,scores,tees,cells,mode='total',wc=True)
+        match_list_pred_cells, match_list_tru_cells = grab_cells_from_boxes(pees,scores,tees,cells,mode='match',wc=True)
+        unmatch_list_pred_cells, unmatch_list_tru_cells = grab_cells_from_boxes(pees,scores,tees,cells,mode='unmatch',wc=True)
+
         #total
-        list_p_cl_es_tot, list_t_cl_es_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='energy',wc=True)
-        list_p_cl_eT_tot, list_t_cl_eT_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='eT',wc=True)
-        list_p_cl_etas_tot, list_t_cl_etas_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='eta',wc=True)
-        list_p_cl_phis_tot, list_t_cl_phis_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='phi',wc=True)
-        list_p_cl_ns_tot, list_t_cl_ns_tot = event_cluster_estimates(pees,scores,tees,cells,mode='total',target='n_cells',wc=True)
+        list_p_cl_es_tot, list_t_cl_es_tot = extract_physics_variables(total_list_pred_cells,total_list_tru_cells,target='energy')
+        list_p_cl_eT_tot, list_t_cl_eT_tot = extract_physics_variables(total_list_pred_cells,total_list_tru_cells,target='eta')
+        list_p_cl_etas_tot, list_t_cl_etas_tot = extract_physics_variables(total_list_pred_cells,total_list_tru_cells,target='phi')
+        list_p_cl_phis_tot, list_t_cl_phis_tot = extract_physics_variables(total_list_pred_cells,total_list_tru_cells,target='eT')
+        list_p_cl_ns_tot, list_t_cl_ns_tot = extract_physics_variables(total_list_pred_cells,total_list_tru_cells,target='n_cells')
 
         #matched
-        list_p_cl_es, list_t_cl_es = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='energy',wc=True)
-        list_p_cl_eT, list_t_cl_eT = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eT',wc=True)
-        list_p_cl_etas, list_t_cl_etas = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eta',wc=True)
-        list_p_cl_phis, list_t_cl_phis = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='phi',wc=True)
-        list_p_cl_ns, list_t_cl_ns = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='n_cells',wc=True)
+        list_p_cl_es, list_t_cl_es = extract_physics_variables(match_list_pred_cells,match_list_tru_cells,target='energy')
+        list_p_cl_eT, list_t_cl_eT = extract_physics_variables(match_list_pred_cells,match_list_tru_cells,target='eta')
+        list_p_cl_etas, list_t_cl_etas = extract_physics_variables(match_list_pred_cells,match_list_tru_cells,target='phi')
+        list_p_cl_phis, list_t_cl_phis = extract_physics_variables(match_list_pred_cells,match_list_tru_cells,target='eT')
+        list_p_cl_ns, list_t_cl_ns = extract_physics_variables(match_list_pred_cells,match_list_tru_cells,target='n_cells')
 
         #unmatched
-        list_p_cl_es_unm, list_t_cl_es_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='energy',wc=True)
-        list_p_cl_eT_unm, list_t_cl_eT_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='eT',wc=True)
-        list_p_cl_etas_unm, list_t_cl_etas_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='eta',wc=True)
-        list_p_cl_phis_unm, list_t_cl_phis_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='phi',wc=True)
-        list_p_cl_ns_unm, list_t_cl_ns_unm = event_cluster_estimates(pees,scores,tees,cells,mode='unmatch',target='n_cells',wc=True)
+        list_p_cl_es_unm, list_t_cl_es_unm = extract_physics_variables(unmatch_list_pred_cells,unmatch_list_tru_cells,target='energy')
+        list_p_cl_eT_unm, list_t_cl_eT_unm = extract_physics_variables(unmatch_list_pred_cells,unmatch_list_tru_cells,target='eta')
+        list_p_cl_etas_unm, list_t_cl_etas_unm = extract_physics_variables(unmatch_list_pred_cells,unmatch_list_tru_cells,target='phi')
+        list_p_cl_phis_unm, list_t_cl_phis_unm = extract_physics_variables(unmatch_list_pred_cells,unmatch_list_tru_cells,target='eT')
+        list_p_cl_ns_unm, list_t_cl_ns_unm = extract_physics_variables(unmatch_list_pred_cells,unmatch_list_tru_cells,target='n_cells')
+
         
         cluster_level_results['n_tboxes'].append(len(tees))
         cluster_level_results['num_tboxes'].append(len(list_t_cl_es_tot))
@@ -242,7 +246,6 @@ def calculate_phys_metrics(
 
 
     return
-
 
 
 
