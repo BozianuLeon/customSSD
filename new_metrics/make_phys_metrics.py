@@ -13,6 +13,7 @@ sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
 from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan
 from utils.metrics import grab_cells_from_boxes, extract_physics_variables
 from utils.metrics import event_cluster_estimates
+from utils.metrics import n_clusters_per_box
 
 MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
 MIN_CELLS_ETA,MAX_CELLS_ETA = -4.823496, 4.823496
@@ -77,6 +78,7 @@ def calculate_phys_metrics(
 
 
     for i in range(len(a)):
+        i=2
         extent_i = a[i]['extent']
         preds = a[i]['p_boxes']
         trues = a[i]['t_boxes']
@@ -104,7 +106,6 @@ def calculate_phys_metrics(
             h5f = h5f
         event_no = a[i]['event_no']
 
-
         #load cells from h5
         cells_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(cells_file,"r") as f:
@@ -117,8 +118,16 @@ def calculate_phys_metrics(
             event_data = cl_data["1d"][event_no]
             cluster_data = cl_data["2d"][event_no]
             cluster_data = remove_nan(cluster_data)
-            cluster_data = cluster_data[cluster_data['cl_E_em']+cluster_data['cl_E_had']>5000]
-
+            mask1 = (cluster_data['cl_E_em']+cluster_data['cl_E_had']) > 5000 #5GeV cut
+            cluster_data = cluster_data[mask1]
+            cluster_cell_data = cl_data["3d"][event_no]
+            cluster_cell_data = cluster_cell_data[mask1]
+        print(cluster_data['cl_cell_n'])
+        print(sum(cluster_data['cl_cell_n']))
+        print(len(cluster_data['cl_cell_n']))
+        hmm_check = n_clusters_per_box(tees,cluster_cell_data,cells)
+        print(hmm_check)
+        quit()
         #truth cluster info
         cluster_level_results['n_clusters'].append(len(cluster_data['cl_eta'].tolist()))
         cluster_level_results['cluster_energies'].append((cluster_data['cl_E_em']+cluster_data['cl_E_had']).tolist())

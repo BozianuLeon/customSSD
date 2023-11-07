@@ -241,7 +241,18 @@ def percentage_truth_area_covered(preds,truths,iou_thresh=0.01):
 
 
 
-
+def circular_mean(phi_values):
+    """
+    Calculate the circular mean (average) of a list of phi_values.
+    Handles the periodicity of phi_values correctly.
+    
+    :param phi_values: List of phi_values in radians
+    :return: Circular mean in radians
+    """
+    sin_sum = np.sum(np.sin(phi_values))
+    cos_sum = np.sum(np.cos(phi_values))
+    circular_mean = np.arctan2(sin_sum, cos_sum)
+    return circular_mean
 
 
 def weighted_circular_mean(phi_values, energy_values):
@@ -374,9 +385,6 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
     list_pred_cl_cells = get_cells_from_boxes(wc_pred_boxes,cells)
     list_tru_cl_cells = get_cells_from_boxes(wc_truth_boxes,cells)
-    # for data in list_pred_cl_cells:
-    #     if sum(data['cell_BadCells']) < 0:
-    #         print(data)
     
     # Check that neither list using placeholder values has an entry with no cells
     # zero_cells_mask tells us that this box contains more than 0 cells
@@ -419,15 +427,64 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
 
 
+import matplotlib
+import matplotlib.pyplot as plt
+
+def is_cluster_enclosed_in_box(cluster_cell_d, cells_this_event, box_xyxy, idx=0):
+    print(cluster_cell_d.shape)
+    which_clusters_are_inside = []
+    f,ax = plt.subplots(1,1)
+    ax.add_patch(matplotlib.patches.Rectangle((box_xyxy[0],box_xyxy[1]),box_xyxy[2]-box_xyxy[0],box_xyxy[3]-box_xyxy[1],lw=4,ec='forestgreen',fc='none'))
+    for i in range(cluster_cell_d.shape[0]):
+        cell_ids = cluster_cell_d[i]['cl_cell_IdCells']
+        cell_ids = cell_ids[np.nonzero(cell_ids)]
+        print(cell_ids.shape)
+        wanted_cell_ids = np.isin(cells_this_event['cell_IdCells'],cell_ids)
+        desired_cells = cells_this_event[wanted_cell_ids]
+        # matches = [box_xyxy[0] <= x <= box_xyxy[2] for x in desired_cells['cell_eta']]
+        # print(box_xyxy)
+        # print('\t',matches.count(True) == len(matches),np.mean(desired_cells['cell_eta']),circular_mean(desired_cells['cell_phi']))
+        ax.scatter(desired_cells['cell_eta'],desired_cells['cell_phi'],s=0.2,label=i)
+        #if x condition satisfied
+        # if all(box_xyxy[0] <= x <= box_xyxy[2] for x in desired_cells['cell_eta']):
+        if box_xyxy[0] <= np.mean(desired_cells['cell_eta']) <= box_xyxy[2]:
+            print('x satisfied!')
+            #if y condition satisfied
+            y_mean_circ = circular_mean(desired_cells['cell_phi'])
+            # if all(box_xyxy[1] <= y <= box_xyxy[3] for y in desired_cells['cell_phi']):
+            if box_xyxy[1] <= y_mean_circ <= box_xyxy[3]:
+                print('y_satisfied!')
+                which_clusters_are_inside.append(True)
+                print(1)
+            elif box_xyxy[1] <= (y_mean_circ + (-1*np.sign(y_mean_circ))*2*np.pi) <= box_xyxy[3]:
+                print('y wrap satisfied')
+                which_clusters_are_inside.append(True)
+                print(1.5)     
+            else:
+                which_clusters_are_inside.append(False)
+                print(3)
+        else:
+            print(4)
+            which_clusters_are_inside.append(False)
+    # all_inside_box = all( and box_xyxy[1] <= y <= box_xyxy[2] for x, y in zip(, desired_cells['cell_phi']))
+    ax.set(xlim=(-6.5,6.5),ylim=(-6.5,6.5),title=f'{sum(which_clusters_are_inside)} Clusters in this box')
+    # ax.legend(fontsize='x-small')
+    f.savefig(f'2-ev-{idx}.png')
+    return  which_clusters_are_inside
 
 
-def n_clusters_per_box(truth_boxes,cluster_data):
+def n_clusters_per_box(truth_boxes,cluster_cell_data,cells_this_event):
     # this function should tell us how many topoclusters are inside each truth box
     # find the number of clusters that make up each truth box.
-    clusters_xy = stu(cluster_data[['cl_eta','cl_phi']])
-    contained_mask = (clusters_xy[:, 0] >= x_min-0.01) & (clusters_xy[:, 0] <= x_max+0.01) & (clusters_xy[:, 1] >= y_min-0.01) & (clusters_xy[:, 1] <= y_max+0.01)
-    
-    return
+    # clusters_xy = stu(cluster_cell_data[['cl_eta','cl_phi']])
+    # contained_mask = (clusters_xy[:, 0] >= x_min-0.01) & (clusters_xy[:, 0] <= x_max+0.01) & (clusters_xy[:, 1] >= y_min-0.01) & (clusters_xy[:, 1] <= y_max+0.01)
+    n_cl_per_box = []
+    for idx,tb in enumerate(truth_boxes):
+        bo_array = is_cluster_enclosed_in_box(cluster_cell_data, cells_this_event, tb, idx)
+        print(bo_array)
+        n_cl_per_box.append(sum(bo_array))
+
+    return n_cl_per_box
 
 
 def clusters_in_box_E_diff(truth_boxes,cluster_data):
@@ -444,6 +501,28 @@ def clusters_in_box_E_diff(truth_boxes,cluster_data):
 
 
 if __name__=="__main__":
+
+
+    eta_array = np.array([1.5,1.4,1.3,1.2])
+    phi_array = np.array([-3.1,-3.05,-2.9,3.1])
+    box = [1.1,-3.14,1.6,-2.85]
+
+
+    is_cluster_enclosed_in_box()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def circular_mean(angles):
         """
@@ -466,37 +545,12 @@ if __name__=="__main__":
     average_phi = circular_mean(phi_values)
     print(f"Average phi: {average_phi}",np.pi)
 
-    def weighted_circular_mean(phi_values, energy_values):
-        """
-        Calculate the weighted circular mean (average) of a list of angles.
-        Handles the periodicity of angles correctly. http://palaeo.spb.ru/pmlibrary/pmbooks/mardia&jupp_2000.pdf
-
-        :param phi_values: List of angles in radians
-        :param energy_values: List of weights corresponding to each phi value
-        :return: Weighted circular mean in radians
-        """
-        if len(phi_values) != len(energy_values):
-            raise ValueError("phi_values and energy_values must have the same length")
-
-        weighted_sin_sum = np.sum(energy_values * np.sin(phi_values))
-        weighted_cos_sum = np.sum(energy_values * np.cos(phi_values))
-        weighted_circular_mean = np.arctan2(weighted_sin_sum, weighted_cos_sum)
-        return weighted_circular_mean
     
     energy_values = [2.0, 4.0, 2.0, 4.0, 2.0, 4.0]
     weighted_average_phi = weighted_circular_mean(phi_values, energy_values)
     print(f"Weighted Average phi: {weighted_average_phi}") 
 
 
-
-
-
-
-
-
-
-#testing
-if __name__=="__main__":
     #always check whether the boxes need to be mutliplied by extents
     tboxes = torch.tensor([[ 1.1125, -0.5430,  1.2125, -0.1503],
                             [ 4.1313,  0.7137,  4.5888,  1.1269],
