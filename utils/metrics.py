@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torchvision
 from torchvision import transforms
-
+import time
 
 try:
     from utils.utils import xy_to_cxcy, cxcy_to_xy, cxcy_to_gcxgcy, gcxgcy_to_cxcy
@@ -273,7 +273,9 @@ def weighted_circular_mean(phi_values, energy_values):
     return weighted_circular_mean
 
 
-
+# TODO : Future use should prioritise saving cell_IdCells rather than a list, then extracting using
+# np.isin to find cells from cells
+# also find out how many negative cells are in the boxes!
 
 def grab_cells_from_boxes(pred_boxes,scores,truth_boxes,cells,mode='match',wc=False):
     # arguments are:
@@ -340,7 +342,7 @@ def extract_physics_variables(list_pred_box_cells, list_tru_box_cells, target='e
         list_tru_cl_phis = [calc_cl_phi(x) for x in list_tru_box_cells]
         return list_pred_cl_phis, list_tru_cl_phis
     
-    if target == 'eT' or 'et':
+    if target in ['eT','et']:
         list_pred_cl_et = [sum(x['cell_E'])/np.cosh(calc_cl_eta(x)) for x in list_pred_box_cells]
         list_tru_cl_et = [sum(x['cell_E'])/np.cosh(calc_cl_eta(x)) for x in list_tru_box_cells]
         return list_pred_cl_et, list_tru_cl_et
@@ -427,72 +429,485 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
 
 
-import matplotlib
-import matplotlib.pyplot as plt
 
-def is_cluster_enclosed_in_box(cluster_cell_d, cells_this_event, box_xyxy, idx=0):
-    print(cluster_cell_d.shape)
+def is_cluster_enclosed_in_box(cluster_cell_d, cells_this_event, box_xyxy):
+    # number of clusters inside a box based on the cells in that cluster
+    # can overestimate due to wrapping. Sometimes boxes that go "off the page" 
+    # count clusters that are at the other side of the image, this is okay!
+
     which_clusters_are_inside = []
-    f,ax = plt.subplots(1,1)
-    ax.add_patch(matplotlib.patches.Rectangle((box_xyxy[0],box_xyxy[1]),box_xyxy[2]-box_xyxy[0],box_xyxy[3]-box_xyxy[1],lw=4,ec='forestgreen',fc='none'))
     for i in range(cluster_cell_d.shape[0]):
         cell_ids = cluster_cell_d[i]['cl_cell_IdCells']
         cell_ids = cell_ids[np.nonzero(cell_ids)]
-        print(cell_ids.shape)
         wanted_cell_ids = np.isin(cells_this_event['cell_IdCells'],cell_ids)
         desired_cells = cells_this_event[wanted_cell_ids]
-        # matches = [box_xyxy[0] <= x <= box_xyxy[2] for x in desired_cells['cell_eta']]
-        # print(box_xyxy)
-        # print('\t',matches.count(True) == len(matches),np.mean(desired_cells['cell_eta']),circular_mean(desired_cells['cell_phi']))
-        ax.scatter(desired_cells['cell_eta'],desired_cells['cell_phi'],s=0.2,label=i)
+
         #if x condition satisfied
-        # if all(box_xyxy[0] <= x <= box_xyxy[2] for x in desired_cells['cell_eta']):
         if box_xyxy[0] <= np.mean(desired_cells['cell_eta']) <= box_xyxy[2]:
-            print('x satisfied!')
+            # print('x satisfied!')
             #if y condition satisfied
             y_mean_circ = circular_mean(desired_cells['cell_phi'])
-            # if all(box_xyxy[1] <= y <= box_xyxy[3] for y in desired_cells['cell_phi']):
             if box_xyxy[1] <= y_mean_circ <= box_xyxy[3]:
-                print('y_satisfied!')
+                # print('y_satisfied!')
                 which_clusters_are_inside.append(True)
-                print(1)
             elif box_xyxy[1] <= (y_mean_circ + (-1*np.sign(y_mean_circ))*2*np.pi) <= box_xyxy[3]:
-                print('y wrap satisfied')
-                which_clusters_are_inside.append(True)
-                print(1.5)     
+                # print('y wrap satisfied')
+                which_clusters_are_inside.append(True)  
             else:
                 which_clusters_are_inside.append(False)
-                print(3)
         else:
-            print(4)
             which_clusters_are_inside.append(False)
-    # all_inside_box = all( and box_xyxy[1] <= y <= box_xyxy[2] for x, y in zip(, desired_cells['cell_phi']))
-    ax.set(xlim=(-6.5,6.5),ylim=(-6.5,6.5),title=f'{sum(which_clusters_are_inside)} Clusters in this box')
-    # ax.legend(fontsize='x-small')
-    f.savefig(f'2-ev-{idx}.png')
-    return  which_clusters_are_inside
 
+    return  sum(which_clusters_are_inside)
+
+
+
+import multiprocessing
 
 def n_clusters_per_box(truth_boxes,cluster_cell_data,cells_this_event):
     # this function should tell us how many topoclusters are inside each truth box
     # find the number of clusters that make up each truth box.
-    # clusters_xy = stu(cluster_cell_data[['cl_eta','cl_phi']])
-    # contained_mask = (clusters_xy[:, 0] >= x_min-0.01) & (clusters_xy[:, 0] <= x_max+0.01) & (clusters_xy[:, 1] >= y_min-0.01) & (clusters_xy[:, 1] <= y_max+0.01)
-    n_cl_per_box = []
-    for idx,tb in enumerate(truth_boxes):
-        bo_array = is_cluster_enclosed_in_box(cluster_cell_data, cells_this_event, tb, idx)
-        print(bo_array)
-        n_cl_per_box.append(sum(bo_array))
+    # multiprocessing because slow!
 
-    return n_cl_per_box
+    # n_cl_per_box = []
+    # for idx,tb in enumerate(truth_boxes):
+    #     bo_array = is_cluster_enclosed_in_box(cluster_cell_data, cells_this_event, tb) 
+    #     n_cl_per_box.append(sum(bo_array))
+    # n_cl_per_box = np.fromiter((is_cluster_enclosed_in_box(cluster_cell_data, cells_this_event,tb) for tb in truth_boxes), dtype=int, count=len(truth_boxes))
+    # n_cl_per_box = np.array([is_cluster_enclosed_in_box(cluster_cell_data, cells_this_event,tb) for tb in truth_boxes])
+    
+    num_workers = 4 #multiprocessing.cpu_count()
+    chunk_size = 1 if len(truth_boxes) // num_workers==0 else len(truth_boxes) // num_workers
+    print('\tNum workers: ', num_workers, 'Chunk size',chunk_size)
+    
+    pool = multiprocessing.Pool()
+    results = []
+    for i in range(0,len(truth_boxes),chunk_size):
+        chunk = truth_boxes[i:i + chunk_size]
+        # chunk_results = pool.map(func1, [a_constant] * len(chunk), chunk)
+        chunk_results = pool.starmap(is_cluster_enclosed_in_box, [(cluster_cell_data, cells_this_event, x) for x in chunk])
+        results.extend(chunk_results)
+    
+    pool.close()
+    pool.join()
+    
+    return results
 
 
-def clusters_in_box_E_diff(truth_boxes,cluster_data):
+
+
+
+def clusters_in_box_E_diff(truth_boxes,cluster_data,cluster_cell_data, cells_this_event):
     # this function should compare the truth boxes to ALL clusters contained within them
     # this used the cell_Ids of clusters (NOT cl_cell_ information)
-
+    tot_clus_E_per_box = []
+    tot_clus_cell_E_per_box = []
+    for idx,tb in enumerate(truth_boxes):
+        e1,e2 = total_energy_in_truth_box(cluster_data,cluster_cell_data,cells_this_event,tb)
+        tot_clus_E_per_box.append(e1)
+        tot_clus_cell_E_per_box.append(e2)
     
-    return
+    return tot_clus_E_per_box,tot_clus_cell_E_per_box
+
+
+
+
+
+
+def number_cluster_in_tboxes(cluster_cell_d, cells_this_event, boxes):
+    # number of clusters inside a box based on the cells in that cluster
+    # can overestimate due to wrapping. Sometimes boxes that go "off the page" 
+    # count clusters that are at the other side of the image, this is okay!
+
+    l_topo_cells = RetrieveCellIdsFromCluster(cells_this_event,cluster_cell_d)
+    n_tc_in_box = []
+    for truth_box in boxes:
+        which_clusters_are_inside = []
+        for cl_no in range(len(l_topo_cells)):
+            cluster_cells = l_topo_cells[cl_no]
+            #if x condition satisfied
+            if truth_box[0] <= np.mean(cluster_cells['cell_eta']) <= truth_box[2]:
+                #if y condition satisfied
+                y_mean_circ = circular_mean(cluster_cells['cell_phi'])
+                if truth_box[1] <= y_mean_circ <= truth_box[3]:
+                    which_clusters_are_inside.append(True)
+                elif truth_box[1] <= (y_mean_circ + (-1*np.sign(y_mean_circ))*2*np.pi) <= truth_box[3]:
+                    which_clusters_are_inside.append(True)  
+                else:
+                    which_clusters_are_inside.append(False)
+            else:
+                which_clusters_are_inside.append(False)
+        n_tc_in_box.append(sum(which_clusters_are_inside))
+        
+    return n_tc_in_box
+
+
+def total_energy_in_truth_box(cluster_d, cluster_cell_d, cells_this_event, boxes):
+    # number of clusters inside a box based on the cells in that cluster
+    # can overestimate due to wrapping. Sometimes boxes that go "off the page" 
+    # count clusters that are at the other side of the image, this is okay!
+
+    list_cl_cell_E = []
+    list_cl_E = []
+    l_topo_cells = RetrieveCellIdsFromCluster(cells_this_event,cluster_cell_d)
+    for truth_box in boxes:
+        cluster_E_in_tbox = 0
+        cluster_cell_E_in_tbox = 0
+        for cl_no in range(len(l_topo_cells)):
+            cluster_cells = l_topo_cells[cl_no]
+            #if x condition satisfied
+            if truth_box[0] <= np.mean(cluster_cells['cell_eta']) <= truth_box[2]:
+                #if y condition satisfied
+                y_mean_circ = circular_mean(cluster_cells['cell_phi'])
+                if truth_box[1] <= y_mean_circ <= truth_box[3]:
+                    cluster_E_in_tbox += cluster_d[cl_no]['cl_E_em']
+                    cluster_E_in_tbox += cluster_d[cl_no]['cl_E_had']
+                    cluster_cell_E_in_tbox += sum(cluster_cells['cell_E'])
+                elif truth_box[1] <= (y_mean_circ + (-1*np.sign(y_mean_circ))*2*np.pi) <= truth_box[3]:
+                    cluster_E_in_tbox += cluster_d[cl_no]['cl_E_em']
+                    cluster_E_in_tbox += cluster_d[cl_no]['cl_E_had']
+                    cluster_cell_E_in_tbox += sum(cluster_cells['cell_E'])
+        
+        list_cl_cell_E.append(cluster_cell_E_in_tbox)
+        list_cl_E.append(cluster_E_in_tbox)
+
+    return  list_cl_E, list_cl_cell_E
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################################################################################################
+# New multiprocessing regime
+######################################################################################################
+
+
+######################################################################################################
+# Get Cells from boxes/clusters
+
+
+
+def RetrieveCellIdsFromBox(cells,boxes):
+
+    ymin,ymax = min(cells['cell_phi']),max(cells['cell_phi']) # get physical bounds of calo cells
+    list_containing_all_cells = []
+    for box in boxes:
+        eta_min,phi_min,eta_max,phi_max = box
+        x_condition = np.logical_and.reduce((cells['cell_eta']>=eta_min, cells['cell_eta']<=eta_max))
+        
+        #box straddles bottom of image
+        if (phi_min < ymin) and (phi_max > ymin):
+            modded_box = box + np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
+            top_of_top_box = min(modded_box[3],ymax)
+            y_condtion1 = np.logical_and.reduce((cells['cell_phi']>=ymin, cells['cell_phi']<=phi_max))
+            y_condtion2 = np.logical_and.reduce((cells['cell_phi']>=modded_box[1], cells['cell_phi']<=top_of_top_box))
+            y_cond = np.logical_or(y_condtion1,y_condtion2)
+        
+        #box straddles top of image
+        elif (phi_max > ymax) and (phi_min < ymax):
+            modded_box = box - np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
+            bottom_of_bottom_box = min(modded_box[1],ymin)
+            y_condtion1 = np.logical_and.reduce((cells['cell_phi'] >= phi_min, cells['cell_phi'] <= ymax))
+            y_condtion2 = np.logical_and.reduce((cells['cell_phi'] >= bottom_of_bottom_box, cells['cell_phi'] <= modded_box[3]))
+            y_cond = np.logical_or(y_condtion1,y_condtion2)
+
+        #box is completely above top
+        elif (phi_max < ymin):
+            modded_box = box + np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
+            y_cond = np.logical_and.reduce((cells['cell_phi']>=modded_box[1], cells['cell_phi']>=modded_box[3]))
+
+        elif (phi_min > ymax):
+            modded_box = box - np.array([0.0, 2*np.pi, 0.0, 2*np.pi])
+            y_cond = np.logical_and.reduce((cells['cell_phi']>=modded_box[1], cells['cell_phi']>=modded_box[3]))
+        else:
+            y_cond = np.logical_and.reduce((cells['cell_phi']>=phi_min, cells['cell_phi']<=phi_max)) #multiple conditions #could use np.all(x,axis)
+        
+        tot_cond = np.logical_and(x_condition,y_cond)
+        cells_here = cells[np.where(tot_cond)][['cell_E','cell_eta','cell_phi','cell_Sigma','cell_IdCells']]
+        if len(cells_here):
+            list_containing_all_cells.append(cells_here)
+        else:
+            # so that we know where there were no cells!
+            # placeholder_values = np.array([(-1.0,-99.9,-99.9,-1.0,-10.0)],
+            #     dtype=[('cell_E', '<f4'), ('cell_eta', '<f4'), ('cell_phi', '<f4'), ('cell_Sigma', '<f4'), ('cell_IdCells', '<u4')])
+            # list_containing_all_cells.append(placeholder_values)
+            list_containing_all_cells.append(None)
+
+    # Check that the list does not include None/placeholder values and if it does, remove it
+    filtered_list = [x for x in list_containing_all_cells if x is not None]
+    # somelist = [x for x in list_containing_all_cells if not min(x['cell_phi']) < -99.0]
+
+    return filtered_list
+
+
+
+
+def RetrieveCellIdsFromCluster(cells,cluster_cell_info):
+    # Inputs
+    # cluster_cell_info, structured array containing cluster *cell* information
+    #                   including cell ids for cells in topocluster
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # cell_ids, array containing cell ids of all cells inside this topocluster
+
+    list_containing_all_cells = []
+    for cluster in range(len(cluster_cell_info)):
+        cell_mask = np.isin(cells['cell_IdCells'],cluster_cell_info[cluster]['cl_cell_IdCells'])
+        desired_cells = cells[cell_mask][['cell_E','cell_eta','cell_phi','cell_Sigma','cell_IdCells']]
+        list_containing_all_cells.append(desired_cells)
+    # return desired_cells
+    return list_containing_all_cells
+
+
+
+
+# def GetCellsFromClusters(cluster_cell_data, cells):
+#     # cluster_cell_data cluster cell info after E cut
+#     # cells in this event
+    
+#     num_workers = 4 #multiprocessing.cpu_count()
+#     chunk_size = 1 if len(cluster_cell_data) // num_workers==0 else len(cluster_cell_data) // num_workers
+#     pool = multiprocessing.Pool(processes=num_workers)
+#     results = []
+#     for j in range(0,len(cluster_cell_data),chunk_size):
+#         mp_chunk = cluster_cell_data[j:j+chunk_size]
+#         chunk_results = pool.starmap(RetrieveCellIdsFromCluster, [(cells, y) for y in mp_chunk])
+#         results.extend(chunk_results)
+
+#     pool.close()
+#     pool.join()
+
+#     return results
+
+
+
+
+
+
+################################################################################################
+# Get physics things from cell ids
+
+
+
+def CalculateEnergyFromCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # total energy,  for this collection of cells
+    
+    if desired_cells is None:
+        return np.nan
+    return sum(desired_cells['cell_E']) 
+
+def CalculateEtaFromCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # eta, (absolute) energy weighted value
+    
+    if desired_cells is None:
+        return np.nan    
+    energy_weighted_eta = np.dot(desired_cells['cell_eta'],np.abs(desired_cells['cell_E'])) / sum(np.abs(desired_cells['cell_E']))
+    return energy_weighted_eta 
+
+def CalculatePhiFromCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # phi, (absolute) energy weighted value
+    
+    if desired_cells is None:
+        return np.nan
+    energy_weighted_phi = weighted_circular_mean(desired_cells['cell_phi'],np.abs(desired_cells['cell_E']))
+    return energy_weighted_phi 
+
+def CalculateEtFromCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # E_T, Transverse energy
+    
+    if desired_cells is None:
+        return np.nan
+    total_energy = sum(desired_cells['cell_E']) 
+    energy_weighted_eta = np.dot(desired_cells['cell_eta'],np.abs(desired_cells['cell_E'])) / sum(np.abs(desired_cells['cell_E']))
+    return total_energy / np.cosh(energy_weighted_eta) 
+
+def CalculateNCellsFromCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # Number of cells in the box/cluster
+
+    if desired_cells is None:
+        return np.nan
+    return len(desired_cells) #if cell_ids is not None else np.nan
+
+def CalculateNegativeEnergyFromCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # fraction of total energy that is negative
+
+    if desired_cells is None:
+        return np.nan
+    # total_energy = sum(abs(desired_cells['cell_E'])) 
+    negative_energy_cells = desired_cells[desired_cells['cell_E']<0]['cell_E']
+    positive_energy_cells = desired_cells[desired_cells['cell_E']>0]['cell_E']
+
+    return abs(sum(negative_energy_cells)) / sum(positive_energy_cells) 
+
+def CalculateMaxEnergyFracFromCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # fraction of total energy in one cell
+    
+    if desired_cells is None:
+        return np.nan
+    total_energy = sum(desired_cells['cell_E'])
+    return max(desired_cells['cell_E']) / total_energy 
+
+def CalculateNoiseFromCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # total noise of the cluster/box (see TC paper p. 26)
+    
+    if desired_cells is None:
+        return np.nan
+    total_noise = np.sqrt(sum(desired_cells['cell_Sigma']**2))
+    return total_noise
+
+def CalculateSignficanceFromCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # total significance of cells
+
+    if desired_cells is None:
+        return np.nan    
+    total_energy = sum(desired_cells['cell_E']) 
+    total_noise = np.sqrt(sum(desired_cells['cell_Sigma']**2))
+
+    return total_energy / total_noise
+
+
+
+# def GetPhysicsFromCells(all_cell_ids, cells):
+#     # Inputs
+#     # all_boxes, array of boxes we would like to find cell Ids for and return
+#     # cells, structured array containing all cells in THIS event ['cell_*'] properties
+#     # Multiprocessing for speed
+    
+#     num_workers = 4 #multiprocessing.cpu_count()
+#     chunk_size = 1 if len(all_cell_ids) // num_workers==0 else len(all_cell_ids) // num_workers
+#     pool = multiprocessing.Pool(processes=num_workers)
+#     results = []
+#     for j in range(0,len(all_cell_ids),chunk_size):
+#         mp_chunk = all_cell_ids[j:j+chunk_size]
+#         chunk_results = pool.starmap(CalculateEnergyFromCells, [(cells, cids) for cids in mp_chunk])
+#         results.extend(chunk_results)
+#     pool.close()
+#     pool.join()
+#     return results
+
+def get_physics_from_cells(all_cell_ids, cells, target='energy'):
+    # functions = [CalculateEnergyFromCells, CalculateEtaFromCells, CalculatePhiFromCells, CalculateNCellsFromCells]
+    # results = [[] for _ in functions]   
+    # for idx in range(len(all_cell_ids)):
+    #     for j, func in enumerate(functions):
+    #         results[j].append(func(cells,all_cell_ids[idx]))
+
+    if target == 'energy':
+        return [CalculateEnergyFromCells(cells,ids_i) for ids_i in all_cell_ids]
+
+    if target  == 'eta':
+        return [CalculateEtaFromCells(cells,ids_i) for ids_i in all_cell_ids]
+    
+    if target == 'phi':
+        return [CalculatePhiFromCells(cells,ids_i) for ids_i in all_cell_ids]
+    
+    if target in ['eT','et','e_T','E_T']:
+        return [CalculateEtFromCells(cells,ids_i) for ids_i in all_cell_ids]
+    
+    if target == 'n_cells':
+        return [CalculateNCellsFromCells(cells,ids_i) for ids_i in all_cell_ids]
+
+    if target == 'neg_frac':
+        return [CalculateNegativeEnergyFromCells(cells,ids_i) for ids_i in all_cell_ids]
+
+    if target == 'max_frac':
+        return [CalculateMaxEnergyFracFromCells(cells,ids_i) for ids_i in all_cell_ids]
+
+    if target in ['noise','sigma','total_noise']:
+        return [CalculateNoiseFromCells(cells,ids_i) for ids_i in all_cell_ids]
+
+    if target == 'significance':
+        return [CalculateSignficanceFromCells(cells,ids_i) for ids_i in all_cell_ids]
+
+
+def get_physics_dictionary(all_cell_ids, cells):
+    output_dict = {
+        'energy'       : [CalculateEnergyFromCells(cells,ids_i) for ids_i in all_cell_ids],
+        'eta'          : [CalculateEtaFromCells(cells,ids_i) for ids_i in all_cell_ids],
+        'phi'          : [CalculatePhiFromCells(cells,ids_i) for ids_i in all_cell_ids],
+        'eT'           : [CalculateEtFromCells(cells,ids_i) for ids_i in all_cell_ids],
+        'n_cells'      : [CalculateNCellsFromCells(cells,ids_i) for ids_i in all_cell_ids],
+        'noise'        : [CalculateNoiseFromCells(cells,ids_i) for ids_i in all_cell_ids],
+        'significance' : [CalculateSignficanceFromCells(cells,ids_i) for ids_i in all_cell_ids],
+        'neg_frac'     : [CalculateNegativeEnergyFromCells(cells,ids_i) for ids_i in all_cell_ids],
+        'max_frac'     : [CalculateMaxEnergyFracFromCells(cells,ids_i) for ids_i in all_cell_ids],
+    }
+
+    return output_dict
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
