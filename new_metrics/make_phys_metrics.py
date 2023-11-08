@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import sys
 import os
+import time
 
 import h5py
 try:
@@ -76,9 +77,8 @@ def calculate_phys_metrics(
     with open(folder_containing_struc_array + "/struc_array.npy", 'rb') as f:
         a = np.load(f)
 
-
     for i in range(len(a)):
-        i=2
+        start = time.perf_counter()
         extent_i = a[i]['extent']
         preds = a[i]['p_boxes']
         trues = a[i]['t_boxes']
@@ -122,11 +122,10 @@ def calculate_phys_metrics(
             cluster_data = cluster_data[mask1]
             cluster_cell_data = cl_data["3d"][event_no]
             cluster_cell_data = cluster_cell_data[mask1]
-        print(cluster_data['cl_cell_n'])
-        print(sum(cluster_data['cl_cell_n']))
-        print(len(cluster_data['cl_cell_n']))
+
         hmm_check = n_clusters_per_box(tees,cluster_cell_data,cells)
-        print(hmm_check)
+        print(len(hmm_check),len(tees),hmm_check)
+        print(sum(hmm_check),sum(mask1),len(cluster_data),len(cluster_cell_data),'\n')
         quit()
         #truth cluster info
         cluster_level_results['n_clusters'].append(len(cluster_data['cl_eta'].tolist()))
@@ -201,6 +200,7 @@ def calculate_phys_metrics(
         cluster_level_results['pbox_unmatch_etas'].append(list_p_cl_etas_unm)
         cluster_level_results['pbox_unmatch_phis'].append(list_p_cl_phis_unm)
         cluster_level_results['pbox_unmatch_n_cells'].append(list_p_cl_ns_unm)
+        print('Time',time.perf_counter()-start,'s')
 
 
     save_loc = save_folder + "/phys_metrics/"
