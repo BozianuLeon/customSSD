@@ -48,6 +48,7 @@ eval_results = {
 }
 
 
+#TODO: Make more physics quantities based on the "merged" topocluster cells.
 
 def evaluate_topocl_truth_box_metrics(
     folder_containing_struc_array,

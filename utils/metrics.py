@@ -768,6 +768,8 @@ def CalculateNegativeEnergyFromCells(all_cells,desired_cells):
     # total_energy = sum(abs(desired_cells['cell_E'])) 
     negative_energy_cells = desired_cells[desired_cells['cell_E']<0]['cell_E']
     positive_energy_cells = desired_cells[desired_cells['cell_E']>0]['cell_E']
+    if len(positive_energy_cells)==0:
+        return np.nan
 
     return abs(sum(negative_energy_cells)) / sum(positive_energy_cells) 
 
@@ -781,7 +783,7 @@ def CalculateMaxEnergyFracFromCells(all_cells,desired_cells):
     if desired_cells is None:
         return np.nan
     total_energy = sum(desired_cells['cell_E'])
-    return max(desired_cells['cell_E']) / total_energy 
+    return abs(max(desired_cells['cell_E'])) / total_energy 
 
 def CalculateNoiseFromCells(all_cells,desired_cells):
     # Inputs

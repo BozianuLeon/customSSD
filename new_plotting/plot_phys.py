@@ -49,8 +49,8 @@ def make_phys_plots(
     #Plot 1, the energies of our boxes and the true clusters
     #total:
     total_clus_energies = np.concatenate(load_object(folder_containing_lists + '/cluster_energies.pkl'))
-    total_pred_energies = np.concatenate(load_object(folder_containing_lists + '/tbox_energies.pkl'))
-    total_tru_energies = np.concatenate(load_object(folder_containing_lists + '/pbox_energies.pkl'))
+    total_pred_energies = np.concatenate(load_object(folder_containing_lists + '/pbox_energies.pkl'))
+    total_tru_energies = np.concatenate(load_object(folder_containing_lists + '/tbox_energies.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_clus, bins, _ = ax[0].hist(total_clus_energies/1000,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_energies)))
@@ -101,8 +101,8 @@ def make_phys_plots(
 
 
     #Matched
-    total_match_pred_energy = np.concatenate(load_object(folder_containing_lists + '/tbox_match_energies.pkl'))
-    total_match_tru_energy = np.concatenate(load_object(folder_containing_lists + '/pbox_match_energies.pkl'))
+    total_match_pred_energy = np.concatenate(load_object(folder_containing_lists + '/pbox_match_energies.pkl'))
+    total_match_tru_energy = np.concatenate(load_object(folder_containing_lists + '/tbox_match_energies.pkl'))
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_match_pred_energy/1000,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_match_pred_energy)))
     n_tbox, _, _ = ax[0].hist(total_match_tru_energy/1000,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_match_tru_energy)))
@@ -126,8 +126,8 @@ def make_phys_plots(
 
 
     #Unmatched
-    total_unmatch_pred_energy = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_energies.pkl'))
-    total_unmatch_tru_energy = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_energies.pkl'))
+    total_unmatch_pred_energy = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_energies.pkl'))
+    total_unmatch_tru_energy = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_energies.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_unmatch_pred_energy/1000,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_unmatch_pred_energy)))
@@ -160,8 +160,8 @@ def make_phys_plots(
 
     #total
     total_clus_etas = np.concatenate(load_object(folder_containing_lists + '/cluster_etas.pkl'))
-    total_pred_etas = np.concatenate(load_object(folder_containing_lists + '/tbox_etas.pkl'))
-    total_tru_etas = np.concatenate(load_object(folder_containing_lists + '/pbox_etas.pkl'))
+    total_pred_etas = np.concatenate(load_object(folder_containing_lists + '/pbox_etas.pkl'))
+    total_tru_etas = np.concatenate(load_object(folder_containing_lists + '/tbox_etas.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_clus, bins, _ = ax[0].hist(total_clus_etas,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_etas)))
@@ -190,8 +190,8 @@ def make_phys_plots(
 
 
     #Matched
-    total_match_pred_eta = np.concatenate(load_object(folder_containing_lists + '/tbox_match_etas.pkl'))
-    total_match_tru_eta = np.concatenate(load_object(folder_containing_lists + '/pbox_match_etas.pkl'))
+    total_match_pred_eta = np.concatenate(load_object(folder_containing_lists + '/pbox_match_etas.pkl'))
+    total_match_tru_eta = np.concatenate(load_object(folder_containing_lists + '/tbox_match_etas.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_match_pred_eta,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_match_pred_eta)))
@@ -217,8 +217,8 @@ def make_phys_plots(
 
 
     #Unmatched
-    total_unmatch_pred_eta = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_etas.pkl'))
-    total_unmatch_tru_eta = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_etas.pkl'))
+    total_unmatch_pred_eta = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_etas.pkl'))
+    total_unmatch_tru_eta = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_etas.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_unmatch_pred_eta,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_unmatch_pred_eta)))
@@ -254,8 +254,8 @@ def make_phys_plots(
 
     #total
     total_clus_phis = np.concatenate(load_object(folder_containing_lists + '/cluster_phis.pkl'))
-    total_pred_phis = np.concatenate(load_object(folder_containing_lists + '/tbox_phis.pkl'))
-    total_tru_phis = np.concatenate(load_object(folder_containing_lists + '/pbox_phis.pkl'))
+    total_pred_phis = np.concatenate(load_object(folder_containing_lists + '/pbox_phis.pkl'))
+    total_tru_phis = np.concatenate(load_object(folder_containing_lists + '/tbox_phis.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_clus, bins, _ = ax[0].hist(total_clus_phis,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_phis)))
@@ -284,8 +284,8 @@ def make_phys_plots(
 
 
     #Matched
-    total_match_pred_phi = np.concatenate(load_object(folder_containing_lists + '/tbox_match_phis.pkl'))
-    total_match_tru_phi = np.concatenate(load_object(folder_containing_lists + '/pbox_match_phis.pkl'))
+    total_match_pred_phi = np.concatenate(load_object(folder_containing_lists + '/pbox_match_phis.pkl'))
+    total_match_tru_phi = np.concatenate(load_object(folder_containing_lists + '/tbox_match_phis.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_match_pred_phi,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_match_pred_phi)))
@@ -311,8 +311,8 @@ def make_phys_plots(
 
 
     #Unmatched
-    total_unmatch_pred_phi = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_phis.pkl'))
-    total_unmatch_tru_phi = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_phis.pkl'))
+    total_unmatch_pred_phi = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_phis.pkl'))
+    total_unmatch_tru_phi = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_phis.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_unmatch_pred_phi,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_unmatch_pred_phi)))
@@ -347,8 +347,8 @@ def make_phys_plots(
 
     #total
     total_clus_n_cells = np.concatenate(load_object(folder_containing_lists + '/cluster_n_cells.pkl'))
-    total_pred_n_cells = np.concatenate(load_object(folder_containing_lists + '/tbox_n_cells.pkl'))
-    total_tru_n_cells = np.concatenate(load_object(folder_containing_lists + '/pbox_n_cells.pkl'))
+    total_pred_n_cells = np.concatenate(load_object(folder_containing_lists + '/pbox_n_cells.pkl'))
+    total_tru_n_cells = np.concatenate(load_object(folder_containing_lists + '/tbox_n_cells.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_clus, bins, _ = ax[0].hist(total_clus_n_cells,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_n_cells)))
@@ -401,8 +401,8 @@ def make_phys_plots(
 
 
     #Matched
-    total_match_pred_n_cells = np.concatenate(load_object(folder_containing_lists + '/tbox_match_n_cells.pkl'))
-    total_match_tru_n_cells = np.concatenate(load_object(folder_containing_lists + '/pbox_match_n_cells.pkl'))
+    total_match_pred_n_cells = np.concatenate(load_object(folder_containing_lists + '/pbox_match_n_cells.pkl'))
+    total_match_tru_n_cells = np.concatenate(load_object(folder_containing_lists + '/tbox_match_n_cells.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_match_pred_n_cells,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_match_pred_n_cells)))
@@ -428,8 +428,8 @@ def make_phys_plots(
 
 
     #Unmatched
-    total_unmatch_pred_n_cells = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_n_cells.pkl'))
-    total_unmatch_tru_n_cells = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_n_cells.pkl'))
+    total_unmatch_pred_n_cells = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_n_cells.pkl'))
+    total_unmatch_tru_n_cells = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_n_cells.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_unmatch_pred_n_cells,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_unmatch_pred_n_cells)))
@@ -459,8 +459,8 @@ def make_phys_plots(
     #total
     total_clus_eT = total_clus_energies/np.cosh(total_clus_etas)
     print(total_clus_energies.shape,total_clus_etas.shape,total_clus_eT.shape)
-    total_pred_eT = np.concatenate(load_object(folder_containing_lists + '/tbox_eT.pkl'))
-    total_tru_eT = np.concatenate(load_object(folder_containing_lists + '/pbox_eT.pkl'))
+    total_pred_eT = np.concatenate(load_object(folder_containing_lists + '/pbox_eT.pkl'))
+    total_tru_eT = np.concatenate(load_object(folder_containing_lists + '/tbox_eT.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_clus, bins, _ = ax[0].hist(total_clus_eT/1000,bins=50,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_energies)))
@@ -511,8 +511,8 @@ def make_phys_plots(
 
 
     #Matched
-    total_match_pred_eT = np.concatenate(load_object(folder_containing_lists + '/tbox_match_eT.pkl'))
-    total_match_tru_eT = np.concatenate(load_object(folder_containing_lists + '/pbox_match_eT.pkl'))
+    total_match_pred_eT = np.concatenate(load_object(folder_containing_lists + '/pbox_match_eT.pkl'))
+    total_match_tru_eT = np.concatenate(load_object(folder_containing_lists + '/tbox_match_eT.pkl'))
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_match_pred_eT/1000,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_match_pred_energy)))
     n_tbox, _, _ = ax[0].hist(total_match_tru_eT/1000,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_match_tru_energy)))
@@ -536,8 +536,8 @@ def make_phys_plots(
 
 
     #Unmatched
-    total_unmatch_pred_eT = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_eT.pkl'))
-    total_unmatch_tru_eT = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_eT.pkl'))
+    total_unmatch_pred_eT = np.concatenate(load_object(folder_containing_lists + '/pbox_unmatch_eT.pkl'))
+    total_unmatch_tru_eT = np.concatenate(load_object(folder_containing_lists + '/tbox_unmatch_eT.pkl'))
 
     f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
     n_pbox, bins, _ = ax[0].hist(total_unmatch_pred_eT/1000,bins=50,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_unmatch_pred_energy)))
@@ -904,19 +904,13 @@ def make_phys_plots(
     plt.close()
 
 
-
-
-
-
-
-
     return 
 
 
 
 
-folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_50k5_mu_20e/phys_metrics/"
-save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_50k5_mu_20e/"
+folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/phys_metrics/"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD1_50k5_mu_15e/"
 if __name__=="__main__":
     print('Making physics plots')
     make_phys_plots(folder_to_look_in,save_at)
