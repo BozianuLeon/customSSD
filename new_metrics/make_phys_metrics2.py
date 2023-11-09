@@ -64,6 +64,8 @@ eval_results = {
 }
 
 
+#TODO: Make this work for matched/unmatched boxes and quickly!
+
 
 def calculate_phys_metrics2(
     folder_containing_struc_array,
