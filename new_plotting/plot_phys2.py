@@ -333,34 +333,34 @@ def make_phys_plots2(
     #####################################################################################################################################
     #Plot 8, the cluster/box negative frac: sum(negE) / sum(posE)
     #bug, divide by 0 encountered when there are no positive cells in a box
-    # total_cl_cell_neg_frac = np.concatenate(load_object(topo_folder + '/cl_cell_neg_frac.pkl'))
-    # total_tru_neg_frac = np.concatenate(load_object(physics_folder + '/tboxes_neg_frac.pkl'))
-    # total_pred_neg_frac = np.concatenate(load_object(physics_folder + '/pboxes_neg_frac.pkl'))
+    total_cl_cell_neg_frac = np.concatenate(load_object(topo_folder + '/cl_cell_neg_frac.pkl'))
+    total_tru_neg_frac = np.concatenate(load_object(physics_folder + '/tboxes_neg_frac.pkl'))
+    total_pred_neg_frac = np.concatenate(load_object(physics_folder + '/pboxes_neg_frac.pkl'))
     # print(min(total_pred_neg_frac),max(total_pred_neg_frac))
     # print(min(total_tru_neg_frac),max(total_tru_neg_frac))
     # print(min(total_cl_cell_neg_frac),max(total_cl_cell_neg_frac))
-    # f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
-    # n_pbox, bins, _ = ax[0].hist(total_pred_neg_frac,bins=100,density=(not log),histtype='step',color='red',label='Predicted Boxes ({})'.format(len(total_pred_neg_frac)))
-    # n_cl_cell, _, _ = ax[0].hist(total_cl_cell_neg_frac,bins=bins,density=(not log),histtype='step',color='dodgerblue',label='cl_cell >5GeV ({})'.format(len(total_cl_cell_neg_frac)))
-    # n_tbox, _, _ = ax[0].hist(total_tru_neg_frac,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({})'.format(len(total_tru_neg_frac)))
-    # ax[0].grid()
-    # ax[0].set(ylabel='Freq.',title='Cluster/Box Negative fraction sum(negE)/sum(posE)')
-    # ax[0].legend()
+    f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    n_pbox, bins, _ = ax[0].hist(total_pred_neg_frac,bins=100,density=(not log),histtype='step',color='red',label='Preds {:.2f}+-{:.1f}'.format(np.mean(total_pred_neg_frac),np.std(total_pred_neg_frac)))
+    n_cl_cell, _, _ = ax[0].hist(total_cl_cell_neg_frac,bins=bins,density=(not log),histtype='step',color='dodgerblue',label='cl_cell >5GeV {:.2f}+-{:.1f}'.format(np.mean(total_cl_cell_neg_frac),np.std(total_cl_cell_neg_frac)))
+    n_tbox, _, _ = ax[0].hist(total_tru_neg_frac,bins=bins,density=(not log),histtype='step',color='green',label='Truth {:.2f}+-{:.1f}'.format(np.mean(total_tru_neg_frac),np.std(total_tru_neg_frac)))
+    ax[0].grid()
+    ax[0].set(ylabel='Freq.',title='Cluster/Box Negative fraction sum(negE)/sum(posE)')
+    ax[0].legend()
 
-    # bin_centers = (bins[:-1] + bins[1:]) / 2
-    # ax[1].scatter(bin_centers, get_ratio(n_tbox,n_cl_cell), label='TBox Clusters',marker='_',color='green',s=50)
-    # ax[1].scatter(bin_centers, get_ratio(n_pbox,n_cl_cell), label='PBox Clusters',marker='_',color='red',s=50)
-    # ax[1].axhline(1,ls='--',color='dodgerblue',alpha=0.5)
-    # ax[1].set(xlabel="Cluster Negative frac.",ylabel='Ratio')
-    # ax[1].grid()
-    # f.subplots_adjust(hspace=0)
-    # if log:
-    #     ax[0].set(yscale='log')
-    #     f.savefig(save_loc1 + '/total_boxes_neg_frac_log.png')
-    # else:
-    #     ax[0].set(ylabel='Freq. Density')
-    #     f.savefig(save_loc1 + '/total_boxes_neg_frac.png')
-    # plt.close()
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    ax[1].scatter(bin_centers, get_ratio(n_tbox,n_cl_cell), label='TBox Clusters',marker='_',color='green',s=50)
+    ax[1].scatter(bin_centers, get_ratio(n_pbox,n_cl_cell), label='PBox Clusters',marker='_',color='red',s=50)
+    ax[1].axhline(1,ls='--',color='dodgerblue',alpha=0.5)
+    ax[1].set(xlabel="Cluster Negative frac.",ylabel='Ratio')
+    ax[1].grid()
+    f.subplots_adjust(hspace=0)
+    if log:
+        ax[0].set(yscale='log')
+        f.savefig(save_loc1 + '/total_boxes_neg_frac_log.png')
+    else:
+        ax[0].set(ylabel='Freq. Density')
+        f.savefig(save_loc1 + '/total_boxes_neg_frac.png')
+    plt.close()
 
 
     #####################################################################################################################################
@@ -456,8 +456,102 @@ def make_phys_plots2(
     plt.close()
 
 
+    #####################################################################################################################################
+    #plot 12, energy but only including cells >2sig
 
+    save_loc7 = save_folder + f"/new_phys/{mode}/two_sig/"
+    if not os.path.exists(save_loc7):
+        os.makedirs(save_loc7)
 
+    total_pred_energies_2sig = np.concatenate(load_object(physics_folder + '/pboxes_energies_2sig.pkl'))
+    total_tru_energies_2sig = np.concatenate(load_object(physics_folder + '/tboxes_energies_2sig.pkl'))
+
+    f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    n_pbox, bins, _ = ax[0].hist(total_pred_energies_2sig/1000,bins=100,density=(not log),histtype='step',color='red',label='Predicted Boxes ({}) cell sig. >2'.format(len(total_pred_energies)))
+    n_clus, _, _ = ax[0].hist(total_clus_energies/1000,bins=bins,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_energies)))
+    n_cl_cell, _, _ = ax[0].hist(total_cl_cell_energies/1000,bins=bins,density=(not log),histtype='step',color='dodgerblue',label='cl_cell >5GeV ({})'.format(len(total_cl_cell_energies)))
+    n_tbox, _, _ = ax[0].hist(total_tru_energies_2sig/1000,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({}) cell sig. >2'.format(len(total_tru_energies)))
+    ax[0].grid()
+    ax[0].set(ylabel='Freq.',title='Cluster/Box Energies')
+    ax[0].legend()
+
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
+    ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
+    ax[1].scatter(bin_centers, get_ratio(n_cl_cell,n_clus), label='cl_cell',marker='_',color='dodgerblue',s=50)
+    ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
+    ax[1].set(xlabel="Cluster Energy (GeV)",ylabel='Ratio')
+    ax[1].grid()
+    f.subplots_adjust(hspace=0)
+    if log:
+        ax[0].set(yscale='log')
+        f.savefig(save_loc7 + '/total_boxes_energy_2sig_log.png')
+    else:
+        ax[0].set(ylabel='Freq. Density')
+        f.savefig(save_loc7 + '/total_boxes_energy_2sig.png')
+    plt.close()
+
+    #####################################################################################################################################
+    #plot 13, e transverse but only including cells >2sig
+
+    total_pred_et_2sig = np.concatenate(load_object(physics_folder + '/pboxes_eT_2sig.pkl'))
+    total_tru_et_2sig = np.concatenate(load_object(physics_folder + '/tboxes_eT_2sig.pkl'))
+
+    f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    n_pbox, bins, _ = ax[0].hist(total_pred_et_2sig/1000,bins=100,density=(not log),histtype='step',color='red',label='Predicted Boxes ({}) cell sig. >2'.format(len(total_pred_energies)))
+    n_clus, _, _ = ax[0].hist(total_clus_eT/1000,bins=bins,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_energies)))
+    n_cl_cell, _, _ = ax[0].hist(total_cl_cell_eT/1000,bins=bins,density=(not log),histtype='step',color='dodgerblue',label='cl_cell >5GeV ({})'.format(len(total_cl_cell_energies)))
+    n_tbox, _, _ = ax[0].hist(total_tru_et_2sig/1000,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({}) cell sig. >2'.format(len(total_tru_energies)))
+    ax[0].grid()
+    ax[0].set(ylabel='Freq.',title='Cluster/Box Transverse Energy')
+    ax[0].legend()
+
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
+    ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
+    ax[1].scatter(bin_centers, get_ratio(n_cl_cell,n_clus), label='cl_cell',marker='_',color='dodgerblue',s=50)
+    ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
+    ax[1].set(xlabel="Cluster $E_T$ (GeV)",ylabel='Ratio')
+    ax[1].grid()
+    f.subplots_adjust(hspace=0)
+    if log:
+        ax[0].set(yscale='log')
+        f.savefig(save_loc7 + '/total_boxes_eT_2sig_log.png')
+    else:
+        ax[0].set(ylabel='Freq. Density')
+        f.savefig(save_loc7 + '/total_boxes_eT_2sig.png')
+    plt.close()
+
+    #####################################################################################################################################
+    #plot 14, n cells but only including cells >2sig
+
+    total_pred_n_cells_2sig = np.concatenate(load_object(physics_folder + '/pboxes_n_cells_2sig.pkl'))
+    total_tru_n_cells_2sig = np.concatenate(load_object(physics_folder + '/tboxes_n_cells_2sig.pkl'))
+
+    f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    n_pbox, bins, _ = ax[0].hist(total_pred_n_cells_2sig,bins=100,density=(not log),histtype='step',color='red',label='Predicted Boxes ({}) cell sig. >2'.format(len(total_pred_n_cells_2sig)))
+    n_clus, _, _ = ax[0].hist(total_clus_n_cells,bins=bins,density=(not log),histtype='step',color='tab:blue',label='TopoCl >5GeV ({})'.format(len(total_clus_n_cells)))
+    n_cl_cell, _, _ = ax[0].hist(total_cl_cell_n_cells,bins=bins,density=(not log),histtype='step',color='dodgerblue',label='cl_cell >5GeV ({})'.format(len(total_cl_cell_n_cells)))
+    n_tbox, _, _ = ax[0].hist(total_tru_n_cells_2sig,bins=bins,density=(not log),histtype='step',color='green',label='Truth Boxes ({}) cell sig. >2'.format(len(total_tru_n_cells_2sig)))
+    ax[0].grid()
+    ax[0].set(ylabel='Freq.',title='Number of cells in Cluster/Box ')
+    ax[0].legend()
+
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    ax[1].scatter(bin_centers, get_ratio(n_tbox,n_clus), label='TBox Clusters',marker='_',color='green',s=50)
+    ax[1].scatter(bin_centers, get_ratio(n_pbox,n_clus), label='PBox Clusters',marker='_',color='red',s=50)
+    ax[1].scatter(bin_centers, get_ratio(n_cl_cell,n_clus), label='cl_cell',marker='_',color='dodgerblue',s=50)
+    ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
+    ax[1].set(xlabel="# cells in cluster",ylabel='Ratio')
+    ax[1].grid()
+    f.subplots_adjust(hspace=0)
+    if log:
+        ax[0].set(yscale='log')
+        f.savefig(save_loc7 + '/total_boxes_n_cells_2sig_log.png')
+    else:
+        ax[0].set(ylabel='Freq. Density')
+        f.savefig(save_loc7 + '/total_boxes_n_cells_2sig.png')
+    plt.close()
 
 
 
@@ -509,7 +603,7 @@ def make_phys_plots2(
 
 
 
-physics_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/new_phys_metrics/"
+physics_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/new_phys_metrics/total/"
 topocl_cell_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/truth_box_eval/"
     
 save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD1_50k5_mu_15e/"

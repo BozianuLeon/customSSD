@@ -47,6 +47,10 @@ eval_results = {
                 'tboxes_significance':  [],
                 'tboxes_neg_frac':      [],
                 'tboxes_max_frac':      [],
+            
+                'tboxes_energies_2sig': [],
+                'tboxes_eT_2sig':       [], 
+                'tboxes_n_cells_2sig':  [],  
                
                 'n_pboxes':             [],
                 'num_pboxes':           [],
@@ -60,6 +64,9 @@ eval_results = {
                 'pboxes_neg_frac':      [],
                 'pboxes_max_frac':      [],
 
+                'pboxes_energies_2sig': [],
+                'pboxes_eT_2sig':       [], 
+                'pboxes_n_cells_2sig':  [],  
 
 }
 
@@ -70,6 +77,7 @@ eval_results = {
 def calculate_phys_metrics2(
     folder_containing_struc_array,
     save_folder,
+    mode = 'total',
 ):
 
     with open(folder_containing_struc_array + "/struc_array.npy", 'rb') as f:
@@ -144,6 +152,10 @@ def calculate_phys_metrics2(
         eval_results['tboxes_neg_frac'].append(tb_phys_dict['neg_frac'])
         eval_results['tboxes_max_frac'].append(tb_phys_dict['max_frac'])
 
+        eval_results['tboxes_energies_2sig'].append(tb_phys_dict['energy2sig'])
+        eval_results['tboxes_eT_2sig'].append(tb_phys_dict['eT2sig'])
+        eval_results['tboxes_n_cells_2sig'].append(tb_phys_dict['n_cells2sig'])
+
         eval_results['n_pboxes'].append(len(pees))
         eval_results['num_pboxes'].append(len(pb_phys_dict['energy']))
         eval_results['pboxes_energies'].append(pb_phys_dict['energy'])
@@ -155,11 +167,15 @@ def calculate_phys_metrics2(
         eval_results['pboxes_significance'].append(pb_phys_dict['significance'])
         eval_results['pboxes_neg_frac'].append(pb_phys_dict['neg_frac'])
         eval_results['pboxes_max_frac'].append(pb_phys_dict['max_frac']) 
+
+        eval_results['pboxes_energies_2sig'].append(pb_phys_dict['energy2sig'])
+        eval_results['pboxes_eT_2sig'].append(pb_phys_dict['eT2sig'])
+        eval_results['pboxes_n_cells_2sig'].append(pb_phys_dict['n_cells2sig'])
         
         # print('time: ', time.perf_counter()-start,' (s)')
 
 
-    save_loc = save_folder + "/new_phys_metrics/"
+    save_loc = save_folder + f"/new_phys_metrics/{mode}/"
     if not os.path.exists(save_loc):
         os.makedirs(save_loc)
 
