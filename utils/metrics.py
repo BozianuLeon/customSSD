@@ -631,7 +631,7 @@ def RetrieveCellIdsFromBox(cells,boxes):
             y_cond = np.logical_and.reduce((cells['cell_phi']>=phi_min, cells['cell_phi']<=phi_max)) #multiple conditions #could use np.all(x,axis)
         
         tot_cond = np.logical_and(x_condition,y_cond)
-        cells_here = cells[np.where(tot_cond)][['cell_E','cell_eta','cell_phi','cell_Sigma','cell_IdCells']]
+        cells_here = cells[np.where(tot_cond)][['cell_E','cell_eta','cell_phi','cell_Sigma','cell_IdCells','cell_xCells','cell_yCells','cell_zCells']]
         if len(cells_here):
             list_containing_all_cells.append(cells_here)
         else:
@@ -661,7 +661,7 @@ def RetrieveCellIdsFromCluster(cells,cluster_cell_info):
     list_containing_all_cells = []
     for cluster in range(len(cluster_cell_info)):
         cell_mask = np.isin(cells['cell_IdCells'],cluster_cell_info[cluster]['cl_cell_IdCells'])
-        desired_cells = cells[cell_mask][['cell_E','cell_eta','cell_phi','cell_Sigma','cell_IdCells']]
+        desired_cells = cells[cell_mask][['cell_E','cell_eta','cell_phi','cell_Sigma','cell_IdCells','cell_xCells','cell_yCells','cell_zCells']]
         list_containing_all_cells.append(desired_cells)
     # return desired_cells
     return list_containing_all_cells
@@ -811,7 +811,47 @@ def CalculateSignficanceFromCells(all_cells,desired_cells):
 
     return total_energy / total_noise
 
+def CalculateEnergyFromTwoSigmaCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # total energy,  for cells with signif > 2
+    
+    if desired_cells is None:
+        return np.nan
+    cell_signif = desired_cells['cell_E'] / desired_cells['cell_Sigma']
+    two_sigma_cells = desired_cells[abs(cell_signif)>=2]
+    return sum(two_sigma_cells['cell_E']) 
 
+def CalculateEtFromTwoSigmaCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # E_T, Transverse energy for cells with signif > 2
+    
+    if desired_cells is None:
+        return np.nan
+    cell_signif = desired_cells['cell_E'] / desired_cells['cell_Sigma']
+    two_sigma_cells = desired_cells[abs(cell_signif)>=2]
+
+    total_energy = sum(two_sigma_cells['cell_E']) 
+    energy_weighted_eta = np.dot(two_sigma_cells['cell_eta'],np.abs(two_sigma_cells['cell_E'])) / sum(np.abs(two_sigma_cells['cell_E']))
+    return total_energy / np.cosh(energy_weighted_eta) 
+
+def CalculateNCellsFromTwoSigmaCells(all_cells,desired_cells):
+    # Inputs
+    # cell_ids, list of cell ids that we want to calculate 
+    # cells, structured array containing all cells in event ['cell_*'] properties
+    # Outputs
+    # Number of cells in the box/cluster with signif > 2
+
+    if desired_cells is None:
+        return np.nan
+    cell_signif = desired_cells['cell_E'] / desired_cells['cell_Sigma']
+    two_sigma_cells = desired_cells[abs(cell_signif)>=2]
+    return len(two_sigma_cells) 
 
 # def GetPhysicsFromCells(all_cell_ids, cells):
 #     # Inputs
@@ -877,6 +917,10 @@ def get_physics_dictionary(all_cell_ids, cells):
         'significance' : [CalculateSignficanceFromCells(cells,ids_i) for ids_i in all_cell_ids],
         'neg_frac'     : [CalculateNegativeEnergyFromCells(cells,ids_i) for ids_i in all_cell_ids],
         'max_frac'     : [CalculateMaxEnergyFracFromCells(cells,ids_i) for ids_i in all_cell_ids],
+
+        'energy2sig'   : [CalculateEnergyFromTwoSigmaCells(cells,ids_i) for ids_i in all_cell_ids],
+        'eT2sig'       : [CalculateEtFromTwoSigmaCells(cells,ids_i) for ids_i in all_cell_ids],
+        'n_cells2sig'  : [CalculateNCellsFromTwoSigmaCells(cells,ids_i) for ids_i in all_cell_ids],
     }
 
     return output_dict
