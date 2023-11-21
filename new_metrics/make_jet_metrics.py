@@ -102,7 +102,7 @@ def calculate_jet_metrics(
             cluster_data = cluster_data[cluster_data['cl_E_em']+cluster_data['cl_E_had']>5000]
 
         # jets_file = "/home/users/b/bozianu/work/data/pileup50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(h5f)
-        jets_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/jets/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
+        jets_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(jets_file,"r") as f:
             j_data = f["caloCells"]
             jet_data = j_data["2d"][event_no]

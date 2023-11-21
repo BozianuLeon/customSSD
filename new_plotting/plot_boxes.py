@@ -1,8 +1,6 @@
 import numpy as np 
-import pandas as pd
 import os
 
-import itertools
 try:
     import cPickle as pickle
 except ModuleNotFoundError:
@@ -10,6 +8,12 @@ except ModuleNotFoundError:
 
 import matplotlib.pyplot as plt
 import matplotlib
+
+import mplhep as hep
+hep.style.use(hep.style.ATLAS)
+
+
+
 
 def load_object(fname):
     with open(fname,'rb') as file:
@@ -50,6 +54,215 @@ list_x_labels = ['Number Truth Boxes - Number Predicted',
                  'Percentage of calorimeter covered by truth boxes (%)',   
                  'Percentage of matched truth boxes covered by predictions (%)'   
                  ]
+
+
+def make_box_plots(
+    boxes_folder,
+    physics_folder,
+    save_folder,
+    log  = True,
+    image_format = "png",
+):
+
+    save_loc = save_folder + f"/boxes/new/"
+    if not os.path.exists(save_loc):
+        os.makedirs(save_loc)
+
+
+    #####################################################################################################################################
+    #Plot 1, the number of clusters, truth and pred boxes
+    n_truth = load_object(boxes_folder + '/n_truth.pkl')
+    n_preds = load_object(boxes_folder + '/n_preds.pkl')
+    n_cl = load_object(physics_folder + '/n_clusters.pkl')
+
+    f,ax = plt.subplots(2,1,figsize=(9, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    freq_cl, bins, _   = ax[0].hist(n_cl,bins=50,density=(not log),histtype='step',color='tab:blue',lw=1.5,label='TopoCl >5GeV {:.2f}$\pm${:.1f}'.format(np.mean(n_cl),np.std(n_cl)))
+    freq_tru, bins, _ = ax[0].hist(n_truth,bins=bins,density=(not log),histtype='step',color='green',lw=1.5,label='Truth Boxes {:.2f}$\pm${:.1f}'.format(np.mean(n_truth),np.std(n_truth)))
+    freq_pred, _, _   = ax[0].hist(n_preds,bins=bins,density=(not log),histtype='step',color='red',lw=1.5,label='Predicted Boxes {:.2f}$\pm${:.1f}'.format(np.mean(n_preds),np.std(n_preds)))
+    
+    ax[0].grid()
+    ax[0].set_title('Number of clusters/boxes per event', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax[0].legend(loc='lower left',bbox_to_anchor=(0.6, 0.5),fontsize="x-small")
+
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_cl),marker='_',color='red',s=50)
+    ax[1].scatter(bin_centers, get_ratio(freq_tru,freq_cl),marker='_',color='green',s=50)
+    ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
+    ax[1].set(xlabel="# Clusters",ylabel='Ratio')
+    ax[1].grid()
+    hep.atlas.label(ax=ax[0],label='Work in Progress',data=False,lumi=None,loc=1)
+    f.subplots_adjust(hspace=0.075)
+    if log:
+        ax[0].set(yscale='log',ylabel='Freq.')
+        f.savefig(save_loc + f'/n_clusters_log.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    else:
+        ax[0].set(ylabel='Freq. Density')
+        f.savefig(save_loc + f'/n_clusters.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+    #####################################################################################################################################
+    #Plot 2, the number of matched clusters, truth and pred boxes
+    n_match_truth = load_object(boxes_folder + '/n_matched_truth.pkl')
+    n_match_preds = load_object(boxes_folder + '/n_matched_preds.pkl')
+
+    f,ax = plt.subplots(2,1,figsize=(9, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    freq_cl, bins, _   = ax[0].hist(n_cl,bins=50,density=(not log),histtype='step',color='tab:blue',lw=1.5,label='TopoCl >5GeV {:.2f}$\pm${:.1f}'.format(np.mean(n_cl),np.std(n_cl)))
+    freq_tru, bins, _ = ax[0].hist(n_match_truth,bins=bins,density=(not log),histtype='step',color='green',lw=1.5,label='Truth Boxes {:.2f}$\pm${:.1f}'.format(np.mean(n_match_truth),np.std(n_match_truth)))
+    freq_pred, _, _   = ax[0].hist(n_match_preds,bins=bins,density=(not log),histtype='step',color='red',lw=1.5,label='Predicted Boxes {:.2f}$\pm${:.1f}'.format(np.mean(n_match_preds),np.std(n_match_preds)))
+    
+    ax[0].grid()
+    ax[0].set_title('Number of Matched boxes per event', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax[0].legend(loc='lower left',bbox_to_anchor=(0.6, 0.5),fontsize="x-small")
+
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_cl),marker='_',color='red',s=50)
+    ax[1].scatter(bin_centers, get_ratio(freq_tru,freq_cl),marker='_',color='green',s=50)
+    ax[1].axhline(1,ls='--',color='tab:blue',alpha=0.5)
+    ax[1].set(xlabel="# Matched Boxes/Clusters",ylabel='Ratio')
+    ax[1].grid()
+    hep.atlas.label(ax=ax[0],label='Work in Progress',data=False,lumi=None,loc=1)
+    f.subplots_adjust(hspace=0.075)
+    if log:
+        ax[0].set(yscale='log',ylabel='Freq.')
+        f.savefig(save_loc + f'/n_match_clusters_log.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    else:
+        ax[0].set(ylabel='Freq. Density')
+        f.savefig(save_loc + f'/n_match_clusters.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+    #####################################################################################################################################
+    #Plot 3, the number of unmatched clusters, truth and pred boxes
+    n_unmatch_truth = load_object(boxes_folder + '/n_unmatched_truth.pkl')
+    n_unmatch_preds = load_object(boxes_folder + '/n_unmatched_preds.pkl')
+
+    f,ax = plt.subplots(2,1,figsize=(9, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    freq_tru, bins, _ = ax[0].hist(n_unmatch_truth,bins=50,density=(not log),histtype='step',color='green',lw=1.5,label='Truth Boxes {:.2f}$\pm${:.1f}'.format(np.mean(n_unmatch_truth),np.std(n_unmatch_truth)))
+    freq_pred, _, _   = ax[0].hist(n_unmatch_preds,bins=bins,density=(not log),histtype='step',color='red',lw=1.5,label='Predicted Boxes {:.2f}$\pm${:.1f}'.format(np.mean(n_unmatch_preds),np.std(n_unmatch_preds)))
+    
+    ax[0].grid()
+    ax[0].set_title('Number of Unmatched boxes per event', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax[0].legend(loc='lower left',bbox_to_anchor=(0.65, 0.5),fontsize="x-small")
+
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50)
+    ax[1].axhline(1,ls='--',color='green',alpha=0.5)
+    ax[1].set(xlabel="# Unmatched Boxes",ylabel='Ratio')
+    ax[1].grid()
+    hep.atlas.label(ax=ax[0],label='Work in Progress',data=False,lumi=None,loc=1)
+    f.subplots_adjust(hspace=0.075)
+    if log:
+        ax[0].set(yscale='log',ylabel='Freq.')
+        f.savefig(save_loc + f'/n_unmatch_clusters_log.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    else:
+        ax[0].set(ylabel='Freq. Density')
+        f.savefig(save_loc + f'/n_unmatch_clusters.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+    #####################################################################################################################################
+    #Plot 4, the percentage area of calorimeter covered
+    perc_area_truth = load_object(boxes_folder + '/percentage_total_area_covered_truth.pkl')
+    perc_area_preds = load_object(boxes_folder + '/percentage_total_area_covered_preds.pkl')
+
+    f,ax = plt.subplots(2,1,figsize=(7.5, 7.5), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+    freq_tru, bins, _ = ax[0].hist(perc_area_truth,bins=50,density=(not log),histtype='step',color='green',lw=1.5,label='Truth Boxes ({:.2f}$\pm${:.1f})'.format(np.mean(perc_area_truth),np.std(perc_area_truth)))
+    freq_pred, _, _   = ax[0].hist(perc_area_preds,bins=bins,density=(not log),histtype='step',color='red',lw=1.5,label='Predicted Boxes ({:.2f}$\pm${:.1f})'.format(np.mean(perc_area_preds),np.std(perc_area_preds)))
+    
+    ax[0].grid()
+    ax[0].set_title('% of total calorimeter covered', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax[0].legend(loc='lower left',bbox_to_anchor=(0.4, 0.4),fontsize="medium")
+
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50,lw=1.5)
+    ax[1].axhline(1,ls='--',color='green',alpha=0.5)
+    ax[1].set(xlabel="Percentage calorimeter area covered",ylabel='Ratio')
+    ax[1].grid()
+    hep.atlas.label(ax=ax[0],label='Work in Progress',loc=1,data=False,lumi=None)
+    f.subplots_adjust(hspace=0.075)
+    if log:
+        ax[0].set(yscale='log',ylabel='Freq.')
+        f.savefig(save_loc + f'/per_area_covered_log.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    else:
+        ax[0].set(ylabel='Freq. Density')
+        f.savefig(save_loc + f'/per_area_covered.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+
+    #####################################################################################################################################
+    #####################################################################################################################################
+    #####################################################################################################################################
+    #Binned Plots
+    bind_save_loc = save_loc + "binned"
+    if not os.path.exists(bind_save_loc):
+        os.makedirs(bind_save_loc)    
+
+
+    n_truth_arr = np.array(n_truth)
+
+    n_match_truth_arr = np.array(n_match_truth)
+    n_match_preds_arr = np.array(n_match_preds)
+    binnings = [0,30,50,80,100,200]
+    numbers_of_bins = [15,25,35,40,50]
+    for i in range(len(binnings)-1):
+        clusters_mask = (n_truth_arr > binnings[i]) & (n_truth_arr < binnings[i+1])
+
+        n_m_truth_many = n_match_truth_arr[clusters_mask]
+        n_m_preds_many = n_match_preds_arr[clusters_mask]
+
+        f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+        freq_tru, bins, _ = ax[0].hist(n_m_truth_many,bins=int(len(n_m_truth_many)/20),range=(0,max(n_m_truth_many)),histtype='step',lw=1.5,color='green',label='Truth Boxes ({:.2f}$\pm${:.1f})'.format(np.mean(n_m_truth_many),np.std(n_m_truth_many)))
+        freq_pred, _, _ = ax[0].hist(n_m_preds_many,bins=bins,histtype='step',color='red',lw=1.5,label='Predictions {:.2f}$\pm${:.1f}'.format(np.mean(n_m_preds_many),np.std(n_m_preds_many)))
+        ax[0].grid()
+        ax[0].set(ylabel='Freq.',title='{} Events, [{},{}] true objects '.format(len(n_m_truth_many),binnings[i],binnings[i+1]))
+        ax[0].legend()
+
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+        ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50)
+        ax[1].axhline(1,ls='--',color='green',alpha=0.5)
+        ax[1].set(xlabel="Number of Matched Boxes (per event)",ylabel='Ratio')
+        ax[1].grid()
+        f.subplots_adjust(hspace=0)
+        f.savefig(bind_save_loc + '/matched_n_boxes_bin{}.png'.format(i))
+        plt.close()
+
+
+    
+
+    n_unmatch_truth_arr = np.array(n_unmatch_truth)
+    n_unmatch_preds_arr = np.array(n_unmatch_preds)
+    binnings = [0,30,50,80,100,200]
+    for i in range(len(binnings)-1):
+        clusters_mask = (n_truth_arr > binnings[i]) & (n_truth_arr < binnings[i+1])
+
+        n_unm_truth_many = n_unmatch_truth_arr[clusters_mask]
+        n_unm_preds_many = n_unmatch_preds_arr[clusters_mask]
+
+        f,ax = plt.subplots(2,1,figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [4, 1]})
+        freq_tru, bins, _ = ax[0].hist(n_unm_truth_many,bins=int(len(n_unm_truth_many)/20),range=(0,max(n_unm_truth_many)),histtype='step',lw=1.5,color='green',label='Truth Boxes ({:.2f}$\pm${:.1f})'.format(np.mean(n_unm_truth_many),np.std(n_unm_truth_many)))
+        freq_pred, _, _ = ax[0].hist(n_unm_preds_many,bins=bins,histtype='step',lw=1.5,color='red',label='Predicted Boxes ({:.2f}$\pm${:.1f})'.format(np.mean(n_unm_preds_many),np.std(n_unm_preds_many)))
+        ax[0].grid()
+        ax[0].set(ylabel='Freq.',title='{} Events, [{},{}] true objects '.format(len(n_unm_truth_many),binnings[i],binnings[i+1]))
+        ax[0].legend()
+
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+        ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50)
+        ax[1].axhline(1,ls='--',color='green',alpha=0.5)
+        ax[1].set(xlabel="Number of Unmatched Boxes (per event)",ylabel='Ratio')
+        ax[1].grid()
+        f.subplots_adjust(hspace=0)
+        f.savefig(bind_save_loc + '/unmatched_n_boxes_bin{}.png'.format(i))
+        plt.close()
+
+
+
+
+
+
+
+
 
 def make_box_metric_plots(
     folder_containing_lists,
@@ -340,11 +553,16 @@ def make_box_metric_plots(
 
 folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/box_metrics/"
 save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD1_50k5_mu_15e/"
-
+box_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/box_metrics/"
+physics_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/new_phys_metrics/total/"
 
 if __name__=="__main__":
     print('Making plots about boxes')
-    make_box_metric_plots(folder_to_look_in,save_at)
+    make_box_plots(box_folder,physics_folder,save_at,log=True)
+    make_box_plots(box_folder,physics_folder,save_at,log=False)
+    # make_box_plots(box_folder,physics_folder,save_at,log=True,image_format='pdf')
+    # make_box_plots(box_folder,physics_folder,save_at,log=False,image_format='pdf')
+    # make_box_metric_plots(folder_to_look_in,save_at)
     print('Completed plots about boxes\n')
 
 
