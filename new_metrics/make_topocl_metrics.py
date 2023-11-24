@@ -45,6 +45,8 @@ eval_results = {
                 'n_clus_per_box':       [],
                 'merged_clus_E':        [],
                 'merged_cl_cell_E':     [],
+                'merged_clus_eT':       [],
+                'merged_cl_cell_eT':    [],
 }
 
 
