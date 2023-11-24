@@ -68,6 +68,8 @@ def make_single_event_plot(
         event_data = cl_data["1d"][event_no]
         cluster_data = cl_data["2d"][event_no]
         cluster_cell_data = cl_data["3d"][event_no]
+        # mm1 = cluster_data['cl_E_em']+cluster_data['cl_E_had']
+        # mm2 = cluster_data['cl_E_EMB1']+cluster_data['cl_E_EMB2']+cluster_data['cl_E_EMB3']+cluster_data['cl_E_EME1']+cluster_data['cl_E_EME2']+cluster_data['cl_E_EME3']+cluster_data['cl_E_FCAL0']+cluster_data['cl_E_FCAL1']+cluster_data['cl_E_FCAL2']+cluster_data['cl_E_HEC0']+cluster_data['cl_E_HEC1']+cluster_data['cl_E_HEC2']+cluster_data['cl_E_HEC3']+cluster_data['cl_E_PreSamplerB']+cluster_data['cl_E_PreSamplerE']+cluster_data['cl_E_TileBar0']+cluster_data['cl_E_TileBar1']+cluster_data['cl_E_TileBar2']+cluster_data['cl_E_TileExt0']+cluster_data['cl_E_TileExt1']+cluster_data['cl_E_TileExt2']+cluster_data['cl_E_TileGap1']+cluster_data['cl_E_TileGap2']+cluster_data['cl_E_TileGap3']
 
     jets_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(h5f)
     with h5py.File(jets_file,"r") as f:

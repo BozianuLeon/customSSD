@@ -82,7 +82,7 @@ def make_box_plots(
     
     ax[0].grid()
     ax[0].set_title('Number of clusters/boxes per event', fontsize=16, fontfamily="TeX Gyre Heros")
-    ax[0].legend(loc='lower left',bbox_to_anchor=(0.6, 0.5),fontsize="x-small")
+    ax[0].legend(loc='lower left',bbox_to_anchor=(0.45, 0.5),fontsize="medium")
 
     bin_centers = (bins[:-1] + bins[1:]) / 2
     ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_cl),marker='_',color='red',s=50)
@@ -113,7 +113,7 @@ def make_box_plots(
     
     ax[0].grid()
     ax[0].set_title('Number of Matched boxes per event', fontsize=16, fontfamily="TeX Gyre Heros")
-    ax[0].legend(loc='lower left',bbox_to_anchor=(0.6, 0.5),fontsize="x-small")
+    ax[0].legend(loc='lower left',bbox_to_anchor=(0.45, 0.5),fontsize="medium")
 
     bin_centers = (bins[:-1] + bins[1:]) / 2
     ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_cl),marker='_',color='red',s=50)
@@ -143,7 +143,7 @@ def make_box_plots(
     
     ax[0].grid()
     ax[0].set_title('Number of Unmatched boxes per event', fontsize=16, fontfamily="TeX Gyre Heros")
-    ax[0].legend(loc='lower left',bbox_to_anchor=(0.65, 0.5),fontsize="x-small")
+    ax[0].legend(loc='lower left',bbox_to_anchor=(0.45, 0.5),fontsize="medium")
 
     bin_centers = (bins[:-1] + bins[1:]) / 2
     ax[1].scatter(bin_centers, get_ratio(freq_pred,freq_tru),marker='_',color='red',s=50)
@@ -255,6 +255,29 @@ def make_box_plots(
         f.subplots_adjust(hspace=0)
         f.savefig(bind_save_loc + '/unmatched_n_boxes_bin{}.png'.format(i))
         plt.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -560,8 +583,8 @@ if __name__=="__main__":
     print('Making plots about boxes')
     make_box_plots(box_folder,physics_folder,save_at,log=True)
     make_box_plots(box_folder,physics_folder,save_at,log=False)
-    # make_box_plots(box_folder,physics_folder,save_at,log=True,image_format='pdf')
-    # make_box_plots(box_folder,physics_folder,save_at,log=False,image_format='pdf')
+    make_box_plots(box_folder,physics_folder,save_at,log=True,image_format='pdf')
+    make_box_plots(box_folder,physics_folder,save_at,log=False,image_format='pdf')
     # make_box_metric_plots(folder_to_look_in,save_at)
     print('Completed plots about boxes\n')
 
