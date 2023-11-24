@@ -159,8 +159,6 @@ def calculate_jet_metrics(
                                                     pred_box_e*np.cos(pred_box_theta),
                                                     m))
 
-
-
         # list_p_cl_es, list_t_cl_es = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='energy')
         # list_p_cl_etas, list_t_cl_etas = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eta')
         # list_p_cl_phis, list_t_cl_phis = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='phi')

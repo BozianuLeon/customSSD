@@ -15,7 +15,7 @@ from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan
 from utils.metrics import grab_cells_from_boxes, extract_physics_variables
 from utils.metrics import event_cluster_estimates
 
-from utils.metrics import number_cluster_in_tboxes, total_energy_in_truth_box
+from utils.metrics import number_cluster_in_tboxes, total_energy_in_truth_box, total_eT_in_truth_box
 
 from utils.metrics import RetrieveCellIdsFromBox, RetrieveCellIdsFromCluster
 from utils.metrics import get_physics_dictionary, get_physics_from_cells
@@ -115,6 +115,7 @@ def evaluate_topocl_truth_box_metrics(
 
         number_tcs_in_tboxes = number_cluster_in_tboxes(cluster_cell_data,cells,tees)
         list_cl_E, list_cl_cell_E = total_energy_in_truth_box(cluster_data, cluster_cell_data, cells, tees)
+        list_cl_eT, list_cl_cell_eT = total_eT_in_truth_box(cluster_data, cluster_cell_data, cells, tees)
         # print('time: ', time.perf_counter()-start,' (s)')
         # print(len(tees),len(list_cl_E),len(list_cl_cell_E))
         # print(list_cl_E)
@@ -140,6 +141,9 @@ def evaluate_topocl_truth_box_metrics(
         eval_results['n_clus_per_box'].append(number_tcs_in_tboxes)
         eval_results['merged_clus_E'].append(list_cl_E)
         eval_results['merged_cl_cell_E'].append(list_cl_cell_E)
+        eval_results['merged_clus_eT'].append(list_cl_eT)
+        eval_results['merged_cl_cell_eT'].append(list_cl_cell_eT)
+
 
     save_loc = save_folder + "/truth_box_eval/"
     if not os.path.exists(save_loc):

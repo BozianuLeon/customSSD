@@ -575,10 +575,44 @@ def total_energy_in_truth_box(cluster_d, cluster_cell_d, cells_this_event, boxes
 
 
 
+def total_eT_in_truth_box(cluster_d, cluster_cell_d, cells_this_event, boxes):
+    list_cl_cell_eT = []
+    list_cl_eT = []
+    l_topo_cells = RetrieveCellIdsFromCluster(cells_this_event,cluster_cell_d)
+    for truth_box in boxes:
+        n_cl_in_box = 0
+        cluster_eT_in_tbox = 0
+        cluster_cell_eT_in_tbox = 0
+        for cl_no in range(len(l_topo_cells)):
+            cluster_cells = l_topo_cells[cl_no]
+            #if x condition satisfied
+            if truth_box[0] <= np.mean(cluster_cells['cell_eta']) <= truth_box[2]:
+                #if y condition satisfied
+                y_mean_circ = circular_mean(cluster_cells['cell_phi'])
+                if truth_box[1] <= y_mean_circ <= truth_box[3]:
+                    cluster_E_in_tbox = cluster_d[cl_no]['cl_E_em']+cluster_d[cl_no]['cl_E_had']
+                    cluster_eta_in_tbox = cluster_d[cl_no]['cl_eta']
+                    cluster_eT_in_tbox += cluster_E_in_tbox / np.cosh(cluster_eta_in_tbox)
 
+                    cluster_cell_E_in_tbox = sum(cluster_cells['cell_E'])
+                    cluster_cell_weighted_eta_in_tbox = np.dot(cluster_cells['cell_eta'],np.abs(cluster_cells['cell_E'])) / sum(np.abs(cluster_cells['cell_E']))
+                    cluster_cell_eT_in_tbox += cluster_cell_E_in_tbox / np.cosh(cluster_cell_weighted_eta_in_tbox)
+                    n_cl_in_box += 1
 
+                elif truth_box[1] <= (y_mean_circ + (-1*np.sign(y_mean_circ))*2*np.pi) <= truth_box[3]:
+                    cluster_E_in_tbox = cluster_d[cl_no]['cl_E_em']+cluster_d[cl_no]['cl_E_had']
+                    cluster_eta_in_tbox = cluster_d[cl_no]['cl_eta']
+                    cluster_eT_in_tbox += cluster_E_in_tbox / np.cosh(cluster_eta_in_tbox)
 
+                    cluster_cell_E_in_tbox = sum(cluster_cells['cell_E'])
+                    cluster_cell_weighted_eta_in_tbox = np.dot(cluster_cells['cell_eta'],np.abs(cluster_cells['cell_E'])) / sum(np.abs(cluster_cells['cell_E']))
+                    cluster_cell_eT_in_tbox += cluster_cell_E_in_tbox / np.cosh(cluster_cell_weighted_eta_in_tbox)
+                    n_cl_in_box += 1
+        
+        list_cl_eT.append(cluster_eT_in_tbox)
+        list_cl_cell_eT.append(cluster_cell_eT_in_tbox)
 
+    return  list_cl_eT, list_cl_cell_eT
 
 
 

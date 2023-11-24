@@ -11,12 +11,8 @@ except ModuleNotFoundError:
     import pickle
 # caution: path[0] is reserved for script path 
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
-from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan
-from utils.metrics import grab_cells_from_boxes, extract_physics_variables
-from utils.metrics import event_cluster_estimates
 
-from utils.metrics import n_clusters_per_box, clusters_in_box_E_diff, number_cluster_in_tboxes
-
+from utils.utils import matched_boxes, unmatched_boxes, wrap_check_NMS, wrap_check_truth, remove_nan
 from utils.metrics import RetrieveCellIdsFromBox, RetrieveCellIdsFromCluster
 from utils.metrics import get_physics_dictionary
 
@@ -71,9 +67,6 @@ eval_results = {
 }
 
 
-#TODO: Make this work for matched/unmatched boxes and quickly!
-
-
 def calculate_phys_metrics2(
     folder_containing_struc_array,
     save_folder,
@@ -85,6 +78,7 @@ def calculate_phys_metrics2(
 
     for i in range(len(a)):
         start = time.perf_counter()
+        print(i)
         extent_i = a[i]['extent']
         preds = a[i]['p_boxes']
         trues = a[i]['t_boxes']
@@ -102,7 +96,12 @@ def calculate_phys_metrics2(
         #wrap check boxes here
         pees = wrap_check_NMS(pees,scores,MIN_CELLS_PHI,MAX_CELLS_PHI,threshold=0.2)
         tees = wrap_check_truth(tees,MIN_CELLS_PHI,MAX_CELLS_PHI)
-        print(i)
+
+        # matching procedure
+        if mode=="match":
+            tees, pees = matched_boxes(tees,pees)
+        elif mode=="unmatch":
+            tees, pees = unmatched_boxes(tees,pees)
         
         #get the cells
         h5f = a[i]['h5file']
@@ -195,7 +194,7 @@ if __name__=="__main__":
     save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/"
 
     print('Making truth box eval metrics')
-    calculate_phys_metrics2(folder_to_look_in,save_at)
+    calculate_phys_metrics2(folder_to_look_in,save_at,mode="total")
     print('Completed truth box eval metrics\n')
 
 
