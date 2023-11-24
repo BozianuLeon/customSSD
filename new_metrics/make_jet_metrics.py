@@ -13,8 +13,13 @@ except ModuleNotFoundError:
 
 # caution: path[0] is reserved for script path (or '' in REPL)
 sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
-from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan, transform_angle
-from utils.utils import event_cluster_estimates, get_cells_from_boxes
+from utils.utils import wrap_check_NMS, wrap_check_truth, remove_nan, get_cells_from_boxes
+from utils.metrics import event_cluster_estimates
+
+from utils.utils import matched_boxes, unmatched_boxes, wrap_check_NMS, wrap_check_truth, remove_nan
+from utils.metrics import RetrieveCellIdsFromBox, RetrieveCellIdsFromCluster
+from utils.metrics import get_physics_dictionary
+
 MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
 MIN_CELLS_ETA,MAX_CELLS_ETA = -4.823496, 4.823496
 
@@ -61,7 +66,7 @@ def calculate_jet_metrics(
 
 
     for i in range(len(a)):
-        # print(i)
+        print(i)
         extent_i = a[i]['extent']
         preds = a[i]['p_boxes']
         trues = a[i]['t_boxes']
@@ -77,6 +82,13 @@ def calculate_jet_metrics(
         pees[:,(0,2)] = (pees[:,(0,2)]*(extent_i[1]-extent_i[0]))+extent_i[0]
         pees[:,(1,3)] = (pees[:,(1,3)]*(extent_i[3]-extent_i[2]))+extent_i[2]
 
+        #wrap check + NMS
+        pees = wrap_check_NMS(pees,scores,MIN_CELLS_PHI,MAX_CELLS_PHI,threshold=0.2)
+        tees = wrap_check_truth(tees,MIN_CELLS_PHI,MAX_CELLS_PHI)
+
+        # matching procedure
+        tees, pees = matched_boxes(tees,pees)
+
         #get the cells
         h5f = a[i]['h5file']
         try:
@@ -86,22 +98,19 @@ def calculate_jet_metrics(
         event_no = a[i]['event_no']
 
         #load cells from h5
-        # cells_file = "/home/users/b/bozianu/work/data/pileup50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         cells_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cells/user.cantel.34126190._0000{}.calocellD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(cells_file,"r") as f:
             h5group = f["caloCells"]
             cells = h5group["2d"][event_no]
 
-        # clusters_file = "/home/users/b/bozianu/work/data/pileup50k/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         clusters_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/clusters/user.cantel.34126190._0000{}.topoclusterD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(clusters_file,"r") as f:
             cl_data = f["caloCells"] 
-            event_data = cl_data["1d"][event_no]
+            # event_data = cl_data["1d"][event_no]
             cluster_data = cl_data["2d"][event_no]
-            cluster_data = remove_nan(cluster_data)
-            cluster_data = cluster_data[cluster_data['cl_E_em']+cluster_data['cl_E_had']>5000]
+            raw_E_mask = (cluster_data['cl_E_em']+cluster_data['cl_E_had']) > 5000 #5GeV cut
+            cluster_data = cluster_data[raw_E_mask]
 
-        # jets_file = "/home/users/b/bozianu/work/data/pileup50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         jets_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(h5f)
         with h5py.File(jets_file,"r") as f:
             j_data = f["caloCells"]
@@ -109,40 +118,73 @@ def calculate_jet_metrics(
             jet_data = remove_nan(jet_data)
         
 
+        ###########################################################################################
+        # Get clusters/boxes physics quantities as constituents
+        ###########################################################################################
         #all TC's (greater than 5GeV)
-        ESD_inputs = []
         m = 0.0 #topoclusters have 0 mass
+        ESD_inputs = []
         for i in range(len(cluster_data)):
             cl_px = float(cluster_data[i]['cl_pt'] * np.cos(cluster_data[i]['cl_phi']))
             cl_py = float(cluster_data[i]['cl_pt'] * np.sin(cluster_data[i]['cl_phi']))
             cl_pz = float(cluster_data[i]['cl_pt'] * np.sinh(cluster_data[i]['cl_eta']))
             ESD_inputs.append(fastjet.PseudoJet(cl_px,cl_py,cl_pz,m))
 
-        #model prediction and truth box jets
-        list_p_cl_es, list_t_cl_es = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='energy')
-        list_p_cl_etas, list_t_cl_etas = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eta')
-        list_p_cl_phis, list_t_cl_phis = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='phi')
+
+        ##model prediction and truth box jets
+        l_true_cells = RetrieveCellIdsFromBox(cells,tees)
+        tb_phys_dict = get_physics_dictionary(l_true_cells,cells)
         truth_box_inputs = []
-        for j in range(len(list_t_cl_es)):
-            truth_box_eta = list_t_cl_etas[j]
-            truth_box_phi = list_t_cl_phis[j]
+        for i in range(len(l_true_cells)):
+            truth_box_e = tb_phys_dict['energy'][i]
+            truth_box_eta = tb_phys_dict['eta'][i]
             truth_box_theta = 2*np.arctan(np.exp(-truth_box_eta))
-            truth_box_e = list_t_cl_es[j]
+            truth_box_phi = tb_phys_dict['phi'][i]
             truth_box_inputs.append(fastjet.PseudoJet(truth_box_e*np.sin(truth_box_theta)*np.cos(truth_box_phi),
                                                     truth_box_e*np.sin(truth_box_theta)*np.sin(truth_box_phi),
                                                     truth_box_e*np.cos(truth_box_theta),
                                                     m))
 
+
+        l_pred_cells = RetrieveCellIdsFromBox(cells,pees)
+        pb_phys_dict = get_physics_dictionary(l_pred_cells,cells)
         pred_box_inputs = []                                            
-        for k in range(len(list_p_cl_es)):
-            pred_box_eta = list_p_cl_etas[k]
-            pred_box_phi = list_p_cl_phis[k]
+        for j in range(len(l_pred_cells)):
+            pred_box_e = pb_phys_dict['energy'][j]
+            pred_box_eta = pb_phys_dict['eta'][j]
             pred_box_theta = 2*np.arctan(np.exp(-pred_box_eta))
-            pred_box_e = list_p_cl_es[k]
+            pred_box_phi = pb_phys_dict['phi'][j]
             pred_box_inputs.append(fastjet.PseudoJet(pred_box_e*np.sin(pred_box_theta)*np.cos(pred_box_phi),
                                                     pred_box_e*np.sin(pred_box_theta)*np.sin(pred_box_phi),
                                                     pred_box_e*np.cos(pred_box_theta),
                                                     m))
+
+
+
+        # list_p_cl_es, list_t_cl_es = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='energy')
+        # list_p_cl_etas, list_t_cl_etas = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='eta')
+        # list_p_cl_phis, list_t_cl_phis = event_cluster_estimates(pees,scores,tees,cells,mode='match',target='phi')
+        # truth_box_inputs = []
+        # for j in range(len(list_t_cl_es)):
+        #     truth_box_eta = list_t_cl_etas[j]
+        #     truth_box_phi = list_t_cl_phis[j]
+        #     truth_box_theta = 2*np.arctan(np.exp(-truth_box_eta))
+        #     truth_box_e = list_t_cl_es[j]
+        #     truth_box_inputs.append(fastjet.PseudoJet(truth_box_e*np.sin(truth_box_theta)*np.cos(truth_box_phi),
+        #                                             truth_box_e*np.sin(truth_box_theta)*np.sin(truth_box_phi),
+        #                                             truth_box_e*np.cos(truth_box_theta),
+        #                                             m))
+
+        # pred_box_inputs = []                                            
+        # for k in range(len(list_p_cl_es)):
+        #     pred_box_eta = list_p_cl_etas[k]
+        #     pred_box_phi = list_p_cl_phis[k]
+        #     pred_box_theta = 2*np.arctan(np.exp(-pred_box_eta))
+        #     pred_box_e = list_p_cl_es[k]
+        #     pred_box_inputs.append(fastjet.PseudoJet(pred_box_e*np.sin(pred_box_theta)*np.cos(pred_box_phi),
+        #                                             pred_box_e*np.sin(pred_box_theta)*np.sin(pred_box_phi),
+        #                                             pred_box_e*np.cos(pred_box_theta),
+        #                                             m))
 
         #esd jets
         batch_energy_esdjets, batch_pt_esdjets, batch_eta_esdjets, batch_phi_esdjets, batch_m_esdjets = list(),list(),list(),list(), list()
@@ -181,7 +223,7 @@ def calculate_jet_metrics(
         #Truth box clusters
         truth_box_jets = fastjet.ClusterSequence(truth_box_inputs,jetdef)
         truth_box_inc_jets = truth_box_jets.inclusive_jets()
-        batch_energy_tboxjets, batch_pt_tboxjets, batch_eta_tboxjets, batch_phi_tboxjets,batch_m_tboxjets = list(),list(),list(),list(),list()
+        batch_energy_tboxjets, batch_pt_tboxjets, batch_eta_tboxjets, batch_phi_tboxjets = list(),list(),list(),list()
         for j in range(len(truth_box_inc_jets)):
             jj = truth_box_inc_jets[j]
             batch_energy_tboxjets.append(jj.E())
@@ -198,14 +240,13 @@ def calculate_jet_metrics(
         #Pred box clusters
         pred_box_jets = fastjet.ClusterSequence(pred_box_inputs,jetdef)
         pred_box_inc_jets = pred_box_jets.inclusive_jets()
-        batch_energy_pboxjets, batch_pt_pboxjets, batch_eta_pboxjets, batch_phi_pboxjets,batch_m_pboxjets = list(),list(),list(),list(),list()
+        batch_energy_pboxjets, batch_pt_pboxjets, batch_eta_pboxjets, batch_phi_pboxjets = list(),list(),list(),list()
         for k in range(len(pred_box_inc_jets)):
             kk = pred_box_inc_jets[k]
             batch_energy_pboxjets.append(kk.E())
             batch_pt_pboxjets.append(kk.pt())
             batch_eta_pboxjets.append(kk.eta())
-            batch_phi_pboxjets.append(kk.phi())
-            batch_m_pboxjets.append(kk.m())        
+            batch_phi_pboxjets.append(kk.phi())      
 
         jet_level_results['n_pboxjets'].append(len(pred_box_inc_jets))
         jet_level_results['pboxjet_energies'].append(batch_energy_pboxjets)
@@ -214,12 +255,15 @@ def calculate_jet_metrics(
         jet_level_results['pboxjet_phis'].append(batch_phi_pboxjets)
 
 
-    save_loc = save_folder + "/jet_metrics/"
+    save_loc = save_folder + "/new_jet_metrics/"
     if not os.path.exists(save_loc):
         os.makedirs(save_loc)
 
-    print('Saving the jet metrics in lists...')
-    #automate this saving!
+    print('Saving the box metrics in lists...')
+    for key, value in jet_level_results.items():
+        filename = f"{key}.pkl"
+        save_object(value, save_loc+filename)
+
     save_object(jet_level_results['n_esdjets'],save_loc+'n_esdjets.pkl')
     save_object(jet_level_results['esdjet_energies'],save_loc+'esdjet_energies.pkl')
     save_object(jet_level_results['esdjet_etas'],save_loc+'esdjet_etas.pkl')
@@ -244,4 +288,13 @@ def calculate_jet_metrics(
     save_object(jet_level_results['pboxjet_phis'],save_loc+'pboxjet_phis.pkl')
     save_object(jet_level_results['pboxjet_pts'],save_loc+'pboxjet_pts.pkl')
     
+
+
+if __name__=="__main__":
+    folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD1_50k5_mu_15e/20231102-13/"
+    save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/"
+
+    print('Making truth box eval metrics')
+    calculate_jet_metrics(folder_to_look_in,save_at)
+    print('Completed truth box eval metrics\n')
 
