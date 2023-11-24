@@ -595,6 +595,7 @@ def total_energy_in_truth_box(cluster_d, cluster_cell_d, cells_this_event, boxes
 
 
 
+
 def RetrieveCellIdsFromBox(cells,boxes):
 
     ymin,ymax = min(cells['cell_phi']),max(cells['cell_phi']) # get physical bounds of calo cells
@@ -822,6 +823,9 @@ def CalculateEnergyFromTwoSigmaCells(all_cells,desired_cells):
         return np.nan
     cell_signif = desired_cells['cell_E'] / desired_cells['cell_Sigma']
     two_sigma_cells = desired_cells[abs(cell_signif)>=2]
+    if len(two_sigma_cells)==0:
+        # print('No 2 sigma cells',sum(desired_cells['cell_E']))
+        return np.nan
     return sum(two_sigma_cells['cell_E']) 
 
 def CalculateEtFromTwoSigmaCells(all_cells,desired_cells):
@@ -835,7 +839,9 @@ def CalculateEtFromTwoSigmaCells(all_cells,desired_cells):
         return np.nan
     cell_signif = desired_cells['cell_E'] / desired_cells['cell_Sigma']
     two_sigma_cells = desired_cells[abs(cell_signif)>=2]
-
+    if len(two_sigma_cells)==0:
+        # print('No 2 sigma cells',sum(desired_cells['cell_E']))
+        return np.nan
     total_energy = sum(two_sigma_cells['cell_E']) 
     energy_weighted_eta = np.dot(two_sigma_cells['cell_eta'],np.abs(two_sigma_cells['cell_E'])) / sum(np.abs(two_sigma_cells['cell_E']))
     return total_energy / np.cosh(energy_weighted_eta) 

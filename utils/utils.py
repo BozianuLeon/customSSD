@@ -323,7 +323,26 @@ def wrap_check_truth(boxes,ymin,ymax):
     return boxes[np.where(suppress==0)]
 
 
+def matched_boxes(truth_boxes,pred_boxes):
+    #take predcited and truth boxes and return only those that "match" overlap with each other
 
+    jaccard_matrix = torchvision.ops.boxes.box_iou(torch.tensor(truth_boxes),torch.tensor(pred_boxes))
+    matched_vals, matches = jaccard_matrix.max(dim=0)
+    matched_truth_boxes = truth_boxes[matches[np.nonzero(matched_vals)]].reshape(-1,4)
+    matched_pred_boxes = pred_boxes[np.nonzero(matched_vals)].reshape(-1,4)
+    matched_truth_boxes = torch.unique(torch.tensor(matched_truth_boxes), dim=0)
+    matched_pred_boxes = torch.unique(torch.tensor(matched_pred_boxes), dim=0)
+    return matched_truth_boxes.numpy(), matched_pred_boxes.numpy()
+
+def unmatched_boxes(truth_boxes,pred_boxes):
+    # take predicted and truth boxes and return only those that are not overlapping with each other
+
+    jaccard_matrix = torchvision.ops.boxes.box_iou(torch.tensor(truth_boxes),torch.tensor(pred_boxes))
+    matched_vals, matches = jaccard_matrix.max(dim=0)
+    unmatched_idxs = np.where(matched_vals==0)
+    unmatched_pred_boxes = pred_boxes[unmatched_idxs].reshape(-1,4)
+    unmatched_truth_boxes = np.delete(truth_boxes,matches[np.nonzero(matched_vals)],axis=0)
+    return unmatched_truth_boxes, unmatched_pred_boxes
 
 
 def get_cells_from_boxes(boxes,cells):
