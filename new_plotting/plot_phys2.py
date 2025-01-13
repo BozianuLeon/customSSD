@@ -632,19 +632,19 @@ def make_phys_plots2(
 
 
 
-physics_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/new_phys_metrics/total/"
-topocl_cell_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/truth_box_eval/"
+physics_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_raw_50k5_mu_13e/new_phys_metrics/total/"
+topocl_cell_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_raw_50k5_mu_13e/truth_box_eval/"
     
-save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD1_50k5_mu_15e/"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_raw_50k5_mu_13e/"
 if __name__=="__main__":
     print('Making physics plots')
     make_phys_plots2(physics_folder,topocl_cell_folder,save_at)
     print(1)
     make_phys_plots2(physics_folder,topocl_cell_folder,save_at,log=False)
     print(2)
-    make_phys_plots2(physics_folder,topocl_cell_folder,save_at,image_format='pdf')
-    print(3)
-    make_phys_plots2(physics_folder,topocl_cell_folder,save_at,log=False,image_format='pdf')
+    # make_phys_plots2(physics_folder,topocl_cell_folder,save_at,image_format='pdf')
+    # print(3)
+    # make_phys_plots2(physics_folder,topocl_cell_folder,save_at,log=False,image_format='pdf')
     print('Completed physics plots\n')
 
 

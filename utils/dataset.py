@@ -36,6 +36,7 @@ class SSDRealDataset(Dataset):
         annotations_i = self.annotations[str(index)]
         #in the new regime we can choose which directory to look in
         path = self.direc + annotations_i["image"]["file_name"]
+        # path = annotations_i["image"]["img_path"]
         h5file_number = annotations_i["image"]["file"]
         event_number_inh5 = annotations_i["image"]["event"]
 

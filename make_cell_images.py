@@ -166,26 +166,30 @@ if __name__=="__main__":
                 H_time = np.pad(H_time,((repeat_rows,repeat_rows),(0,0)),'wrap')
 
                 #If total cell signficance in a cell exceeds a threshold truncate 
-                truncation_threshold = 125
-                H_tot = np.where(H_tot < truncation_threshold, H_tot, truncation_threshold)
-                H_em = np.where(H_em < truncation_threshold, H_em, truncation_threshold)
-                H_had = np.where(H_had < truncation_threshold, H_had, truncation_threshold)
+                # truncation_threshold = 125
+                # H_tot = np.where(H_tot < truncation_threshold, H_tot, truncation_threshold)
+                # H_em = np.where(H_em < truncation_threshold, H_em, truncation_threshold)
+                # H_had = np.where(H_had < truncation_threshold, H_had, truncation_threshold)
 
-                #Max cell significance in a pixel
-                H_max[np.isnan(H_max)] = 0
-                H_max = np.where(H_max < 5, 0, H_max) 
-                H_max = np.where(H_max > 15, 15, H_max) 
+                # #Max cell significance in a pixel
+                # H_max[np.isnan(H_max)] = 0
+                # H_max = np.where(H_max < 5, 0, H_max) 
+                # H_max = np.where(H_max > 15, 15, H_max) 
                 
+                H_tot[np.isnan(H_tot)] = 0
+                H_em[np.isnan(H_em)] = 0
+                H_had[np.isnan(H_had)] = 0
+                H_max[np.isnan(H_max)] = 0
                 H_mean[np.isnan(H_mean)] = 0
                 H_sigma[np.isnan(H_sigma)] = -1
                 H_time[np.isnan(H_time)] = 0
 
-                #treat the barrel and forward regions differently
-                raw_energy_thresh = 1000
-                central_H_energy = np.where(H_energy[:,10:-10]>raw_energy_thresh,H_energy[:,10:-10],0)
-                left_edge_H_energy = np.where(H_energy[:,:10]>4*raw_energy_thresh,H_energy[:,:10]/4,0)
-                right_edge_H_energy = np.where(H_energy[:,-10:]>4*raw_energy_thresh,H_energy[:,-10:]/4,0)
-                H_energy = np.hstack((left_edge_H_energy,central_H_energy,right_edge_H_energy))
+                # #treat the barrel and forward regions differently
+                # raw_energy_thresh = 1000
+                # central_H_energy = np.where(H_energy[:,10:-10]>raw_energy_thresh,H_energy[:,10:-10],0)
+                # left_edge_H_energy = np.where(H_energy[:,:10]>4*raw_energy_thresh,H_energy[:,:10]/4,0)
+                # right_edge_H_energy = np.where(H_energy[:,-10:]>4*raw_energy_thresh,H_energy[:,-10:]/4,0)
+                # H_energy = np.hstack((left_edge_H_energy,central_H_energy,right_edge_H_energy))
 
 
                 extent = (xedges[0],xedges[-1],yedges[0]-(repeat_rows*one_box_height),yedges[-1]+(repeat_rows*one_box_height)) 
@@ -193,9 +197,10 @@ if __name__=="__main__":
                 # Saving, now we save all H_* as a layer in one tensor
                 # when we want to access only EM layers, just take that slice out of the sing .pt
                 print('\t\tSaving image {}, id: {}, adding to dictionary...'.format(global_counter,unique_file_chunk_event_no))
-                overall_save_path = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cell_images/"
+                overall_save_path = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/cell_images_dev/"
                 H_layers = np.stack([H_tot,H_em,H_had,H_max,H_mean,H_sigma,H_energy,H_time],axis=0)
                 H_layers_tensor = torch.tensor(H_layers)
+                torch.save(H_layers_tensor,overall_save_path+"dev-image-tensor-{}.pt".format(unique_file_chunk_event_no))
                 torch.save(H_layers_tensor,overall_save_path+"cell-image-tensor-{}.pt".format(unique_file_chunk_event_no))
 
                 # examine_one_image(overall_save_path+"cell-image-tensor-{}.pt".format(unique_file_chunk_event_no),GT_cluster_boxes)

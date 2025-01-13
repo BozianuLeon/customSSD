@@ -1,5 +1,9 @@
 /.ipynb_checkpoints
 /__pycache__
+models/__pycache__
+new_metrics/__pycache__
+new_plotting/__pycache__
+utils/__pycache__
 /data
 /practice.ipynb
 /inference

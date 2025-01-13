@@ -66,10 +66,18 @@ def make_single_event_plot(
     with h5py.File(clusters_file,"r") as f:
         cl_data = f["caloCells"]
         event_data = cl_data["1d"][event_no]
-        cluster_data = cl_data["2d"][event_no]
+        cluster_data = cl_data["2d"][event_no][1]
         cluster_cell_data = cl_data["3d"][event_no]
-        # mm1 = cluster_data['cl_E_em']+cluster_data['cl_E_had']
-        # mm2 = cluster_data['cl_E_EMB1']+cluster_data['cl_E_EMB2']+cluster_data['cl_E_EMB3']+cluster_data['cl_E_EME1']+cluster_data['cl_E_EME2']+cluster_data['cl_E_EME3']+cluster_data['cl_E_FCAL0']+cluster_data['cl_E_FCAL1']+cluster_data['cl_E_FCAL2']+cluster_data['cl_E_HEC0']+cluster_data['cl_E_HEC1']+cluster_data['cl_E_HEC2']+cluster_data['cl_E_HEC3']+cluster_data['cl_E_PreSamplerB']+cluster_data['cl_E_PreSamplerE']+cluster_data['cl_E_TileBar0']+cluster_data['cl_E_TileBar1']+cluster_data['cl_E_TileBar2']+cluster_data['cl_E_TileExt0']+cluster_data['cl_E_TileExt1']+cluster_data['cl_E_TileExt2']+cluster_data['cl_E_TileGap1']+cluster_data['cl_E_TileGap2']+cluster_data['cl_E_TileGap3']
+        print('Clusters')
+        e1 = cluster_data['cl_E_em']+cluster_data['cl_E_had']
+        e2 = cluster_data['cl_E_EMB1']+cluster_data['cl_E_EMB2']+cluster_data['cl_E_EMB3']+cluster_data['cl_E_EME1']+cluster_data['cl_E_EME2']+cluster_data['cl_E_EME3']+cluster_data['cl_E_FCAL0']+cluster_data['cl_E_FCAL1']+cluster_data['cl_E_FCAL2']+cluster_data['cl_E_HEC0']+cluster_data['cl_E_HEC1']+cluster_data['cl_E_HEC2']+cluster_data['cl_E_HEC3']+cluster_data['cl_E_PreSamplerB']+cluster_data['cl_E_PreSamplerE']+cluster_data['cl_E_TileBar0']+cluster_data['cl_E_TileBar1']+cluster_data['cl_E_TileBar2']+cluster_data['cl_E_TileExt0']+cluster_data['cl_E_TileExt1']+cluster_data['cl_E_TileExt2']+cluster_data['cl_E_TileGap1']+cluster_data['cl_E_TileGap2']+cluster_data['cl_E_TileGap3']
+    #     print('Cluster E   (cl_E_em+cl_E_had)       :',e1)
+    #     print('Cluster E_T (cl_E_em+cl_E_had)       :',e1/np.cosh(cluster_data['cl_eta']))
+    #     print('Cluster E   (cl_E_EMBX+cl_E_HECX+...):',e2)
+    #     print('Cluster E_T (cl_E_EMBX+cl_E_HECX+...):',e2/np.cosh(cluster_data['cl_eta']))
+    #     print()
+    #     print('Cluster pt  (cl_pt)                  :',cluster_data['cl_pt'])
+    # quit()
 
     jets_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_32_50k/jets/user.cantel.34126190._0000{}.jetD3PD_mc16_JZ4W.r10788.h5".format(h5f)
     with h5py.File(jets_file,"r") as f:
@@ -85,8 +93,10 @@ def make_single_event_plot(
     tees = wc_truth_boxes
 
     #From the ESD file
-    new_cluster_data = remove_nan(cluster_data)
-    new_jet_data = remove_nan(jet_data)
+    # new_cluster_data = remove_nan(cluster_data)
+    new_cluster_data = cluster_data.reshape(-1)
+    # new_jet_data = remove_nan(jet_data)
+    new_jet_data = jet_data.reshape(-1)
 
     ###############################################################################################################
 
@@ -179,12 +189,12 @@ def make_single_event_plot(
         x,y=float(pred_box[0]),float(pred_box[1])
         w,h=float(pred_box[2])-float(pred_box[0]),float(pred_box[3])-float(pred_box[1])  
         bb = matplotlib.patches.Rectangle((x,y),w,h,lw=1.25,ec='red',fc='none')
-        # ax.add_patch(bb)
+        ax.add_patch(bb)
     
     ax.set(xlabel='$\eta$',ylabel='$\phi$')
     ax.axhline(y=min(cells['cell_phi']), color='pink', linestyle='--',lw=0.5)
     ax.axhline(y=max(cells['cell_phi']), color='pink', linestyle='--',lw=0.5)
-    hep.atlas.label(ax=ax,label='Work in Progress',data=False,lumi=None,loc=0)
+    # hep.atlas.label(ax=ax,label='Work in Progress',data=False,lumi=None,loc=0)
     f.savefig(save_loc+'/cells-img-boxes-{}.{}'.format(idx,image_format),dpi=400,format=image_format,bbox_inches="tight")
 
     ###############################################################################################################
@@ -197,7 +207,7 @@ def make_single_event_plot(
         x,y=float(bbx[0]),float(bbx[1])
         w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
         bb = matplotlib.patches.Rectangle((x,y),w,h,lw=1,ec='limegreen',fc='none')
-        # ax.add_patch(bb)
+        ax.add_patch(bb)
     
     for pred_box,pred_score in zip(pees,scores):
         x,y=float(pred_box[0]),float(pred_box[1])
@@ -208,7 +218,7 @@ def make_single_event_plot(
     ax.set(xlabel='$\eta$',ylabel='$\phi$')
     ax.axhline(y=min(cells['cell_phi']), color='pink', linestyle='--',lw=0.5)
     ax.axhline(y=max(cells['cell_phi']), color='pink', linestyle='--',lw=0.5)
-    hep.atlas.label(ax=ax,label='Work in Progress',data=False,lumi=None,loc=0)
+    # hep.atlas.label(ax=ax,label='Work in Progress',data=False,lumi=None,loc=0)
     f.savefig(save_loc+'/cells-img-boxes-nowrap-{}.{}'.format(idx,image_format),dpi=400,format=image_format, bbox_inches="tight")
 
 
@@ -249,7 +259,7 @@ def make_single_event_plot(
                     matplotlib.lines.Line2D([],[], marker='h', color='plum', label='TopoClusters >5GeV',linestyle='None',markersize=10),
                     matplotlib.lines.Line2D([],[], marker='h', color='plum', label='TopoClusters <5GeV',linestyle='None',markersize=10,markeredgecolor='k'),]
     a.legend(handles=legend_elements, loc='lower left',bbox_to_anchor=(0.63, 0.74),fontsize="x-small")
-    hep.atlas.label(ax=a,label='Work in Progress',data=False,lumi=None,loc=0)
+    # hep.atlas.label(ax=a,label='Work in Progress',data=False,lumi=None,loc=0)
     f.savefig(save_loc+'/boxes-clusters-{}.{}'.format(idx,image_format),dpi=400,format=image_format, bbox_inches="tight")
 
     ###############################################################################################################
@@ -429,7 +439,7 @@ folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_inference/SSD1_50
 save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD1_50k5_mu_15e/"
 if __name__=="__main__":
     print('Making single event')
-    make_single_event_plot(folder_to_look_in,save_at,idx=3,pdf=False)
-    make_single_event_plot(folder_to_look_in,save_at,idx=3,pdf=True)
+    make_single_event_plot(folder_to_look_in,save_at,idx=17,pdf=False)
+    # make_single_event_plot(folder_to_look_in,save_at,idx=3,pdf=True)
     print('Completed single event plots\n')
 

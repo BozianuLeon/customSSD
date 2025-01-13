@@ -313,7 +313,6 @@ class MultiBoxLoss(nn.Module):
         # Identify priors that are positive (object/non-background)
         positive_priors = true_classes != 0  # (N, 8732)
 
-
         # LOCALIZATION LOSS
 
         # Localization loss is computed only over positive priors
@@ -350,7 +349,7 @@ class MultiBoxLoss(nn.Module):
 
         # As in the paper, averaged over positive priors only, although computed over both positive and hard-negative priors
         conf_loss = (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) / n_positives.sum().float()  # (), scalar
-            
+        
         return conf_loss + self.alpha * loc_loss
 
 

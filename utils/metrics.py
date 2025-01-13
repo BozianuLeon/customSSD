@@ -430,6 +430,25 @@ def event_cluster_estimates(pred_boxes, scores, truth_boxes, cells, mode='match'
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
 def is_cluster_enclosed_in_box(cluster_cell_d, cells_this_event, box_xyxy):
     # number of clusters inside a box based on the cells in that cluster
     # can overestimate due to wrapping. Sometimes boxes that go "off the page" 
@@ -632,6 +651,9 @@ def total_eT_in_truth_box(cluster_d, cluster_cell_d, cells_this_event, boxes):
 
 def RetrieveCellIdsFromBox(cells,boxes):
 
+    if isinstance(boxes,torch.Tensor):
+        boxes = boxes.numpy()
+
     ymin,ymax = min(cells['cell_phi']),max(cells['cell_phi']) # get physical bounds of calo cells
     list_containing_all_cells = []
     for box in boxes:
@@ -750,7 +772,7 @@ def CalculateEtaFromCells(all_cells,desired_cells):
     # Outputs
     # eta, (absolute) energy weighted value
     
-    if desired_cells is None:
+    if (desired_cells is None) or (len(desired_cells['cell_eta'])==0):
         return np.nan    
     energy_weighted_eta = np.dot(desired_cells['cell_eta'],np.abs(desired_cells['cell_E'])) / sum(np.abs(desired_cells['cell_E']))
     return energy_weighted_eta 
@@ -775,6 +797,8 @@ def CalculateEtFromCells(all_cells,desired_cells):
     # E_T, Transverse energy
     
     if desired_cells is None:
+        return np.nan
+    elif len(desired_cells['cell_eta'])==0:
         return np.nan
     total_energy = sum(desired_cells['cell_E']) 
     energy_weighted_eta = np.dot(desired_cells['cell_eta'],np.abs(desired_cells['cell_E'])) / sum(np.abs(desired_cells['cell_E']))
@@ -817,6 +841,8 @@ def CalculateMaxEnergyFracFromCells(all_cells,desired_cells):
     
     if desired_cells is None:
         return np.nan
+    elif len(desired_cells['cell_E'])==0:
+        return np.nan
     total_energy = sum(desired_cells['cell_E'])
     return abs(max(desired_cells['cell_E'])) / total_energy 
 
@@ -841,6 +867,8 @@ def CalculateSignficanceFromCells(all_cells,desired_cells):
 
     if desired_cells is None:
         return np.nan    
+    elif len(desired_cells['cell_Sigma'])==0:
+        return np.nan
     total_energy = sum(desired_cells['cell_E']) 
     total_noise = np.sqrt(sum(desired_cells['cell_Sigma']**2))
 

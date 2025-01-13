@@ -301,7 +301,8 @@ def wrap_check_truth(boxes,ymin,ymax):
     #input is a np.ndarray containing the boxes in xyxy coords, after multiplication of extent
     if isinstance(boxes,np.ndarray):
         boxes = torch.tensor(boxes)
-    suppress = np.zeros(len(boxes))
+    
+    suppress = torch.zeros(len(boxes))
     for j in range(len(boxes)):
         box_j = boxes[j]
 
@@ -317,10 +318,10 @@ def wrap_check_truth(boxes,ymin,ymax):
             wrapped_box = boxes[torch.argmax(overlaps)]
 
             #keep the truth box with the largest area (can be different due to merging).
-            suppress[j] = max(suppress[j],(box_j[2]-box_j[0])*(box_j[3]-box_j[1])<(wrapped_box[2]-wrapped_box[0])*(wrapped_box[3]-wrapped_box[1]))
+            # suppress[j] = max(suppress[j],(box_j[2]-box_j[0])*(box_j[3]-box_j[1])<(wrapped_box[2]-wrapped_box[0])*(wrapped_box[3]-wrapped_box[1]))
+            suppress[j] = (box_j[2]-box_j[0])*(box_j[3]-box_j[1])<(wrapped_box[2]-wrapped_box[0])*(wrapped_box[3]-wrapped_box[1])
 
-    boxes = boxes.numpy()
-    return boxes[np.where(suppress==0)]
+    return boxes[torch.where(suppress==0)]
 
 
 def matched_boxes(truth_boxes,pred_boxes):

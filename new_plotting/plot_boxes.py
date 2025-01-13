@@ -574,17 +574,17 @@ def make_box_metric_plots(
 #jaccard index
 
 
-folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/box_metrics/"
-save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD1_50k5_mu_15e/"
-box_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/box_metrics/"
-physics_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD1_50k5_mu_15e/new_phys_metrics/total/"
+folder_to_look_in = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_raw_50k5_mu_13e/box_metrics/"
+save_at = "/home/users/b/bozianu/work/SSD/SSD/cached_plots/SSD_raw_50k5_mu_13e/"
+box_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_raw_50k5_mu_13e/box_metrics/"
+physics_folder = "/home/users/b/bozianu/work/SSD/SSD/cached_metrics/SSD_raw_50k5_mu_13e/new_phys_metrics/total/"
 
 if __name__=="__main__":
     print('Making plots about boxes')
     make_box_plots(box_folder,physics_folder,save_at,log=True)
     make_box_plots(box_folder,physics_folder,save_at,log=False)
-    make_box_plots(box_folder,physics_folder,save_at,log=True,image_format='pdf')
-    make_box_plots(box_folder,physics_folder,save_at,log=False,image_format='pdf')
+    # make_box_plots(box_folder,physics_folder,save_at,log=True,image_format='pdf')
+    # make_box_plots(box_folder,physics_folder,save_at,log=False,image_format='pdf')
     # make_box_metric_plots(folder_to_look_in,save_at)
     print('Completed plots about boxes\n')
 
