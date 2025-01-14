@@ -44,12 +44,14 @@ class CustomPadSumPool(torch.nn.Module):
         self.sumpool = torch.nn.AvgPool2d(kernel_size=kernel_size, stride=stride, divisor_override=1)
 
     def forward(self, x):
+        print(x.shape)
         # cyclic padding on the y-axis
         x = F.pad(x, (0, 0, self.padding, self.padding), mode='circular')
 
         # zero padding on the x-axis 
         x = F.pad(x, (self.padding, self.padding, 0, 0), mode='constant', value=0)
         # print("Padded Input!\n",x)
+        print(x.shape)
         return self.sumpool(x)
 
 
@@ -67,26 +69,29 @@ class MaskSumPool(nn.Module):
         else:
             # self.pool_mask = torch.ones((kernel_size, kernel_size)) # default
             self.pool_mask = torch.ones((kernel_size, kernel_size), dtype=torch.float32)
-        print(self.pool_mask.shape)
-        self.pool_mask = self.pool_mask.unsqueeze(0).expand(self.in_channels, self.in_channels, self.in_channels)
-        print(self.pool_mask.shape)
-        self.pool_mask = self.pool_mask.view(1, self.in_channels, kernel_size, kernel_size)
-        print(self.pool_mask.shape)
+        # print(self.pool_mask.shape)
+        self.pool_mask = self.pool_mask.expand(self.in_channels,-1,-1).unsqueeze(0)
+        self.pool_mask = self.pool_mask.permute(1,0,2,3)
+        # print(self.pool_mask.shape)
+        # self.pool_mask = self.pool_mask.unsqueeze(0).expand(self.in_channels, self.in_channels, self.in_channels)
+        # print(self.pool_mask.shape)
+        # self.pool_mask = self.pool_mask.view(1, self.in_channels, kernel_size, kernel_size)
+        # print(self.pool_mask.shape)
 
-        # Create a custom convolutional layer (using groups to handle multiple channels)
         self.conv = nn.Conv2d(
             in_channels=self.in_channels, 
             out_channels=self.in_channels,
             kernel_size=self.kernel_size,
             stride=self.stride,
             padding=0,  # padding handled later
-            groups=1,  # Don't perform multi-channel convolution
+            groups=self.in_channels,  # Don't perform multi-channel convolution
             bias=False 
         )
 
-        # Set the convolution weights to the custom pooling mask
+        # Set convolution weights to the custom pooling mask
         with torch.no_grad():
-            self.conv.weight = nn.Parameter(self.pool_mask.view(1, self.in_channels, kernel_size, kernel_size))
+            # self.conv.weight = nn.Parameter(self.pool_mask.view(1, self.in_channels, kernel_size, kernel_size))
+            self.conv.weight = nn.Parameter(self.pool_mask)
 
         # Freeze the weights so that they are not updated during backpropagation
         self.conv.weight.requires_grad = False
@@ -147,7 +152,7 @@ if __name__ =="__main__":
 
     s_layer = CustomPadSumPool(kernel_size=3)
     output = s_layer(input)
-    print(output.shape)
+    print('check here',output.shape)
     print(output)
     print()
     print()
@@ -157,24 +162,36 @@ if __name__ =="__main__":
                             [1, 1, 1],
                             [0, 1, 0]])
     # ms_layer = MaskSumPool(kernel_size=3, stride=1, pool_mask=None)
-    ms_layer = MaskSumPool(kernel_size=3, in_channels=1, stride=1, pool_mask=None)
-    output = ms_layer(input)
-    print(output.shape)
-    print(output)
+    # ms_layer = MaskSumPool(kernel_size=3, in_channels=1, stride=1, pool_mask=None)
+    # output = ms_layer(input)
+    # print(output.shape)
+    # print(output)
     print()
     print()
     print()
 
     input1 = torch.arange(36).reshape(1,6,6)
     input2 = torch.arange(start=36,end=0,step=-1).reshape(1,6,6)
-    input = torch.cat((input1,input2)).unsqueeze(0)
+    input3 = torch.ones((1,6,6))
+    input = torch.cat((input1,input2,input3)).unsqueeze(0)
     print(input.shape)
     print(input)
     print()
-    print()
-    ms_layer = MaskSumPool(kernel_size=3, in_channels=2, stride=1, pool_mask=None)
+    print("here:")
+    ms_layer = MaskSumPool(kernel_size=3, in_channels=3, stride=1, pool_mask=None)
     output = ms_layer(input)
     print(output.shape)
+    print(output)
 
-
+    input1b = torch.ones((1,6,6))*2
+    input2b = torch.ones((1,6,6))*3
+    input3b = torch.ones((1,6,6))*4
+    inputb = torch.cat((input1b,input2b,input3b))
+    input = torch.cat((input1,input2,input3))
+    batch = torch.stack((input,inputb),dim=0)
+    print(batch.shape)
+    ms_layer = MaskSumPool(kernel_size=3, in_channels=3, stride=1, pool_mask=None)
+    output = ms_layer(batch)
+    print(output.shape)
+    print(output)
 
