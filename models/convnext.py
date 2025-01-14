@@ -803,7 +803,7 @@ class smallUConvNeXt(nn.Module):
 class UConvNeXt_central(nn.Module):
     def __init__(self, num_channels=3,hidden_channels=24):
         # adaption of UConvNeXt to better handle images with different shapes
-        # still rectangular.
+        # still rectangular. Requires different padding to UConvNeXt case
         super(UConvNeXt_central, self).__init__()
         
         self.gelu = nn.GELU()
