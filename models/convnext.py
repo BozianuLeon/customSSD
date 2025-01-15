@@ -842,40 +842,40 @@ class UConvNeXt_central(nn.Module):
 
         #stem
         out1 = self.gelu(self.ln1(self.conv1(x)))
-        print('End of stem',out1.shape)
+        # print('End of stem',out1.shape)
 
         #conv2
         out2 = self.conv2_1(out1)
-        print('End of conv2',out2.shape)
+        # print('End of conv2',out2.shape)
 
         #pool1
         out3 = self.ln2(self.pool(out2))
-        print('End of pool1',out3.shape)
+        # print('End of pool1',out3.shape)
 
         #conv3
         out4 = self.conv3_1(out3)
-        print('End of conv3',out4.shape)
+        # print('End of conv3',out4.shape)
 
         #pool2
         out5 = self.ln3(self.pool2(out4))
-        print('End of pool2',out5.shape)
+        # print('End of pool2',out5.shape)
 
         #conv4
         out6 = self.conv4_1(out5)
-        print('End of conv4',out6.shape)
+        # print('End of conv4',out6.shape)
 
         #up sample 1
         out7 = self.up1(out6)
-        print('End of up1',out7.shape)
+        # print('End of up1',out7.shape)
         out7 = torch.cat([out4,out7],dim=1)
 
         #conv5
         out8 = self.conv5_1(out7)
-        print('End of conv5',out8.shape)
+        # print('End of conv5',out8.shape)
 
         #up sample 2
         out9 = self.up2(out8)
-        print('End of up2',out9.shape)
+        # print('End of up2',out9.shape)
         out9 = torch.cat([out2,out9],dim=1)
 
         return out9

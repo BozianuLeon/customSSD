@@ -4,8 +4,6 @@ import torch.nn.functional as F
 import torchvision
 
 
-
-
 class SumPool(torch.nn.Module):
     def __init__(self, kernel_size, stride=1):
         super(SumPool, self).__init__()
@@ -52,7 +50,6 @@ class CustomPadSumPool(torch.nn.Module):
         x = F.pad(x, (self.padding, self.padding, 0, 0), mode='constant', value=0)
 
         return self.sumpool(x)
-
 
 
 class MaskSumPool(nn.Module):
@@ -102,6 +99,8 @@ class MaskSumPool(nn.Module):
 
 
 
+
+
 if __name__ =="__main__":
 
     input = torch.arange(25).reshape(1,5,5)
@@ -111,6 +110,7 @@ if __name__ =="__main__":
     print(input)
     print("==========================")
     print()
+
     s_layer = PadSumPool(kernel_size=3)
     output = s_layer(input)
     print("Pad Sum Pool Output:")
@@ -174,4 +174,3 @@ if __name__ =="__main__":
     print(output)
     print("==========================")
     print()
-
