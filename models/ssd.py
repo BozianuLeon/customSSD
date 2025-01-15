@@ -72,7 +72,7 @@ class SSD(torch.nn.Module):
         # grab chosen feature extractor
         self.backbone_name = backbone_name
         self.feature_extractor = CustomFeatureExtractor(in_channels=in_channels*2, hidden_channels=20, name=backbone_name)
-        print(f"Backbone model:\t {sum(p.numel() for p in self.feature_extractor.parameters()):,} parameters.")
+        print(f"Backbone model:    {sum(p.numel() for p in self.feature_extractor.parameters()):,} parameters.")
 
         self.label_num = 1 
         self._build_additional_features(self.feature_extractor.out_channels)
@@ -80,11 +80,11 @@ class SSD(torch.nn.Module):
         
         self.loc = nn.Conv2d(self.feature_extractor.out_channels[0], self.num_defaults[0] * 4, kernel_size=3, padding=1)
         self.conf = nn.Conv2d(self.feature_extractor.out_channels[0], self.num_defaults[0] * self.label_num, kernel_size=3, padding=1)
-        print(f"Loc head:\t {sum(p.numel() for p in self.loc.parameters()):,} parameters.")
-        print(f"Conf head:\t {sum(p.numel() for p in self.conf.parameters()):,} parameters.")
+        print(f"Loc head:          {sum(p.numel() for p in self.loc.parameters()):,} parameters.")
+        print(f"Conf head:         {sum(p.numel() for p in self.conf.parameters()):,} parameters.")
 
         self.sumpool = MaskSumPool(kernel_size=9, in_channels=in_channels, stride=1, pool_mask=None)
-        print(f"PT map:\t {sum(p.numel() for p in self.sumpool.parameters()):,} parameters.")
+        print(f"PT map:            {sum(p.numel() for p in self.sumpool.parameters()):,} (frozen) parameters.")
         
         self._init_weights()
 
@@ -105,7 +105,7 @@ class SSD(torch.nn.Module):
         self.additional_blocks = nn.ModuleList([layer1,layer2])
 
         total_params = sum(p.numel() for p in self.additional_blocks.parameters())
-        print(f"Additional blocks:\t {total_params:,} parameters.")
+        print(f"Aux. layers:       {total_params:,} parameters.")
 
     def _init_weights(self):
         layers = [*self.additional_blocks, self.loc, self.conf]

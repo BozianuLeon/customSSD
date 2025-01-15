@@ -64,7 +64,7 @@ class CustomDataset(torch.utils.data.Dataset):
 if __name__=="__main__":
 
     dataset = CustomDataset(
-        annotation_file="/home/users/b/bozianu/work/data/mu200/anns_central_jets_20GeV.json"
+        annotation_file="../../../data/mu200/anns_central_jets_20GeV.json"
     )
 
     img, val_dict = dataset[3]
