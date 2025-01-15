@@ -3,12 +3,9 @@ import torch
 
 
 class MyDefaultBoxes(object):
-    def __init__(self, figsize, scale, step_x, step_y):
+    def __init__(self, figsize, step_x, step_y):
 
         self.figsize = figsize
-        self.scale = scale
-        self.box_size = (self.scale/self.figsize[0], self.scale/self.figsize[1])
-
         self.step_x = step_x
         self.step_y = step_y
 
@@ -68,10 +65,11 @@ class MyDefaultBoxes(object):
 
 if __name__=="__main__":
 
-    figsize = (24,63)#(96,125)
-    scale = 24
+    # pytorch tensor [5,125,49]
+    # figsize = (49,125)
+    figsize = (24,63) # (96,125)
     step_x, step_y = 1,1
-    dboxes = MyDefaultBoxes(figsize, scale, step_x, step_y)
+    dboxes = MyDefaultBoxes(figsize, step_x, step_y)
     print('Number of dboxes: ', dboxes.dboxes.shape)
 
 
