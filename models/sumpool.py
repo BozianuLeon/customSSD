@@ -57,6 +57,10 @@ class CustomPadSumPool(torch.nn.Module):
 
 class MaskSumPool(nn.Module):
     def __init__(self, kernel_size, in_channels, stride=1, pool_mask=None):
+        # Custom sum pool layer that maintains image size,
+        # via custom padding (cyclic in y-axis, zeros in x-axis)
+        # Masked kernel to control which pixels contribute to sum
+        # concatenated with input + used as pt estimate output
         super(MaskSumPool, self).__init__()
         self.in_channels = in_channels
         self.kernel_size = kernel_size
@@ -69,27 +73,19 @@ class MaskSumPool(nn.Module):
         else:
             self.pool_mask = torch.ones((kernel_size, kernel_size), dtype=torch.float32) # default
 
-        self.pool_mask = self.pool_mask.expand(self.in_channels,-1,-1).unsqueeze(0)
-        self.pool_mask = self.pool_mask.permute(1,0,2,3)
-        # print(self.pool_mask.shape)
-        # self.pool_mask = self.pool_mask.unsqueeze(0).expand(self.in_channels, self.in_channels, self.in_channels)
-        # print(self.pool_mask.shape)
-        # self.pool_mask = self.pool_mask.view(1, self.in_channels, kernel_size, kernel_size)
-        # print(self.pool_mask.shape)
-
         self.conv = nn.Conv2d(
             in_channels=self.in_channels, 
             out_channels=self.in_channels,
             kernel_size=self.kernel_size,
             stride=self.stride,
             padding=0,  # padding handled later
-            groups=self.in_channels,  # Don't perform multi-channel convolution
+            groups=self.in_channels,  # depthwise convolution, no mixing channels
             bias=False 
         )
 
-        # Set convolution weights to the custom pooling mask
         with torch.no_grad():
-            # self.conv.weight = nn.Parameter(self.pool_mask.view(1, self.in_channels, kernel_size, kernel_size))
+            self.pool_mask = self.pool_mask.expand(self.in_channels,-1,-1).unsqueeze(0)
+            self.pool_mask = self.pool_mask.permute(1,0,2,3)
             self.conv.weight = nn.Parameter(self.pool_mask)
 
         # Freeze the weights so that they are not updated during backpropagation
@@ -97,9 +93,10 @@ class MaskSumPool(nn.Module):
 
     def forward(self, x):
         x = x.float()  # convert to float 
-        # x = F.pad(x, (0, 0, self.padding, self.padding), mode='circular')
-        x = F.pad(x, (0, 0, self.padding, self.padding), mode='constant', value=0)
+        
+        x = F.pad(x, (0, 0, self.padding, self.padding), mode='circular')
         x = F.pad(x, (self.padding, self.padding, 0, 0), mode='constant', value=0)
+        
         with torch.no_grad():
             return self.conv(x)
 
@@ -112,47 +109,50 @@ if __name__ =="__main__":
     print("Input:")
     print(input.shape)
     print(input)
+    print("==========================")
     print()
-    print("Output:")
     s_layer = PadSumPool(kernel_size=3)
     output = s_layer(input)
+    print("Pad Sum Pool Output:")
     print(output.shape)
     print(output)
+    print("==========================")
+    print()
 
-    s_layer = CustomPadSumPool(kernel_size=3)
-    output = s_layer(input)
-    print('check here',output.shape)
-    print(output)
-    print()
-    print()
-    print()
-    print("Masked sum pool")
-    print(input)
+
     custom_pool_mask = torch.tensor([[0, 1, 0],
                                      [1, 1, 1],
                                      [0, 1, 0]],dtype=torch.float32)
     # ms_layer = MaskSumPool(kernel_size=3, in_channels=1, stride=1, pool_mask=None)
     ms_layer = MaskSumPool(kernel_size=3, in_channels=1, stride=1, pool_mask=custom_pool_mask)
     output = ms_layer(input)
+    print("Masked sum pool:")
+    print("Kernel mask:", custom_pool_mask)
     print(output.shape)
     print(output)
+    print("==========================")
     print()
-    print()
+
 
 
     input1 = torch.arange(36).reshape(1,6,6)
     input2 = torch.arange(start=36,end=0,step=-1).reshape(1,6,6)
     input3 = torch.ones((1,6,6))
     input = torch.cat((input1,input2,input3)).unsqueeze(0)
+    print("Multiple Channel Input:")
     print(input.shape)
     print(input)
+    print("==========================")
     print()
-    print("here:")
+
     # ms_layer = MaskSumPool(kernel_size=3, in_channels=3, stride=1, pool_mask=None)
     ms_layer = MaskSumPool(kernel_size=3, in_channels=3, stride=1, pool_mask=custom_pool_mask)
     output = ms_layer(input)
+    print("Masked sum pool:")
     print(output.shape)
     print(output)
+    print("==========================")
+    print()
 
     input1b = torch.ones((1,6,6))*2
     input2b = torch.ones((1,6,6))*3
@@ -160,11 +160,18 @@ if __name__ =="__main__":
     inputb = torch.cat((input1b,input2b,input3b))
     input = torch.cat((input1,input2,input3))
     batch = torch.stack((input,inputb),dim=0)
+    print("Batched Input:")
     print(batch.shape)
     print(batch)
+    print("==========================")
+    print()
+
     # ms_layer = MaskSumPool(kernel_size=3, in_channels=3, stride=1, pool_mask=None)
     ms_layer = MaskSumPool(kernel_size=3, in_channels=3, stride=1, pool_mask=custom_pool_mask)
     output = ms_layer(batch)
+    print("Masked sum pool:")
     print(output.shape)
     print(output)
+    print("==========================")
+    print()
 
