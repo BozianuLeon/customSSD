@@ -1,12 +1,12 @@
 /__pycache__
 /logs
 log.*
+jobname*
 *.pth
 *.pkl
 *.png
 *.sh
 *.out
-jobname*
 
 
 
