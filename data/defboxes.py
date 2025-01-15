@@ -44,11 +44,12 @@ class MyDefaultBoxes(object):
 
     @property
     def scale_xy(self):
-        #not sure about this!!!
+        #Needs to be updated
         return self.box_size[0]
 
     @property
     def scale_wh(self):
+        #Needs to be updated
         return self.box_size[0]
 
     @property
