@@ -107,12 +107,12 @@ class DefaultBoxes(object):
     @property
     def scale_xy(self):
         #Needs to be updated
-        return self.box_size[0]
+        return 1.0
 
     @property
     def scale_wh(self):
         #Needs to be updated
-        return self.box_size[0]
+        return 1.0
 
     @property
     def fig_size(self):
@@ -131,7 +131,7 @@ if __name__=="__main__":
 
     print("Each bin has height:", 4*torch.pi/125, "scale in height should be: ",0.8*4*torch.pi/125)
     print("Each bin has width:", (2.5--2.5)/49, "scale in width should be: ",0.8*5/49)
-
+    print("scale_0 should be",0.1600*24, "scale_1 should be ",0.0643*63)
     # pytorch tensor [5,125,49]
     # figsize = (49,125) # (96,125)
     figsize = (24,63) 
