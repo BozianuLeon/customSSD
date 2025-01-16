@@ -49,8 +49,9 @@ print(model.backbone_name,f'!total \t{total_params:,} parameters.\n')
 model.eval()
 
 # default prior boxes
-dboxes = data.DefaultBoxes(figsize=(24,63),step_x=1,step_y=1) 
+dboxes = data.DefaultBoxes(figsize=(24,63),scale=(3.84,4.05),step_x=1,step_y=1) 
 print("Generated prior boxes, ",dboxes.dboxes.shape, ", default boxes")
+
 # encoder 
 encoder = data.Encoder(dboxes)
 
@@ -165,7 +166,6 @@ with torch.inference_mode():
             plt.close()
             print(step*BS + i)
             print("\t",len(tru_boxes_ext),len(det_boxes_ext),len(det_boxes_pts))
-            quit()
             if (step*BS + i) == 16:
                 quit()
 
