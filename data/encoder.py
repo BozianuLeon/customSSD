@@ -91,15 +91,15 @@ class Encoder(object):
         bboxes_in = bboxes_in.permute(0, 2, 1)
         scores_in = scores_in.permute(0, 2, 1)
 
-        # Unparameterise p.5 SSD
+        # 1. Unparameterise p.5 SSD
         # NEED TO UPDATE scale_xy, scale_wh
-        bboxes_in[:, :, :2] = self.scale_xy*bboxes_in[:, :, :2]
-        bboxes_in[:, :, 2:] = self.scale_wh*bboxes_in[:, :, 2:]
-
+        # bboxes_in[:, :, :2] = self.scale_xy*bboxes_in[:, :, :2]
+        # bboxes_in[:, :, 2:] = self.scale_wh*bboxes_in[:, :, 2:]
         bboxes_in[:, :, :2] = bboxes_in[:, :, :2]*self.dboxes_xywh[:, :, 2:] + self.dboxes_xywh[:, :, :2]
         bboxes_in[:, :, 2:] = bboxes_in[:, :, 2:].exp()*self.dboxes_xywh[:, :, 2:]
 
-        # Find prediction centres, extract pT from pT array
+
+        # 2. Find prediction centres, extract pT from pT array
         centres = bboxes_in[:,:,:2]
         centres_x = (centres[:,:,0]*((EXTENT[1]-EXTENT[0])))+EXTENT[0]
         centres_y = (centres[:,:,1]*((EXTENT[3]-EXTENT[2])))+EXTENT[2]
@@ -131,7 +131,7 @@ class Encoder(object):
         # f.savefig(f'pt_array_0.png',dpi=500)
         # plt.close()
 
-        # Transform format to ltrb
+        # 3. Transform format to ltrb
         l, t, r, b = bboxes_in[:, :, 0] - 0.5*bboxes_in[:, :, 2],\
                      bboxes_in[:, :, 1] - 0.5*bboxes_in[:, :, 3],\
                      bboxes_in[:, :, 0] + 0.5*bboxes_in[:, :, 2],\
