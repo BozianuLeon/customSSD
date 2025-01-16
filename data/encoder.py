@@ -43,6 +43,7 @@ class Encoder(object):
         bboxes_in = bboxes_in.to(self.dboxes.device)
         labels_in = labels_in.to(self.dboxes.device)
 
+        # scale boxes to pixel space (important!)
         bboxes_in[:,(0,2)] = bboxes_in[:,(0,2)] / 49 
         bboxes_in[:,(1,3)] = bboxes_in[:,(1,3)] / 125
 
