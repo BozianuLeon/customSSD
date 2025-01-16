@@ -1,8 +1,5 @@
 import torch
 
-
-
-
 # This function is from https://github.com/kuangliu/pytorch-ssd.
 def calc_iou_tensor(box1, box2):
     """ Calculation of IoU based on two boxes tensor,

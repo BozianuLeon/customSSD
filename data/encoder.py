@@ -1,5 +1,5 @@
 import torch
-from utils import calc_iou_tensor
+from data.utils import calc_iou_tensor
 
 MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
 # MIN_CELLS_ETA,MAX_CELLS_ETA = -4.823496, 4.823496
