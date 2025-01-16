@@ -43,7 +43,7 @@ class Encoder(object):
         bboxes_in = bboxes_in.to(self.dboxes.device)
         labels_in = labels_in.to(self.dboxes.device)
 
-        bboxes_in[:,(0,2)] = bboxes_in[:,(0,2)] / 96 
+        bboxes_in[:,(0,2)] = bboxes_in[:,(0,2)] / 49 
         bboxes_in[:,(1,3)] = bboxes_in[:,(1,3)] / 125
 
         ious = calc_iou_tensor(bboxes_in, self.dboxes)
@@ -90,7 +90,7 @@ class Encoder(object):
         bboxes_in = bboxes_in.permute(0, 2, 1)
         scores_in = scores_in.permute(0, 2, 1)
 
-        # unparameterise
+        # Unparameterise p.5 SSD
         # NEED TO UPDATE scale_xy, scale_wh
         bboxes_in[:, :, :2] = self.scale_xy*bboxes_in[:, :, :2]
         bboxes_in[:, :, 2:] = self.scale_wh*bboxes_in[:, :, 2:]
