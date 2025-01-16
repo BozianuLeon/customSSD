@@ -120,24 +120,24 @@ class SSD(torch.nn.Module):
         return lc_out, conf_out
 
     def forward(self, x):
-        print('input image shape',x.shape)
+        # print('input image shape',x.shape)
 
         ptmap = self.sumpool(x)
-        print('ptmap shape',ptmap.shape)
+        # print('ptmap shape',ptmap.shape)
         x = torch.cat((x, ptmap), dim=1)
-        print('concat image+sumpool',x.shape)
+        # print('concat image+sumpool',x.shape)
 
         x = self.feature_extractor(x)
-        print('After feature ext.',x.shape)     
+        # print('After feature ext.',x.shape)     
 
         for l in self.additional_blocks:
             x = l(x)
-        print('After additional blocks',x.shape)
+        # print('After additional blocks',x.shape)
 
         # print('feature maps [125,96] reshape->',125*96, 'but we downsample the image in aux layers to to reduce to [63,48]',63*48,'equal to our step_x, step_y=2' )
         # print('I want: Number of dboxes:  torch.Size([3024, 4])')
         locs, confs = self.bbox_view(x, self.loc, self.conf)
-        print('After bbox_view',confs.shape,locs.shape)
+        # print('After bbox_view',confs.shape,locs.shape)
 
         return locs, confs, ptmap[:,0,:,:]
 

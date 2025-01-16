@@ -1,4 +1,12 @@
 import torch
+import torchvision
+from data.utils import calc_iou_tensor
+
+MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
+# MIN_CELLS_ETA,MAX_CELLS_ETA = -4.823496, 4.823496
+MIN_CELLS_ETA,MAX_CELLS_ETA = -2.5, 2.5
+# EXTENT = [-4.82349586, 4.82349586, -6.21738815, 6.21801758] 
+EXTENT = (-2.4999826, 2.4999774, -6.217388274177672, 6.2180176992265)
 
 
 class Encoder(object):
@@ -60,7 +68,7 @@ class Encoder(object):
                      0.5*(bboxes_out[:, 1] + bboxes_out[:, 3]), \
                      -bboxes_out[:, 0] + bboxes_out[:, 2], \
                      -bboxes_out[:, 1] + bboxes_out[:, 3]
-                     
+
         bboxes_out[:, 0] = x
         bboxes_out[:, 1] = y
         bboxes_out[:, 2] = w
@@ -98,7 +106,7 @@ class Encoder(object):
         bins_x = torch.linspace(MIN_CELLS_ETA, MAX_CELLS_ETA, int((MAX_CELLS_ETA - MIN_CELLS_ETA) / 0.1 + 1))
         wrapped_bins_y = torch.linspace(EXTENT[2], EXTENT[3], int((EXTENT[3] - EXTENT[2]) / ((2*torch.pi)/64) + 1))
  
-        batch_idxs = torch.arange(pt_array_in.shape[0]).unsqueeze(1).expand(pt_array_in.shape[0], 3024)  # Shape [4, 3024]
+        batch_idxs = torch.arange(pt_array_in.shape[0]).unsqueeze(1).expand(pt_array_in.shape[0], self.nboxes)  # Shape [4, n_dfboxes]
         cx_idxs = torch.bucketize(centres_x, bins_x.to(self.device))
         cy_idxs = torch.bucketize(centres_y, wrapped_bins_y.to(self.device))
 
@@ -133,7 +141,7 @@ class Encoder(object):
         bboxes_in[:, :, 2] = r
         bboxes_in[:, :, 3] = b
 
-        return bboxes_in, nn.functional.softmax(scores_in, dim=0), pts_in
+        return bboxes_in, torch.nn.functional.softmax(scores_in, dim=0), pts_in
 
     def decode_batch(self,bboxes_in,scores_in,pt_array_in,iou_thresh,confidence,max_num):#CRITERIA IS NMS CRITERIA AND SO LOWER LESS BOXES (0.45)
         bboxes, probs, pts = self.scale_back_batch(bboxes_in, scores_in, pt_array_in)
@@ -178,9 +186,9 @@ if __name__=="__main__":
     # figsize = (49,125)
     figsize = (24,63) # (96,125)
     step_x, step_y = 1,1
-    from defboxes import MyDefaultBoxes
+    from defboxes import DefaultBoxes
 
-    dboxes = MyDefaultBoxes(figsize, step_x, step_y)
+    dboxes = DefaultBoxes(figsize, step_x, step_y)
     print('Number of dboxes: ', dboxes.dboxes.shape)
 
 

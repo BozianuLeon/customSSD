@@ -2,12 +2,15 @@ import torch
 
 
 
-class MyDefaultBoxes(object):
+class DefaultBoxes(object):
     def __init__(self, figsize, step_x, step_y):
 
         self.figsize = figsize
         self.step_x = step_x
         self.step_y = step_y
+        self.scale = 4.0
+        self.box_size = (self.scale/self.figsize[0], self.scale/self.figsize[1])
+
 
         self.default_boxes = []
         width, height = self.figsize
@@ -23,7 +26,7 @@ class MyDefaultBoxes(object):
         cy_vals = (i_vals + 0.5) / height  # Normalize by height for cy
 
         all_sizes = [
-                     (4.0/self.figsize[0], 4.0/self.figsize[1]), 
+                     (self.scale/self.figsize[0], self.scale/self.figsize[1]), 
                     #  (6/self.figsize[0], 6/self.figsize[1])
                      ]
 
@@ -50,7 +53,7 @@ class MyDefaultBoxes(object):
     @property
     def scale_wh(self):
         #Needs to be updated
-        return self.box_size[0]
+        return self.box_size[1]
 
     @property
     def fig_size(self):

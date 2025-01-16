@@ -40,8 +40,8 @@ class CustomDataset(torch.utils.data.Dataset):
         bboxes[:,3] = bboxes[:,1] + bboxes[:,3] 
 
         if len(bboxes)==0:
-            bboxes = torch.zeros((0, 4), dtype=torch.float32)
-            labels = torch.zeros(0, dtype=torch.int64)
+            bboxes = torch.tensor([[-0.4,-0.4,0.4,0.4]], dtype=torch.float32)
+            labels = torch.tensor([0], dtype=torch.int64)
         else:
             labels = torch.ones(bboxes.shape[0], dtype=torch.int64)
 
