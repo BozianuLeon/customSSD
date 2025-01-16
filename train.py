@@ -18,7 +18,7 @@ config = {
     "LR"         : 0.01,
     "WD"         : 0.01,
     "wup_epochs" : int(6/3),
-    "n_epochs"   : 4,
+    "n_epochs"   : 5,
 }
 torch.manual_seed(config["seed"])
 
@@ -48,7 +48,8 @@ cosine_scheduler = CosineAnnealingLR(optimizer, T_max=config["n_epochs"] - confi
 scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[config["wup_epochs"]])
 
 # default prior boxes
-dboxes = data.DefaultBoxes(figsize=(24,63),step_x=1,step_y=1) 
+dboxes = data.MyDefaultBoxes(figsize=(24,63), scale=24, step_x=1, step_y=1)
+# dboxes = data.DefaultBoxes(figsize=(24,63),scale=(0.8*5,0.8*4*torch.pi),step_x=1,step_y=1) 
 print("Generated prior boxes, ",dboxes.dboxes.shape, ", default boxes")
 
 # encoder and loss
