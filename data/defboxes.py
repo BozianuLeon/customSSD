@@ -53,7 +53,7 @@ class DefaultBoxes(object):
     @property
     def scale_wh(self):
         #Needs to be updated
-        return self.box_size[0]
+        return self.box_size[1]
 
     @property
     def fig_size(self):
