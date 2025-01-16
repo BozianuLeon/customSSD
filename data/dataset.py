@@ -9,6 +9,7 @@ import json
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, annotation_file, rnd_flips=False):
         # Custom dataset that takes in the annotations folder 
+        # and will randomly flip the images/bounding boxes during training
         # returns 
         # img: pytorch tensor [5,125,49]
         # validation dict: contains lists/tensors of dict_keys(['boxes', 'labels', 'jet_pt', 'extent', 'h5file', 'h5event', 'event_no'])
@@ -54,12 +55,9 @@ class CustomDataset(torch.utils.data.Dataset):
             labels = torch.ones(bboxes.shape[0], dtype=torch.int64)
         
         if self.rnd_flips:
-            print(bboxes)
             # Add random horizontal flip!
             bboxes = torchvision.tv_tensors.BoundingBoxes(bboxes,format="XYXY",canvas_size=img.shape[-2:])
             img, bboxes = self.transforms(img, bboxes)
-            print(bboxes)
-
         
         event_no = anns_i["image"]["id"]
         h5file   = anns_i["image"]["file"]

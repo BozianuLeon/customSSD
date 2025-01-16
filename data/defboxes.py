@@ -74,7 +74,6 @@ class DefaultBoxes(object):
         self.scale = scale
         self.box_size = (self.scale[0]/self.figsize[0], self.scale[1]/self.figsize[1])
 
-
         self.default_boxes = []
         width, height = self.figsize
 
@@ -136,7 +135,7 @@ if __name__=="__main__":
     # pytorch tensor [5,125,49]
     # figsize = (49,125) # (96,125)
     figsize = (24,63) 
-    scale = (0.8*5,0.8*4*torch.pi)
+    scale = (0.8*5, 0.8*4*torch.pi)
     step_x, step_y = 1,1
     dboxes = DefaultBoxes(figsize, scale, step_x, step_y)
     print('Number of dboxes: ', dboxes.dboxes.shape)
