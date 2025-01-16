@@ -3,4 +3,5 @@ from models.convnext import petiteConvNeXt, tinyConvNeXt, UConvNeXt, UConvNeXt_c
 from models.resnext import ResNeXt20
 from models.sumpool import MaskSumPool
 from models.layernorm import LayerNorm2d
+from models.loss import Loss
 
