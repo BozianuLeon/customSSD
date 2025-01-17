@@ -17,13 +17,13 @@ config = {
     "BS"         : 4,
     "LR"         : 0.01,
     "WD"         : 0.01,
-    "wup_epochs" : int(6/3),
-    "n_epochs"   : 5,
+    "wup_epochs" : int(9/3),
+    "n_epochs"   : 14,
 }
 torch.manual_seed(config["seed"])
 
 
-dataset = data.CustomDataset(annotation_file="/home/users/b/bozianu/work/data/mu200/anns_central_jets_20GeV.json")
+dataset = data.CustomDataset(annotation_file="/home/users/b/bozianu/work/data/mu200/anns_central_jets_20GeV.json", rnd_flips=True)
 train_len = int(0.78 * len(dataset))
 val_len = int(0.02 * len(dataset))
 test_len = len(dataset) - train_len - val_len
@@ -48,8 +48,7 @@ cosine_scheduler = CosineAnnealingLR(optimizer, T_max=config["n_epochs"] - confi
 scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[config["wup_epochs"]])
 
 # default prior boxes
-dboxes = data.MyDefaultBoxes(figsize=(24,63), scale=24, step_x=1, step_y=1)
-# dboxes = data.DefaultBoxes(figsize=(24,63),scale=(0.8*5,0.8*4*torch.pi),step_x=1,step_y=1) 
+dboxes = data.DefaultBoxes(figsize=(24,63),scale=(3.84,4.05),step_x=1,step_y=1) 
 print("Generated prior boxes, ",dboxes.dboxes.shape, ", default boxes")
 
 # encoder and loss
