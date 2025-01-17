@@ -17,13 +17,13 @@ config = {
     "BS"         : 4,
     "LR"         : 0.01,
     "WD"         : 0.01,
-    "wup_epochs" : int(6/3),
-    "n_epochs"   : 5,
+    "wup_epochs" : int(9/3),
+    "n_epochs"   : 14,
 }
 torch.manual_seed(config["seed"])
 
 
-dataset = data.CustomDataset(annotation_file="/home/users/b/bozianu/work/data/mu200/anns_central_jets_20GeV.json")
+dataset = data.CustomDataset(annotation_file="/home/users/b/bozianu/work/data/mu200/anns_central_jets_20GeV.json", rnd_flips=True)
 train_len = int(0.78 * len(dataset))
 val_len = int(0.02 * len(dataset))
 test_len = len(dataset) - train_len - val_len
