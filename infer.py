@@ -19,13 +19,14 @@ config = {
     "NW"         : 2,
     "BS"         : 4,
     "WD"         : 0.01,
-    "n_epochs"   : 6,
+    "n_epochs"   : 14,
     "max_num"    : 150,
 }
 torch.manual_seed(config["seed"])
 
 
-dataset = data.CustomDataset(annotation_file="/home/users/b/bozianu/work/data/mu200/anns_central_jets_20GeV.json")
+# dataset = data.CustomDataset(annotation_file="/home/users/b/bozianu/work/data/mu200/anns_central_jets_20GeV.json")
+dataset = data.CustomDataset(annotation_file="/srv/beegfs/scratch/shares/atlas_caloM/mu_200_truthjets/central_2sig_images/anns_central_jets_ttbar.json")
 train_len = int(0.78 * len(dataset))
 val_len = int(0.02 * len(dataset))
 test_len = len(dataset) - train_len - val_len
@@ -137,7 +138,7 @@ with torch.inference_mode():
             import matplotlib
             # det_boxes_ext,det_boxes_scr,det_boxes_pts = wrap_check_NMS3(det_boxes_ext,det_boxes_scr,det_boxes_pts,iou_thresh=0.3)
             # tru_boxes_ext,tru_pts = wrap_check_truth2(torch.tensor(tru_boxes_ext),torch.tensor(targets[i]['jet_pt']),MIN_CELLS_PHI,MAX_CELLS_PHI)
-            f,ax = plt.subplots(1,1)   
+            f,ax = plt.subplots(1,1,figsize=(10,12))   
             img = img_tensor[i].detach().cpu().numpy()
             # img = original_images[i].detach().cpu().numpy()
             ax.imshow(img[0],cmap='binary_r',extent=extent_i,origin='lower')
@@ -149,20 +150,20 @@ with torch.inference_mode():
                 bbx,pt = tru_boxes_ext[k],tru_pts[k]
                 x,y=float(bbx[0]),float(bbx[1])
                 w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
-                ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1.2,ec='limegreen',fc='none'))
-                ax.text(x,y+(3*h/4), f"{pt:.0f}",color='limegreen',fontsize=6)
+                ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1.8,ec='limegreen',fc='none'))
+                ax.text(x+0.05,y+h-0.15, f"{pt:.0f}",color='limegreen',fontsize=8)
 
             for j in range(len(det_boxes_ext)):
                 bbx,scr,pt = det_boxes_ext[j],det_boxes_scr[j],det_boxes_pts[j]
                 x,y=float(bbx[0]),float(bbx[1])
                 w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
-                ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1,ec='red',fc='none'))
-                ax.text(x+w,y+h, f"{scr.item():.2f}",color='red',fontsize=7)
-                ax.text(x,y+h/20, f"{pt.item():.0f}",color='red',fontsize=6)
+                ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1.9,ec='red',fc='none'))
+                ax.text(x+w-0.3,y+h-0.15, f"{scr.item():.2f}",color='red',fontsize=8)
+                ax.text(x+0.05,y+h/20, f"{pt.item():.0f}",color='red',fontsize=8)
 
             ax.set(xlabel='$\eta$',ylabel='$\phi$',xlim=(extent_i[0],extent_i[1]),ylim=(extent_i[2],extent_i[3]))
             plt.tight_layout()
-            f.savefig(save_loc+f'ex-NMS-{step*BS + i}.png',dpi=400)
+            f.savefig(save_loc+f'ex-NMS-{step*BS + i}-ttbar.png',dpi=400)
             plt.close()
             print(step*BS + i)
             print("\t",len(tru_boxes_ext),len(det_boxes_ext),len(det_boxes_pts))
