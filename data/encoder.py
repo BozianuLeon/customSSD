@@ -93,8 +93,8 @@ class Encoder(object):
 
         # 1. Unparameterise p.5 SSD
         # NEED TO UPDATE scale_xy, scale_wh
-        # bboxes_in[:, :, :2] = self.scale_xy*bboxes_in[:, :, :2]
-        # bboxes_in[:, :, 2:] = self.scale_wh*bboxes_in[:, :, 2:]
+        # bboxes_in[:, :, :2] = self.scale_xy*bboxes_in[:, :, :2] #
+        # bboxes_in[:, :, 2:] = self.scale_wh*bboxes_in[:, :, 2:] #
         bboxes_in[:, :, :2] = bboxes_in[:, :, :2]*self.dboxes_xywh[:, :, 2:] + self.dboxes_xywh[:, :, :2]
         bboxes_in[:, :, 2:] = bboxes_in[:, :, 2:].exp()*self.dboxes_xywh[:, :, 2:]
 
