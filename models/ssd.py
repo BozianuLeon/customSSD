@@ -83,8 +83,17 @@ class SSD(torch.nn.Module):
         print(f"Loc head:          {sum(p.numel() for p in self.loc.parameters()):,} parameters.")
         print(f"Conf head:         {sum(p.numel() for p in self.conf.parameters()):,} parameters.")
 
-        self.sumpool = MaskSumPool(kernel_size=9, in_channels=in_channels, stride=1, pool_mask=None)
-        print(f"PT map:            {sum(p.numel() for p in self.sumpool.parameters()):,} (frozen) parameters.")
+        custom_pool_mask = torch.tensor([[0, 0, 0, 1, 1, 1, 0, 0, 0],
+                                         [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                                         [0, 1, 1, 1, 1, 1, 1, 1, 0],
+                                         [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                                         [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                                         [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                                         [0, 1, 1, 1, 1, 1, 1, 1, 0],
+                                         [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                                         [0, 0, 0, 1, 1, 1, 0, 0, 0],],dtype=torch.float32)
+        self.sumpool = MaskSumPool(kernel_size=9, in_channels=in_channels, stride=1, pool_mask=custom_pool_mask)
+        print(f"PT map:            {sum(p.numel() for p in self.sumpool.parameters()):,} (frozen) parameters. Custom pooling mask kernel.")
         
         self._init_weights()
 
