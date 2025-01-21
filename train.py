@@ -18,7 +18,7 @@ config = {
     "LR"         : 0.01,
     "WD"         : 0.01,
     "wup_epochs" : int(9/3),
-    "n_epochs"   : 14,
+    "n_epochs"   : 8,
 }
 torch.manual_seed(config["seed"])
 
@@ -48,7 +48,7 @@ cosine_scheduler = CosineAnnealingLR(optimizer, T_max=config["n_epochs"] - confi
 scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[config["wup_epochs"]])
 
 # default prior boxes
-dboxes = data.DefaultBoxes(figsize=(24,63),scale=(3.84,4.05),step_x=1,step_y=1) 
+dboxes = data.DefaultBoxes(figsize=(24,63),scale=(3.84, 4.05),step_x=1,step_y=1) 
 print("Generated prior boxes, ",dboxes.dboxes.shape, ", default boxes")
 
 # encoder and loss
@@ -67,7 +67,7 @@ for epoch in range(config["n_epochs"]):
         images = images.to(config["device"],non_blocking=True)
 
         # forward pass
-        plocs, plabel, ptmap = model(images) #plocs.shape(torch.Size([BS, 4, 3024])) and plabel.shape(torch.Size([BS, 1, n_dfboxes]))
+        plocs, plabel, ptmap = model(images) #plocs.shape(torch.Size([BS, 4, n_dfboxes])) and plabel.shape(torch.Size([BS, 1, n_dfboxes]))
         # encode targets/default boxes
         gloc, glabel = [], []
         for i in range(config["BS"]):
@@ -122,7 +122,7 @@ for epoch in range(config["n_epochs"]):
             val_images = val_images.to(config["device"],non_blocking=True) 
         
             # forward pass
-            plocs, plabel, ptmap = model(val_images) #plocs.shape(torch.Size([8, 4, 8732])) and plabel.shape(torch.Size([8, 1, 8732]))
+            plocs, plabel, ptmap = model(val_images) #plocs.shape(torch.Size([BS, 4, n_dfboxes])) and plabel.shape(torch.Size([BS, 1, n_dfboxes]))
 
             # encode val_targets/default boxes
             gloc, glabel = [], []
@@ -134,9 +134,9 @@ for epoch in range(config["n_epochs"]):
                 gloc.append(encoded_gloc.to(config["device"],non_blocking=True))
                 glabel.append(encoded_glabel.to(config["device"],non_blocking=True)) 
 
-            gloc = torch.stack(gloc).to(config["device"],non_blocking = True) #torch.Size([8, 8732, 4])
-            glabel = torch.stack(glabel).to(config["device"],non_blocking = True)#torch.Size([8, 8732])
-            gloc = gloc.permute(0, 2, 1) #torch.Size([8, 4, 8732])
+            gloc = torch.stack(gloc).to(config["device"],non_blocking = True) #torch.Size([BS, n_dfboxes, 4])
+            glabel = torch.stack(glabel).to(config["device"],non_blocking = True)#torch.Size([BS, n_dfboxes])
+            gloc = gloc.permute(0, 2, 1) #torch.Size([BS, 4, n_dfboxes])
 
             val_loss = loss(plocs, plabel, gloc, glabel) 
             running_val_loss.append(val_loss.item())
