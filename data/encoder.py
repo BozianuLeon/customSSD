@@ -38,10 +38,28 @@ class Encoder(object):
         self.scale_wh = dboxes.scale_wh
         self.figsize = dboxes.fig_size
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    def encode_batch(self, target_dict, batch_size):
+        # encode target boxes using default boxes
+        # return in correct shape for loss function 
+        gloc, glabel = list(), list()
+
+        for i in range(batch_size):
+            true_bboxes = target_dict[i]["boxes"].to(self.device,non_blocking=True) #torch.Size([x, 4])
+            true_labels = target_dict[i]["labels"].to(self.device,non_blocking=True) #torch.Size([x])
+
+            encoded_gloc, encoded_glabel = self.encode(true_bboxes, true_labels) #torch.Size([n_dfboxes, 4]) and torch.Size([n_dfboxes])
+
+            gloc.append(encoded_gloc.to(self.device,non_blocking=True))
+            glabel.append(encoded_glabel.to(self.device,non_blocking=True)) 
+        
+        gloc = torch.stack(gloc).to(self.device,non_blocking = True) #torch.Size([BS, n_dfboxes, 4])
+        glabel = torch.stack(glabel).to(self.device,non_blocking = True)#torch.Size([BS, n_dfboxes])
+        gloc = gloc.permute(0, 2, 1) #torch.Size([BS, 4, 3024])
+        
+        return gloc, glabel
 
     def encode(self, bboxes_in, labels_in, criteria=0.5):
-        bboxes_in = bboxes_in.to(self.dboxes.device)
-        labels_in = labels_in.to(self.dboxes.device)
 
         # scale boxes to pixel space (important!)
         bboxes_in[:,(0,2)] = bboxes_in[:,(0,2)] / 49 
@@ -53,13 +71,13 @@ class Encoder(object):
 
         # set best ious 2.0
         best_dbox_ious.index_fill_(0, best_bbox_idx, 2.0)        
-        idx = torch.arange(0, best_bbox_idx.size(0), dtype=torch.int64)
+        idx = torch.arange(0, best_bbox_idx.size(0), dtype=torch.int64, device=self.device)
         best_dbox_idx[best_bbox_idx[idx]] = idx
 
         # filter IoU > 0.5
         masks = best_dbox_ious > criteria
 
-        labels_out = torch.zeros(self.nboxes, dtype=torch.long)
+        labels_out = torch.zeros(self.nboxes, dtype=torch.long, device=self.device)
         labels_out[masks] = labels_in[best_dbox_idx[masks]]
         bboxes_out = self.dboxes.clone()
         bboxes_out[masks, :] = bboxes_in[best_dbox_idx[masks], :]

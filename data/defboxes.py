@@ -9,6 +9,7 @@ class DefaultBoxes(object):
         self.step_y = step_y
         self.scale = scale
         self.box_size = (self.scale[0]/self.figsize[0], self.scale[1]/self.figsize[1])
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.default_boxes = []
         width, height = self.figsize
@@ -31,7 +32,7 @@ class DefaultBoxes(object):
         
         self.dboxes = torch.stack(self.default_boxes)
         self.dboxes.clamp_(min=0, max=1)
-        self.dboxes = self.dboxes.float()
+        self.dboxes = self.dboxes.float().to(self.device)
 
         # For IoU calculation
         self.dboxes_ltrb = self.dboxes.clone()
