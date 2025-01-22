@@ -63,7 +63,7 @@ scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_schedul
 
 # default prior boxes
 dboxes = data.DefaultBoxes(figsize=(24,63),scale=(3.84, 4.05),step_x=1,step_y=1) 
-print("Generated prior boxes, ",dboxes.dboxes.shape, ", default boxes")
+print("Generated prior boxes, ",dboxes.dboxes.shape, ", default boxes", dboxes.dboxes.device)
 
 # encoder and loss
 encoder = data.Encoder(dboxes)
@@ -83,16 +83,15 @@ for epoch in range(config["n_epochs"]):
         # forward pass
         plocs, plabel, ptmap = model(images) #plocs.shape(torch.Size([BS, 4, n_dfboxes])) and plabel.shape(torch.Size([BS, 1, n_dfboxes]))
         
-        # encode targets/default boxes TODO: move this into encoder?
-        gloc, glabel = [], []
-        for i in range(config["BS"]):
-            true_bboxes = target_dict[i]["boxes"].to(config["device"],non_blocking=True) #torch.Size([x, 4])
-            true_labels = target_dict[i]["labels"].to(config["device"],non_blocking=True) #torch.Size([x])
+        # # encode targets/default boxes
+        gloc,glabel = encoder.encode_batch(target_dict, config["BS"])
+        train_loss = loss(plocs, plabel, gloc, glabel)
+        running_loss.append(train_loss.item())
 
-            encoded_gloc, encoded_glabel = encoder.encode(true_bboxes, true_labels) #torch.Size([n_dfboxes, 4]) and torch.Size([n_dfboxes])
-
-            gloc.append(encoded_gloc.to(config["device"],non_blocking=True))
-            glabel.append(encoded_glabel.to(config["device"],non_blocking=True)) 
+        # back prop
+        optimizer.zero_grad()
+        train_loss.backward()
+        optimizer.step()
 
 # ###
 #         f,ax = plt.subplots()
@@ -113,17 +112,7 @@ for epoch in range(config["n_epochs"]):
 #         quit()
 # ###
 
-        gloc = torch.stack(gloc).to(config["device"],non_blocking = True) #torch.Size([BS, n_dfboxes, 4])
-        glabel = torch.stack(glabel).to(config["device"],non_blocking = True)#torch.Size([BS, n_dfboxes])
-        gloc = gloc.permute(0, 2, 1) #torch.Size([BS, 4, 3024])
 
-        train_loss = loss(plocs, plabel, gloc, glabel)
-        running_loss.append(train_loss.item())
-
-        # back prop
-        optimizer.zero_grad()
-        train_loss.backward()
-        optimizer.step()
 
     print(f"\tEpoch {epoch} / {config['n_epochs']}: train loss {mean(running_loss):.4f}, train time {time.perf_counter() - beginning:.2f}s, LR: {optimizer.param_groups[0]['lr']:.4f}")
 
@@ -140,18 +129,7 @@ for epoch in range(config["n_epochs"]):
             plocs, plabel, ptmap = model(val_images) #plocs.shape(torch.Size([BS, 4, n_dfboxes])) and plabel.shape(torch.Size([BS, 1, n_dfboxes]))
 
             # encode val_targets/default boxes
-            gloc, glabel = [], []
-            for i in range(config["BS"]):
-                true_bboxes = val_dict[i]["boxes"].to(config["device"],non_blocking=True) #torch.Size([x, 4])
-                true_labels = val_dict[i]["labels"].to(config["device"],non_blocking=True) #torch.Size([x])
-
-                encoded_gloc, encoded_glabel = encoder.encode(true_bboxes, true_labels) #torch.Size([n_dfboxes, 4]) and torch.Size([n_dfboxes])
-                gloc.append(encoded_gloc.to(config["device"],non_blocking=True))
-                glabel.append(encoded_glabel.to(config["device"],non_blocking=True)) 
-
-            gloc = torch.stack(gloc).to(config["device"],non_blocking = True) #torch.Size([BS, n_dfboxes, 4])
-            glabel = torch.stack(glabel).to(config["device"],non_blocking = True)#torch.Size([BS, n_dfboxes])
-            gloc = gloc.permute(0, 2, 1) #torch.Size([BS, 4, n_dfboxes])
+            gloc,glabel = encoder.encode_batch(val_dict, config["BS"])
 
             val_loss = loss(plocs, plabel, gloc, glabel) 
             running_val_loss.append(val_loss.item())
