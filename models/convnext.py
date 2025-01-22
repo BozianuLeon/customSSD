@@ -839,7 +839,7 @@ class UConvNeXt_central(nn.Module):
         self.up2 = nn.ConvTranspose2d(in_channels=hidden_channels*2, out_channels=hidden_channels, kernel_size=2, stride=2, padding=0, output_padding=(1,1))
 
     def forward(self,x):
-
+        # print('Input shape',x.shape)
         #stem
         out1 = self.gelu(self.ln1(self.conv1(x)))
         # print('End of stem',out1.shape)
@@ -877,9 +877,114 @@ class UConvNeXt_central(nn.Module):
         out9 = self.up2(out8)
         # print('End of up2',out9.shape)
         out9 = torch.cat([out2,out9],dim=1)
+        # print('Final output', out9.shape)
 
         return out9
 
+
+
+
+
+
+class smallConvNeXtBlock(nn.Module):
+    def __init__(self, in_channels, layer_scale=1e-6):
+        # Simple implementation of convnext block. See https://arxiv.org/abs/2201.03545 
+        # Utilising custom layernorm (taken from https://pytorch.org/vision/main/_modules/torchvision/models/convnext.html)
+        # See also https://github.com/facebookresearch/ConvNeXt/blob/main/models/convnext.py 
+        # for alternative implementation details
+        super(smallConvNeXtBlock, self).__init__()
+        self.gelu = nn.GELU()
+
+        # depthwise conv, now with circular padding
+        self.conv_d9x9 = nn.Conv2d(in_channels, in_channels, kernel_size=9, stride=1, padding=4, padding_mode='circular', groups=in_channels) 
+        self.ln = LayerNorm2d(in_channels)
+        # Separate "downsampling" layers 1x1 kernels
+        self.conv_1x1_1 = nn.Conv2d(in_channels, in_channels*2, kernel_size=1, stride=1, padding=0, bias=True)
+        self.gelu = nn.GELU()
+        self.conv_1x1_2 = nn.Conv2d(in_channels*2, in_channels, kernel_size=1, stride=1, padding=0, bias=True)
+        self.layer_scale = nn.Parameter(torch.ones(in_channels, 1, 1) * layer_scale)
+
+    def forward(self, input):
+
+        out = self.conv_d9x9(input)
+        out = self.ln(out)
+        
+        out = self.conv_1x1_1(out)
+        out = self.gelu(out)
+
+        out = self.layer_scale * self.conv_1x1_2(out)
+
+        ret = out + input
+        return ret
+
+
+class smallConvNeXt_central(nn.Module):
+    def __init__(self, num_channels=3, hidden_channels=8, num_classes=1000):
+        super(smallConvNeXt_central, self).__init__()
+        
+        self.gelu = nn.GELU()
+        # STEM CELL BLOCK (125,49)->(125,49)
+        self.conv1 = nn.Conv2d(num_channels, hidden_channels, kernel_size=9, stride=1, padding=4, padding_mode='circular', bias=True)
+        self.ln1 = LayerNorm2d(hidden_channels)
+
+        # BLOCK-2 (56,56)
+        self.conv2_1 = smallConvNeXtBlock(in_channels=hidden_channels)
+        self.channel_res2 = nn.Conv2d(hidden_channels, hidden_channels, kernel_size=1, stride=1)
+
+        # BLOCK-3 
+        self.conv3_1 = smallConvNeXtBlock(in_channels=hidden_channels)
+        self.channel_res3 = nn.Conv2d(hidden_channels, hidden_channels*2, kernel_size=1, stride=1)
+
+        # BLOCK-4 
+        self.conv4_1 = smallConvNeXtBlock(in_channels=hidden_channels*2)
+        self.conv4_2 = smallConvNeXtBlock(in_channels=hidden_channels*2) # here's where we cut for SSD. reduce channels 32->24
+
+        # in-between res4->res5 down sampling (14,14)->(7,7)
+        self.down_ln4 = LayerNorm2d(hidden_channels*3)
+        self.down_res4 = nn.Conv2d(hidden_channels*3, hidden_channels*8, kernel_size=1, stride=2) #should be kernel size 2
+
+        # BLOCK-5 (7,7)
+        self.conv5_1 = smallConvNeXtBlock(in_channels=hidden_channels*8)
+
+        #global average pooling
+        self.avg_pool = nn.AdaptiveAvgPool2d(output_size=(1,1))
+        self.ln6 = LayerNorm2d(hidden_channels*8)
+        self.flat = nn.Flatten()
+        self.fc = nn.Linear(hidden_channels*8,num_classes)
+
+    def forward(self,x):
+        # print('Input shape',x.shape)
+        #stem
+        out = self.gelu(self.ln1(self.conv1(x)))
+        # print('End of stem',out.shape)
+
+        #conv2
+        out = self.conv2_1(out)
+        out = self.channel_res2(out)
+        # print('End of conv2',out.shape)
+
+        #conv3
+        out = self.conv3_1(out)              
+        out = self.channel_res3(out)
+        # print('End of conv3',out.shape)
+
+        #conv4
+        out = self.conv4_1(out)             
+        out = self.conv4_2(out)                                    
+        out = self.down_res4(self.down_ln4(out))
+        # print('End of conv4',out.shape)
+
+        #conv5
+        out = self.conv5_1(out)            
+        # print('End of conv5',out.shape)
+
+        #output
+        out = self.avg_pool(out)
+        out = self.ln6(out)
+        out = self.fc(self.flat(out))
+        # print('Final output',out.shape)
+        
+        return out
 
 
 
@@ -994,6 +1099,20 @@ if __name__=="__main__":
     input_tensor = torch.randn(1, 3, 125, 49)
     print(f"=================== central UConvNeXt ===================")
     model = UConvNeXt_central()
+    output_tensor = model(input_tensor)
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"{total_params:,} total parameters in custom central UConvNeXt model")
+    print(f"=================== ========== ===================")
+    print()
+
+
+    small_layer = smallConvNeXtBlock(in_channels=96)
+    print("Have initiatilised convnext block")
+    total_params = sum(p.numel() for p in small_layer.parameters())
+    print(f"{total_params:,} parameters in 1 custom small convnext block\n")
+
+    print(f"=================== central smallConvNeXt ===================")
+    model = smallConvNeXt_central()
     output_tensor = model(input_tensor)
     total_params = sum(p.numel() for p in model.parameters())
     print(f"{total_params:,} total parameters in custom central UConvNeXt model")
