@@ -17,6 +17,7 @@ parser.add_argument('-e','--epochs', type=int, required=True, help='Number of tr
 parser.add_argument('-bs','--batch_size', nargs='?', const=8, default=8, type=int, help='Batch size to be used')
 parser.add_argument('-nw','--num_workers', nargs='?', const=2, default=2, type=int, help='Number of worker CPUs')
 parser.add_argument('-in','--input_file', type=str, required=True, help='Path to annotations file (json file)',)
+parser.add_argument('-out','--output_file',nargs='?', const='./saved_models/', default='./saved_models/', type=str, help='Path to saved_models directory',)
 args = parser.parse_args()
 
 
@@ -112,8 +113,6 @@ for epoch in range(config["n_epochs"]):
 #         quit()
 # ###
 
-
-
     print(f"\tEpoch {epoch} / {config['n_epochs']}: train loss {mean(running_loss):.4f}, train time {time.perf_counter() - beginning:.2f}s, LR: {optimizer.param_groups[0]['lr']:.4f}")
 
 
@@ -143,7 +142,7 @@ for epoch in range(config["n_epochs"]):
 # save trained model
 model_name = "jetSSD_{}_{}e".format(model.backbone_name,config["n_epochs"])
 print(f'Saving model now...\t{model_name}')
-torch.save(model.state_dict(), "saved_models/{}.pth".format(model_name))
+torch.save(model.state_dict(), args.output_file+"/{}.pth".format(model_name))
 
 
 
