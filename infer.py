@@ -4,31 +4,41 @@ import numpy as np
 import time
 import os
 from statistics import mean
+import argparse
 
 import models
 import data
 
-MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
-# MIN_CELLS_ETA,MAX_CELLS_ETA = -4.823496, 4.823496
-MIN_CELLS_ETA,MAX_CELLS_ETA = -2.5, 2.5
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--backbone', type=str, required=True, help='Name of backbone model (e.g resnet50)',)
+parser.add_argument('-e','--epochs', type=int, required=True, help='Number of training epochs',)
+parser.add_argument('-bs','--batch_size', nargs='?', const=8, default=8, type=int, help='Batch size to be used')
+parser.add_argument('-nw','--num_workers', nargs='?', const=2, default=2, type=int, help='Number of worker CPUs')
+parser.add_argument('-in','--input_file', type=str, required=True, help='Path to annotations file (json file)',)
+parser.add_argument('-p','--proc', type=str, required=True, help='Type of process (JZ1,JZ2,JZ3,ttbar)',)
+parser.add_argument('--model_dir', type=str, required=True, help='Path to saved models directory',)
+parser.add_argument('-out','--output_dir',nargs='?', const='./cache/', default='./cache/', type=str, help='Path to directory containing struc_array.npy',)
+args = parser.parse_args()
 
 
 config = {
     "seed"       : 0,
     "device"     : torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-    "NW"         : 2,
-    "BS"         : 4,
-    "WD"         : 0.01,
-    "n_epochs"   : 14,
+    "NW"         : args.num_workers,
+    "BS"         : args.batch_size,
+    "n_epochs"   : int(args.epochs),
     "max_num"    : 150,
 }
+
+MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
+# MIN_CELLS_ETA,MAX_CELLS_ETA = -4.823496, 4.823496
+MIN_CELLS_ETA,MAX_CELLS_ETA = -2.5, 2.5
 torch.manual_seed(config["seed"])
 
-
-# dataset = data.CustomDataset(annotation_file="/home/users/b/bozianu/work/data/mu200/anns_central_jets_20GeV.json")
-dataset = data.CustomDataset(annotation_file="/srv/beegfs/scratch/shares/atlas_caloM/mu_200_truthjets/central_2sig_images/anns_central_jets_ttbar.json")
-train_len = int(0.78 * len(dataset))
-val_len = int(0.02 * len(dataset))
+dataset = data.CustomDataset(annotation_file=args.input_file)
+train_len = int(0.11 * len(dataset))
+val_len = int(0.11 * len(dataset))
 test_len = len(dataset) - train_len - val_len
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_len, val_len, test_len])
 print('\ttrain / val / test size : ',train_len,'/',val_len,'/',test_len,'\n')
@@ -39,10 +49,10 @@ test_loader = torch.utils.data.DataLoader(test_dataset, collate_fn=dataset.colla
 
 
 # load trained model
-model = models.SSD(backbone_name="uconvnext_central",in_channels=5)
+model = models.SSD(backbone_name=args.backbone,in_channels=5)
 model = model.to(config["device"]) 
 model_name = "jetSSD_{}_{}e".format(model.backbone_name,config["n_epochs"])
-model_save_path = f"./saved_models/{model_name}.pth"
+model_save_path = args.model_dir + f"/{model_name}.pth"
 model.load_state_dict(torch.load(model_save_path, map_location=torch.device(config["device"])))
 total_params = sum(p.numel() for p in model.parameters())
 print(model.backbone_name,f'!total \t{total_params:,} parameters.\n')
@@ -59,7 +69,9 @@ encoder = data.Encoder(dboxes)
 
 
 
-save_loc = "./cache/" + model_name + "/" + time.strftime("%Y%m%d-%H") + "/"
+save_loc = args.output_dir + "/" + model_name + "/" + args.proc + "/" + time.strftime("%Y%m%d-%H") + "/"
+print("Save location: ", save_loc)
+
 if not os.path.exists(save_loc):
     os.makedirs(save_loc)
 
@@ -124,7 +136,7 @@ with torch.inference_mode():
             det_boxes_pts = det_boxes_pts[mask_too_small]
 
             # # new! secondary low score mask
-            mask_low_score = det_boxes_scr > 0.95
+            mask_low_score = det_boxes_scr > 0.8
             det_boxes_ext = det_boxes_ext[mask_low_score]
             det_boxes_pts = det_boxes_pts[mask_low_score]
             det_boxes_scr = det_boxes_scr[mask_low_score]
@@ -133,42 +145,43 @@ with torch.inference_mode():
             det_scores.append(det_boxes_scr)
             det_pts.append(det_boxes_pts)
 
-            #######
-            import matplotlib.pyplot as plt
-            import matplotlib
-            # det_boxes_ext,det_boxes_scr,det_boxes_pts = wrap_check_NMS3(det_boxes_ext,det_boxes_scr,det_boxes_pts,iou_thresh=0.3)
-            # tru_boxes_ext,tru_pts = wrap_check_truth2(torch.tensor(tru_boxes_ext),torch.tensor(targets[i]['jet_pt']),MIN_CELLS_PHI,MAX_CELLS_PHI)
-            f,ax = plt.subplots(1,1,figsize=(10,12))   
-            img = img_tensor[i].detach().cpu().numpy()
-            # img = original_images[i].detach().cpu().numpy()
-            ax.imshow(img[0],cmap='binary_r',extent=extent_i,origin='lower')
+            # ###############################
+            # import matplotlib.pyplot as plt
+            # import matplotlib
+            # # det_boxes_ext,det_boxes_scr,det_boxes_pts = wrap_check_NMS3(det_boxes_ext,det_boxes_scr,det_boxes_pts,iou_thresh=0.3)
+            # # tru_boxes_ext,tru_pts = wrap_check_truth2(torch.tensor(tru_boxes_ext),torch.tensor(targets[i]['jet_pt']),MIN_CELLS_PHI,MAX_CELLS_PHI)
+            # f,ax = plt.subplots(1,1,figsize=(10,12))   
+            # img = img_tensor[i].detach().cpu().numpy()
+            # # img = original_images[i].detach().cpu().numpy()
+            # ax.imshow(img[0],cmap='binary_r',extent=extent_i,origin='lower')
         
-            ax.axhline(y=MIN_CELLS_PHI, color='red', alpha=0.6, linestyle='--',lw=0.7)
-            ax.axhline(y=MAX_CELLS_PHI, color='red', alpha=0.6, linestyle='--',lw=0.7)
+            # ax.axhline(y=MIN_CELLS_PHI, color='red', alpha=0.6, linestyle='--',lw=0.7)
+            # ax.axhline(y=MAX_CELLS_PHI, color='red', alpha=0.6, linestyle='--',lw=0.7)
     
-            for k in range(len(tru_boxes_ext)):
-                bbx,pt = tru_boxes_ext[k],tru_pts[k]
-                x,y=float(bbx[0]),float(bbx[1])
-                w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
-                ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1.8,ec='limegreen',fc='none'))
-                ax.text(x+0.05,y+h-0.15, f"{pt:.0f}",color='limegreen',fontsize=8)
+            # for k in range(len(tru_boxes_ext)):
+            #     bbx,pt = tru_boxes_ext[k],tru_pts[k]
+            #     x,y=float(bbx[0]),float(bbx[1])
+            #     w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
+            #     ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1.8,ec='limegreen',fc='none'))
+            #     ax.text(x+0.05,y+h-0.15, f"{pt:.0f}",color='limegreen',fontsize=8)
 
-            for j in range(len(det_boxes_ext)):
-                bbx,scr,pt = det_boxes_ext[j],det_boxes_scr[j],det_boxes_pts[j]
-                x,y=float(bbx[0]),float(bbx[1])
-                w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
-                ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1.9,ec='red',fc='none'))
-                ax.text(x+w-0.3,y+h-0.15, f"{scr.item():.2f}",color='red',fontsize=8)
-                ax.text(x+0.05,y+h/20, f"{pt.item():.0f}",color='red',fontsize=8)
+            # for j in range(len(det_boxes_ext)):
+            #     bbx,scr,pt = det_boxes_ext[j],det_boxes_scr[j],det_boxes_pts[j]
+            #     x,y=float(bbx[0]),float(bbx[1])
+            #     w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
+            #     ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1.9,ec='red',fc='none'))
+            #     ax.text(x+w-0.3,y+h-0.15, f"{scr.item():.2f}",color='red',fontsize=8)
+            #     ax.text(x+0.05,y+h/20, f"{pt.item():.0f}",color='red',fontsize=8)
 
-            ax.set(xlabel='$\eta$',ylabel='$\phi$',xlim=(extent_i[0],extent_i[1]),ylim=(extent_i[2],extent_i[3]))
-            plt.tight_layout()
-            f.savefig(save_loc+f'ex-NMS-{step*BS + i}-ttbar.png',dpi=400)
-            plt.close()
-            print(step*BS + i)
-            print("\t",len(tru_boxes_ext),len(det_boxes_ext),len(det_boxes_pts))
-            if (step*BS + i) == 16:
-                quit()
+            # ax.set(xlabel='$\eta$',ylabel='$\phi$',xlim=(extent_i[0],extent_i[1]),ylim=(extent_i[2],extent_i[3]))
+            # plt.tight_layout()
+            # f.savefig(save_loc+f'ex-NMS-{step*BS + i}-ttbar.png',dpi=400)
+            # plt.close()
+            # print(step*BS + i)
+            # print("\t",len(tru_boxes_ext),len(det_boxes_ext),len(det_boxes_pts))
+            # if (step*BS + i) == 16:
+            #     quit()
+            # ###############################
 
         print(step)
 

@@ -58,9 +58,7 @@ print(model.backbone_name, f'\t{total_params:,} total! parameters.\n')
         
 # optimizers & learning rate
 optimizer = torch.optim.AdamW(model.parameters(), lr=config["LR"], weight_decay=config["WD"], amsgrad=True)  
-warmup_scheduler = LinearLR(optimizer, start_factor=1./3, end_factor=1.0, total_iters=config["wup_epochs"]) # Linear warmup
-cosine_scheduler = CosineAnnealingLR(optimizer, T_max=config["n_epochs"] - config["wup_epochs"]) # Cosine Annealing after warmup
-scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, cosine_scheduler], milestones=[config["wup_epochs"]])
+scheduler = CosineAnnealingLR(optimizer, T_max=config["n_epochs"], eta_min=0.00)
 
 # default prior boxes
 dboxes = data.DefaultBoxes(figsize=(24,63),scale=(3.84, 4.05),step_x=1,step_y=1) 
