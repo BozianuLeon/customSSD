@@ -16,6 +16,8 @@ parser.add_argument('--jet_path', type=str, required=True, help='path to the jet
 parser.add_argument('--path', type=str, required=True, help='path to the cells .h5 directory',)
 parser.add_argument('--output_dir', type=str, nargs='?', const='../cache/images/', help='path to the output .json file')
 parser.add_argument('--output_json', type=str, nargs='?', const='../cache/anns_central_jets_20GeV.json', help='path to the output .json file')
+parser.add_argument('--job_id', type=int, required=True, help='Grid job id',)
+parser.add_argument('-p','--proc', type=str, required=True, help='Type of process (JZ1,JZ2,JZ3,ttbar)',)
 args = parser.parse_args()
 
 
@@ -65,21 +67,16 @@ def get_jet_bounding_boxes(jet_data,event_no,extent,min_max_tuple):
     real_jets = remove_nan(jets)
     #loop over all jets in this event 
     if len(real_jets) > 0:
-        # filtered_pt_jets = real_jets[real_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_pt'] > 20_000] # Select the pt threshold (in MeV)
-        # filtered_jets = filtered_pt_jets[abs(filtered_pt_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta']) < 2.1] # Select the eta threshold
-        filtered_pt_jets = real_jets[real_jets['AntiKt4EMTopoJets_pt'] > 20_000] # Select the pt threshold (in MeV)
-        filtered_jets = filtered_pt_jets[abs(filtered_pt_jets['AntiKt4EMTopoJets_eta']) < 2.1] # Select the eta threshold
+        filtered_pt_jets = real_jets[real_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_pt'] > 20_000] # Select the pt threshold (in MeV)
+        filtered_jets = filtered_pt_jets[abs(filtered_pt_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta']) < 2.1] # Select the eta threshold
         
         if len(filtered_jets)>0:
             box_list = []
             pt_list  = []
             for jet_no in range(len(filtered_jets)):
-                # jet_eta = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta'][jet_no]
-                # jet_phi = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_phi'][jet_no]
-                # jet_pt  = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_pt'][jet_no] / 1000 
-                jet_eta = filtered_jets['AntiKt4EMTopoJets_eta'][jet_no]
-                jet_phi = filtered_jets['AntiKt4EMTopoJets_phi'][jet_no]
-                jet_pt  = filtered_jets['AntiKt4EMTopoJets_pt'][jet_no] / 1000 
+                jet_eta = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta'][jet_no]
+                jet_phi = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_phi'][jet_no]
+                jet_pt  = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_pt'][jet_no] / 1000 
                 xmin = jet_eta - R
                 ymin = jet_phi - R
 
@@ -143,14 +140,25 @@ if __name__=="__main__":
     annotation_dict = {}
     annotation_dict_jet = {}
     global_counter = 0
-    file_nos = ["01","02","03","04","05","06","07","08","09"] + np.arange(10,20).tolist() + np.arange(21,26).tolist() # jz4
-    # file_nos = [36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56] # ttbar
-    for file_no in file_nos:
-        print('Loading file {}/{}'.format(file_no,len(file_nos)))    
 
-        cells_file = args.path + "/user.lbozianu.42443923._0000{}.calocellD3PD_mc21_14TeV_JZ4.r14365.h5".format(file_no)
-        jets_file  = args.jet_path + "/user.lbozianu.42443923._0000{}.jetD3PD_mc21_14TeV_JZ4.r14365.h5".format(file_no)
-                                
+    if args.proc == "ttbar":
+        file_nos = [22,23,26,27,28,30,31,32,33,34,35,36,37,38,39,40,41,42]
+        # file_nos = [22,23,26,27,28,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100]
+        tag = args.proc + ".r15583"
+    elif args.proc == "JZ4":
+        file_nos = [13,15,16,19,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42]
+        # file_nos = [13,15,16,19,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85]
+        tag = args.proc + ".r14365"
+    print(len(file_nos), " files")
+
+    for file_no in file_nos:
+        print('Loading file {}/{}'.format(file_no,len(file_nos)))      
+        if args.proc in ["JZ1", "JZ2", "JZ3", "JZ4", "JZ5", "ttbar"]:
+            cells_file = args.path     + "user.lbozianu.{}._0000{}.calocellD3PD_mc21_14TeV_{}.h5".format(args.job_id,file_no,tag) 
+            jets_file  = args.jet_path + "user.lbozianu.{}._0000{}.jetD3PD_mc21_14TeV_{}.h5".format(args.job_id,file_no,tag)
+        else:
+            print(args.proc," not recognised process, check spelling..")
+                          
         chunk_size = 100
         chunk_counter = 0
 
