@@ -13,6 +13,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--path', type=str, required=True, help='path to the cells .h5 directory',)
 parser.add_argument('--output_dir', type=str, nargs='?', const='../cache/images/', help='path to the output directory')
+parser.add_argument('--job_id', type=int, required=True, help='Grid job id',)
+parser.add_argument('-p','--proc', type=str, required=True, help='Type of process (JZ1,JZ2,JZ3, ttbar)',)
 args = parser.parse_args()
 
 
@@ -43,13 +45,23 @@ if __name__=="__main__":
     annotation_dict = {}
     annotation_dict_jet = {}
     global_counter = 0
-    file_nos = ["01","02","03","04","05","06","07","08","09"] + np.arange(10,20).tolist() + np.arange(21,26).tolist() # jz4
-    # file_nos = [36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56] # ttbar
+
+    if args.proc == "ttbar":
+        file_nos = [22,23,26,27,28,30,31,32,33,34,35,36,37,38,39,40,41,42]
+        # file_nos = [22,23,26,27,28,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100]
+        tag = args.proc + ".r15583"
+    elif args.proc == "JZ4":
+        file_nos = [13,15,16,19,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42]
+        # file_nos = [13,15,16,19,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85]
+        tag = args.proc + ".r14365"
+
+    print(len(file_nos), " files")
     for file_no in file_nos:
         print('Loading file {}/{}'.format(file_no,len(file_nos)))     
-        cells_file = args.path + "/user.lbozianu.42443923._0000{}.calocellD3PD_mc21_14TeV_JZ4.r14365.h5".format(file_no) # JZ4
-        # cells_file = args.path + "user.lbozianu.42443875._0000{}.calocellD3PD_mc21_14TeV_ttbar.r15583.h5".format(file_no) # ttbar
-
+        if args.proc in ["JZ1", "JZ2", "JZ3", "JZ4", "JZ5", "ttbar"]:
+            cells_file = args.path + "user.lbozianu.{}._0000{}.calocellD3PD_mc21_14TeV_{}.h5".format(args.job_id,file_no,tag) 
+        else:
+            print(args.proc," not recognised process, check spelling..")
 
         chunk_size = 100
         with h5py.File(cells_file,"r") as f1:
@@ -61,7 +73,7 @@ if __name__=="__main__":
             print('\tLoading chunk {}/{}'.format(chunk_counter,int(n_events_in_file/chunk_size)))
             with h5py.File(cells_file,"r") as f:
                 h5group = f["caloCells"]       
-                #convert to numpy arrays in chun sizes
+                #convert to numpy arrays in chunk sizes
                 events = h5group["1d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
                 cells = h5group["2d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
 

@@ -59,7 +59,7 @@ class Encoder(object):
         
         return gloc, glabel
 
-    def encode(self, bboxes_in, labels_in, criteria=0.5):
+    def encode(self, bboxes_in, labels_in, criteria=0.33):
 
         # scale boxes to pixel space (important!)
         bboxes_in[:,(0,2)] = bboxes_in[:,(0,2)] / 49 
@@ -74,7 +74,7 @@ class Encoder(object):
         idx = torch.arange(0, best_bbox_idx.size(0), dtype=torch.int64, device=self.device)
         best_dbox_idx[best_bbox_idx[idx]] = idx
 
-        # filter IoU > 0.5
+        # filter IoU > criteria
         masks = best_dbox_ious > criteria
 
         labels_out = torch.zeros(self.nboxes, dtype=torch.long, device=self.device)
