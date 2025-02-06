@@ -42,16 +42,6 @@ class DefaultBoxes(object):
         self.dboxes_ltrb[:, 3] = self.dboxes[:, 1] + 0.5 * self.dboxes[:, 3]
 
     @property
-    def scale_xy(self):
-        #Needs to be updated
-        return 1.0
-
-    @property
-    def scale_wh(self):
-        #Needs to be updated
-        return 1.0
-
-    @property
     def fig_size(self):
         return self.figsize
 

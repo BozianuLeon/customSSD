@@ -34,8 +34,6 @@ class Encoder(object):
         self.dboxes = dboxes(order="ltrb")
         self.dboxes_xywh = dboxes(order="xywh").unsqueeze(dim=0)
         self.nboxes = self.dboxes.size(0)
-        self.scale_xy = dboxes.scale_xy
-        self.scale_wh = dboxes.scale_wh
         self.figsize = dboxes.fig_size
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
@@ -110,9 +108,6 @@ class Encoder(object):
         scores_in = scores_in.permute(0, 2, 1)
 
         # 1. Unparameterise p.5 SSD
-        # NEED TO UPDATE scale_xy, scale_wh
-        # bboxes_in[:, :, :2] = self.scale_xy*bboxes_in[:, :, :2] #
-        # bboxes_in[:, :, 2:] = self.scale_wh*bboxes_in[:, :, 2:] #
         bboxes_in[:, :, :2] = bboxes_in[:, :, :2]*self.dboxes_xywh[:, :, 2:] + self.dboxes_xywh[:, :, :2]
         bboxes_in[:, :, 2:] = bboxes_in[:, :, 2:].exp()*self.dboxes_xywh[:, :, 2:]
 
