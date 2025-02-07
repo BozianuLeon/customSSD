@@ -37,7 +37,7 @@ class Encoder(object):
         self.figsize = dboxes.fig_size
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    def encode_batch(self, target_dict, batch_size):
+    def encode_batch(self, target_dict, batch_size, iou_thresh=0.33):
         # encode target boxes using default boxes
         # return in correct shape for loss function 
         gloc, glabel = list(), list()
@@ -46,7 +46,7 @@ class Encoder(object):
             true_bboxes = target_dict[i]["boxes"].to(self.device,non_blocking=True) #torch.Size([x, 4])
             true_labels = target_dict[i]["labels"].to(self.device,non_blocking=True) #torch.Size([x])
 
-            encoded_gloc, encoded_glabel = self.encode(true_bboxes, true_labels) #torch.Size([n_dfboxes, 4]) and torch.Size([n_dfboxes])
+            encoded_gloc, encoded_glabel = self.encode(true_bboxes, true_labels, iou_thresh) #torch.Size([n_dfboxes, 4]) and torch.Size([n_dfboxes])
 
             gloc.append(encoded_gloc.to(self.device,non_blocking=True))
             glabel.append(encoded_glabel.to(self.device,non_blocking=True)) 
@@ -57,7 +57,7 @@ class Encoder(object):
         
         return gloc, glabel
 
-    def encode(self, bboxes_in, labels_in, criteria=0.33):
+    def encode(self, bboxes_in, labels_in, criteria):
 
         # scale boxes to pixel space (important!)
         bboxes_in[:,(0,2)] = bboxes_in[:,(0,2)] / 49 

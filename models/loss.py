@@ -215,6 +215,7 @@ class NewLoss(torch.nn.Module):
 
         mask = glabel > 0 
         pos_num = mask.sum(dim=1) 
+        num_mask = (pos_num > 0).float() # does the image contain any positive anchors
         # print(pos_num,glabel.sum(dim=1))
 
         # Box Regression Loss (Smooth L1)
@@ -264,12 +265,7 @@ class NewLoss(torch.nn.Module):
         neg_num = torch.clamp(3*pos_num, max=mask.size(1)).unsqueeze(-1)
         neg_mask = con_rank < neg_num
         closs = (con*((mask + neg_mask).float())).sum(dim=1)
-
-        # total_loss = sl1 + floss 
-        num_mask = (pos_num > 0).float() # does the image contain any positive anchors
-        # print(num_mask/pos_num)
-        # print(sl1.shape,gloss.shape,closs.shape,floss.shape)
-        # ret = (total_loss*num_mask/pos_num).mean(dim=0)
+        # print("BCE loss:      ", closs)
 
         loss_dict = {
             "SL1"   : (sl1*num_mask/pos_num).mean(dim=0),
