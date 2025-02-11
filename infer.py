@@ -49,9 +49,9 @@ test_loader = torch.utils.data.DataLoader(test_dataset, collate_fn=dataset.colla
 
 
 # load trained model
-model = models.SSD(backbone_name=args.backbone,in_channels=5)
+model = models.SSD(backbone_name=args.backbone,in_channels=5,diamond_mask=True)
 model = model.to(config["device"]) 
-model_name = "jetSSD_{}_{}e".format(model.backbone_name,config["n_epochs"])
+model_name = "jetSSD_di_{}_{}e".format(model.backbone_name,config["n_epochs"])
 model_save_path = args.model_dir + f"/{model_name}.pth"
 model.load_state_dict(torch.load(model_save_path, map_location=torch.device(config["device"])))
 total_params = sum(p.numel() for p in model.parameters())
@@ -93,7 +93,7 @@ with torch.inference_mode():
         # define NMS scriteria, confidence threshold
         output = encoder.decode_batch(locs, conf, ptmap, 
                                         iou_thresh=0.25, #NMS
-                                        confidence=0.3, #conf threshold
+                                        confidence=0.45, #conf threshold
                                         max_num=config["max_num"]) #155
 
         boxes, labels, scores, pts = zip(*output)
@@ -134,12 +134,6 @@ with torch.inference_mode():
             det_boxes_ext = det_boxes_ext[mask_too_small]
             det_boxes_scr = det_boxes_scr[mask_too_small]
             det_boxes_pts = det_boxes_pts[mask_too_small]
-
-            # # new! secondary low score mask
-            mask_low_score = det_boxes_scr > 0.8
-            det_boxes_ext = det_boxes_ext[mask_low_score]
-            det_boxes_pts = det_boxes_pts[mask_low_score]
-            det_boxes_scr = det_boxes_scr[mask_low_score]
 
             det_boxes.append(det_boxes_ext)
             det_scores.append(det_boxes_scr)

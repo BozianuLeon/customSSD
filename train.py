@@ -39,7 +39,7 @@ torch.manual_seed(config["seed"])
 
 
 dataset = data.CustomDataset(annotation_file=args.input_file, rnd_flips=True)
-train_len = int(0.078 * len(dataset))
+train_len = int(0.78 * len(dataset))
 val_len = int(0.02 * len(dataset))
 test_len = len(dataset) - train_len - val_len
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_len, val_len, test_len])
@@ -51,7 +51,7 @@ test_loader  = torch.utils.data.DataLoader(test_dataset, collate_fn=dataset.coll
 
 
 # instantiate model
-model = models.SSD(backbone_name=args.backbone,in_channels=5)
+model = models.SSD(backbone_name=args.backbone,in_channels=5,diamond_mask=True)
 model = model.to(config["device"]) 
 total_params = sum(p.numel() for p in model.parameters())
 print(model.backbone_name, f'\t{total_params:,} total! parameters.\n')
@@ -82,8 +82,8 @@ for epoch in range(config["n_epochs"]):
         images = images.to(config["device"],non_blocking=True)
 
         # forward pass
-        plocs, plabel, ptmap = model(images) #plocs.shape(torch.Size([BS, 4, n_dfboxes])) and plabel.shape(torch.Size([BS, 1, n_dfboxes]))
-        
+        plocs, plabel, ptmap = model(images) # plocs.shape(torch.Size([BS, 4, n_dfboxes])) and plabel.shape(torch.Size([BS, 1, n_dfboxes]))
+
         # # encode targets/default boxes
         gloc,glabel = encoder.encode_batch(target_dict, config["BS"])
         # train_loss = loss(plocs, plabel, gloc, glabel)
