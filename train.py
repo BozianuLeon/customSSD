@@ -12,7 +12,7 @@ import data
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--backbone', type=str, required=True, help='Name of backbone model (e.g resnet50)',)
+parser.add_argument('--backbone', type=str, required=True, help='Name of backbone model (e.g resnet50, smallconvnext_central)',)
 parser.add_argument('-e','--epochs', type=int, required=True, help='Number of training epochs',)
 parser.add_argument('-bs','--batch_size', nargs='?', const=8, default=8, type=int, help='Batch size to be used')
 parser.add_argument('-nw','--num_workers', nargs='?', const=2, default=2, type=int, help='Number of worker CPUs')
@@ -51,7 +51,7 @@ test_loader  = torch.utils.data.DataLoader(test_dataset, collate_fn=dataset.coll
 
 
 # instantiate model
-model = models.SSD(backbone_name=args.backbone,in_channels=5)
+model = models.SSD(backbone_name=args.backbone,in_channels=5,diamond_mask=True)
 model = model.to(config["device"]) 
 total_params = sum(p.numel() for p in model.parameters())
 print(model.backbone_name, f'\t{total_params:,} total! parameters.\n')
@@ -66,7 +66,8 @@ print("Generated prior boxes, ",dboxes.dboxes.shape, ", default boxes", dboxes.d
 
 # encoder and loss
 encoder = data.Encoder(dboxes)
-loss = models.Loss(dboxes,scalar=1.0)
+loss = models.Loss(dboxes)
+newloss = models.NewLoss(dboxes,scalar=1.0)
 
 
 print('Starting training...')
@@ -75,16 +76,24 @@ for epoch in range(config["n_epochs"]):
 
     model.train()
     running_loss = list()
+    s_loss,g_loss,c_loss,f_loss,v_loss = list(),list(),list(),list(),list()
     for step, (images, target_dict) in enumerate(train_loader):
         # send data to gpu (annoying)
         images = images.to(config["device"],non_blocking=True)
 
         # forward pass
-        plocs, plabel, ptmap = model(images) #plocs.shape(torch.Size([BS, 4, n_dfboxes])) and plabel.shape(torch.Size([BS, 1, n_dfboxes]))
-        
+        plocs, plabel, ptmap = model(images) # plocs.shape(torch.Size([BS, 4, n_dfboxes])) and plabel.shape(torch.Size([BS, 1, n_dfboxes]))
+
         # # encode targets/default boxes
         gloc,glabel = encoder.encode_batch(target_dict, config["BS"])
-        train_loss = loss(plocs, plabel, gloc, glabel)
+        # train_loss = loss(plocs, plabel, gloc, glabel)
+        newtrain_loss_dict = newloss(plocs, plabel, gloc, glabel)
+        s_loss.append(newtrain_loss_dict["SL1"].item())
+        g_loss.append(newtrain_loss_dict["GIOU"].item())
+        c_loss.append(newtrain_loss_dict["BCE"].item())
+        f_loss.append(newtrain_loss_dict["FCL"].item())
+        v_loss.append(newtrain_loss_dict["VFCL"].item())
+        train_loss = newtrain_loss_dict["SL1"] + newtrain_loss_dict["FCL"]
         running_loss.append(train_loss.item())
 
         # back prop
@@ -112,7 +121,7 @@ for epoch in range(config["n_epochs"]):
 # ###
 
     print(f"\tEpoch {epoch} / {config['n_epochs']}: train loss {mean(running_loss):.4f}, train time {time.perf_counter() - beginning:.2f}s, LR: {optimizer.param_groups[0]['lr']:.4f}")
-
+    print(f"\t\tSL1 Loss: {mean(s_loss):.3f}, GIOU Loss: {mean(g_loss):.3f}, BCE Loss: {mean(c_loss):.3f}, Focal Loss: {mean(f_loss):.3f}, VariFocal Loss: {mean(v_loss):.3f}")
 
     # validation step
     model.eval()
@@ -161,7 +170,7 @@ with torch.no_grad():
         # define NMS scriteria, confidence threshold
         output = encoder.decode_batch(locs, conf, ptmap,
                                         iou_thresh=0.3, #NMS
-                                        confidence=0.6, #conf threshold
+                                        confidence=0.4, #conf threshold
                                         max_num=150) 
 
         boxes, labels, scores, pts = zip(*output)

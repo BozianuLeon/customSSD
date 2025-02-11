@@ -1,5 +1,6 @@
 import torch
 import torchvision
+import warnings
 from data.utils import calc_iou_tensor
 
 MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
@@ -34,12 +35,10 @@ class Encoder(object):
         self.dboxes = dboxes(order="ltrb")
         self.dboxes_xywh = dboxes(order="xywh").unsqueeze(dim=0)
         self.nboxes = self.dboxes.size(0)
-        self.scale_xy = dboxes.scale_xy
-        self.scale_wh = dboxes.scale_wh
         self.figsize = dboxes.fig_size
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    def encode_batch(self, target_dict, batch_size):
+    def encode_batch(self, target_dict, batch_size, iou_thresh=0.33):
         # encode target boxes using default boxes
         # return in correct shape for loss function 
         gloc, glabel = list(), list()
@@ -48,7 +47,7 @@ class Encoder(object):
             true_bboxes = target_dict[i]["boxes"].to(self.device,non_blocking=True) #torch.Size([x, 4])
             true_labels = target_dict[i]["labels"].to(self.device,non_blocking=True) #torch.Size([x])
 
-            encoded_gloc, encoded_glabel = self.encode(true_bboxes, true_labels) #torch.Size([n_dfboxes, 4]) and torch.Size([n_dfboxes])
+            encoded_gloc, encoded_glabel = self.encode(true_bboxes, true_labels, iou_thresh) #torch.Size([n_dfboxes, 4]) and torch.Size([n_dfboxes])
 
             gloc.append(encoded_gloc.to(self.device,non_blocking=True))
             glabel.append(encoded_glabel.to(self.device,non_blocking=True)) 
@@ -59,7 +58,7 @@ class Encoder(object):
         
         return gloc, glabel
 
-    def encode(self, bboxes_in, labels_in, criteria=0.33):
+    def encode(self, bboxes_in, labels_in, criteria):
 
         # scale boxes to pixel space (important!)
         bboxes_in[:,(0,2)] = bboxes_in[:,(0,2)] / 49 
@@ -110,9 +109,6 @@ class Encoder(object):
         scores_in = scores_in.permute(0, 2, 1)
 
         # 1. Unparameterise p.5 SSD
-        # NEED TO UPDATE scale_xy, scale_wh
-        # bboxes_in[:, :, :2] = self.scale_xy*bboxes_in[:, :, :2] #
-        # bboxes_in[:, :, 2:] = self.scale_wh*bboxes_in[:, :, 2:] #
         bboxes_in[:, :, :2] = bboxes_in[:, :, :2]*self.dboxes_xywh[:, :, 2:] + self.dboxes_xywh[:, :, :2]
         bboxes_in[:, :, 2:] = bboxes_in[:, :, 2:].exp()*self.dboxes_xywh[:, :, 2:]
 
@@ -181,7 +177,9 @@ class Encoder(object):
 
         bboxes, score, pts = bboxes_in[mask.squeeze(1),:], scores_in[mask], pts_in[mask]
         if score.size(0) == 0:
-            raise IndexError("No scores passed chosen threshold")
+            warnings.warn(f'No scores passed chosen threshold, reducing threshold for this event to {max(scores_in)-0.01}')
+            mask = scores_in > (max(scores_in)-0.01)
+            bboxes, score, pts = bboxes_in[mask.squeeze(1),:], scores_in[mask], pts_in[mask]
 
         # second, if there are more than max_num passing, cut predictions
         score_sorted, score_idx_sorted = score.sort(dim=0)

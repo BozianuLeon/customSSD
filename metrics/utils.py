@@ -13,10 +13,11 @@ EXTENT = (-2.4999826, 2.4999774, -6.217388274177672, 6.2180176992265)
 
 
 
-def target_box_match_pt(tees, t_pt, pees, p_pt, iou_thresh=0.5):
+def iou_box_matching(tees, pees, iou_thresh=0.5):
     # find the indices of the truth/predicted boxes that are matched to each other
     # using hungarian algorithm, linear_sum_assignment based on IoU score
     # returns two tensors, 1 if this target/pred box is matched, 0 if not
+    # tees and pees in xyxy coordinates
 
     iou_scores = -torchvision.ops.box_iou(tees,pees)
 
@@ -48,12 +49,94 @@ def target_box_match_pt(tees, t_pt, pees, p_pt, iou_thresh=0.5):
     # print(p_pt[good_mod_pred_indices])
     # print()
     # print(torch.cat((good_pred_indices,good_mod_pred_indices)))
-    # quit()
     good_total_gt_indices = torch.cat((good_gt_indices,good_mod_gt_indices))
     good_total_pred_indices = torch.cat((good_pred_indices,good_mod_pred_indices))
 
+    if torch.isin(good_pred_indices, good_mod_pred_indices).any():
+        print("PT     indicies…", good_pred_indices)
+        print("GT     indicies…", good_gt_indices)
+        print("PT mod indicies…", good_mod_pred_indices)
+        print("GT mod indicies…", good_mod_gt_indices)
+        print("PT tot indixes...",good_total_pred_indices)
+        print("GT tot indixes...",good_total_gt_indices)
+        print()
+
+
+        print("repeated elements (when a box matches twice both initially and once when modded)")
+        common_elements_pred = torch.isin(good_pred_indices, good_mod_pred_indices)
+        common_elements_mod_pred = torch.isin(good_mod_pred_indices,good_pred_indices)
+        print(common_elements_pred,common_elements_mod_pred)
+        idx_pred_common = good_pred_indices[common_elements_pred]
+        idx_mod_pred_common = good_mod_pred_indices[common_elements_mod_pred]
+        idx_gt_common = good_gt_indices[common_elements_pred]
+        idx_mod_gt_common = good_mod_gt_indices[common_elements_mod_pred]
+        
+        iou_common = -iou_scores[good_gt_indices[common_elements_pred], good_pred_indices[common_elements_pred]]
+        iou_mod_common = -mod_iou_scores[good_mod_gt_indices[common_elements_mod_pred], good_mod_pred_indices[common_elements_mod_pred]]
+        # print(idx_gt_common,idx_pred_common,iou_common)
+        # print(idx_mod_gt_common,idx_mod_pred_common,iou_mod_common)
+        # print("which match is better? original or modded?")
+        mask_pred = iou_common < iou_mod_common
+        mask_mod_pred = ~mask_pred
+
+        get_rid_of_the_worst_pred_duplicates = torch.isin(good_total_pred_indices, idx_pred_common[mask_pred])
+        # print(get_rid_of_the_worst_pred_duplicates)
+        get_rid_of_the_worst_gt_duplicates = torch.isin(good_total_gt_indices, idx_gt_common[mask_pred])
+        # print(get_rid_of_the_worst_gt_duplicates)
+        combined_get_rid_of = get_rid_of_the_worst_pred_duplicates & get_rid_of_the_worst_gt_duplicates
+        
+        get_rid_of_the_worst_pred_mod_duplicates = torch.isin(good_total_pred_indices, idx_mod_pred_common[mask_mod_pred])
+        # print(get_rid_of_the_worst_pred_mod_duplicates)
+        get_rid_of_the_worst_gt_mod_duplicates = torch.isin(good_total_gt_indices, idx_mod_gt_common[mask_mod_pred])
+        # print(get_rid_of_the_worst_gt_mod_duplicates)
+        combined_mod_get_rid_of = get_rid_of_the_worst_pred_mod_duplicates & get_rid_of_the_worst_gt_mod_duplicates
+        # print(combined_get_rid_of)
+        # print(combined_mod_get_rid_of)
+        final_get_rid_combined_mask = combined_get_rid_of | combined_mod_get_rid_of
+        print(final_get_rid_combined_mask)
+
+        print("Fixed PT tot indixes...",good_total_pred_indices[~final_get_rid_combined_mask], "non-duplicate values")
+        print("Fixed GT tot indixes...",good_total_gt_indices[~final_get_rid_combined_mask], "non-duplicate values")
+        good_total_gt_indices = good_total_gt_indices[~final_get_rid_combined_mask]
+        good_total_pred_indices = good_total_pred_indices[~final_get_rid_combined_mask]
+
+
     # returns tensor of matched gt and pred pts in order
-    return t_pt[good_total_gt_indices], p_pt[good_total_pred_indices]
+    return good_total_gt_indices, good_total_pred_indices
+
+
+def dR_box_matching(t_centre_x, t_centre_y, p_centre_x, p_centre_y, dR_thresh=0.2):
+    
+    t_centres = torch.stack((t_centre_x, t_centre_y),dim=1)
+    p_centres = torch.stack((p_centre_x, p_centre_y),dim=1)
+
+    # dR_mat = torch.cdist(t_centres, p_centres, p=2)
+    # print(dR_mat)
+    # print()
+
+    diff = t_centres[:, None, :] - p_centres[None, :, :]  # Broadcasting to get the difference matrix
+    diff[:, :, 1] = torch.fmod(diff[:, :, 1] + torch.pi, 2 * torch.pi) - torch.pi # Handle the y coordinate difference modulo 2*pi
+    distances = torch.norm(diff, dim=2)
+    # print(distances)
+    
+    _, matched_pred_indices = distances.min(dim=1)
+
+    min_distances = distances[torch.arange(len(t_centres)),matched_pred_indices]
+    # print("Min distances",min_distances)
+    dR_mask = min_distances < dR_thresh
+    good_match_gt_indices = torch.arange(len(t_centres))[dR_mask]
+    good_match_pred_indices = matched_pred_indices[dR_mask]
+    # print(good_match_gt_indices)
+    # print(good_match_pred_indices)
+
+    return good_match_gt_indices, good_match_pred_indices
+
+
+
+
+
+
+
 
 def target_box_matching(gt_boxes, pr_boxes, iou_thresh=0.5):
     # find the indices of the truth/predicted boxes that are matched to each other
