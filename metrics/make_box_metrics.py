@@ -9,7 +9,7 @@ except ModuleNotFoundError:
     import pickle
 
 
-from utils import target_box_matching, target_box_match_pt, wrap_check_truth3, wrap_check_NMS3
+from utils import iou_box_matching, dR_box_matching, wrap_check_truth3, wrap_check_NMS3
 
 
 
@@ -38,6 +38,17 @@ results = {
 
            'tboxes_matched_pt': [], 
            'pboxes_matched_pt': [], 
+           'tboxes_matched_eta':[], 
+           'pboxes_matched_eta':[], 
+           'tboxes_matched_phi':[], 
+           'pboxes_matched_phi':[], 
+
+           'tboxes_dRmatched_pt':[],
+           'pboxes_dRmatched_pt':[],
+           'tboxes_dRmatched_eta':[],
+           'pboxes_dRmatched_eta':[],
+           'tboxes_dRmatched_phi':[],
+           'pboxes_dRmatched_phi':[],
 
            'n_truth':           [],
            'n_preds':           [],
@@ -59,7 +70,7 @@ def calculate_box_metrics(
         a = np.load(f)
 
     for i in range(len(a)):
-        # i=2368
+        # i = 2387
         extent_i = a[i]['extent']
         preds = a[i]['p_boxes']
         scores = a[i]['p_scores']
@@ -67,7 +78,7 @@ def calculate_box_metrics(
         trues = a[i]['t_boxes']
         t_momenta = a[i]['t_pt']
 
-        #remove padding
+        #remove padding, boxes in xyxy coordinates
         pees = preds[(preds[:, 2] - preds[:, 0]) >= 0.01]
         scores = scores[scores > 0.01]
         p_momenta = p_momenta[p_momenta > 0.01]
@@ -82,7 +93,7 @@ def calculate_box_metrics(
         tees, t_momenta = wrap_check_truth3(tees,t_momenta,MIN_CELLS_PHI,MAX_CELLS_PHI)
     
         print(i)
-        # #could filter by score again here i.e pees[scores>0.85]
+
         # centre of the truth/pred boxes
         tboxes_ceta = (tees[:,2] + tees[:,0])/2
         pboxes_ceta = (pees[:,2] + pees[:,0])/2
@@ -90,23 +101,72 @@ def calculate_box_metrics(
         pboxes_cphi = (pees[:,3] + pees[:,1])/2
 
 
-        t_box_match_pt, p_box_match_pt = target_box_match_pt(tees, t_momenta, pees, p_momenta, iou_thresh=0.5)
-        # get matched pred and gt boxes pt in order 
+        # IoU matching
+        t_box_match_idx, p_box_match_idx = iou_box_matching(tees, pees, iou_thresh=0.5)
+        print("IoU matching:",t_box_match_idx, p_box_match_idx)
+        t_box_match_pt = t_momenta[t_box_match_idx]
+        p_box_match_pt = p_momenta[p_box_match_idx]
+        t_box_match_eta = tboxes_ceta[t_box_match_idx]
+        p_box_match_eta = pboxes_ceta[p_box_match_idx]
+        t_box_match_phi = tboxes_cphi[t_box_match_idx]
+        p_box_match_phi = pboxes_cphi[p_box_match_idx]
+
         results['tboxes_matched_pt'].append(t_box_match_pt)
         results['pboxes_matched_pt'].append(p_box_match_pt)
+        results['tboxes_matched_eta'].append(t_box_match_eta)
+        results['pboxes_matched_eta'].append(p_box_match_eta)
+        results['tboxes_matched_phi'].append(t_box_match_phi)
+        results['pboxes_matched_phi'].append(p_box_match_phi)
 
-        t_box_match, p_box_match = target_box_matching(tees, pees, iou_thresh=0.5)
-        # print(len(t_box_match_pt)-sum(t_box_match).item())
+        # dR matching
+        t_box_dRmatch_idx, p_box_dRmatch_idx = dR_box_matching(tboxes_ceta, tboxes_cphi, pboxes_ceta, pboxes_cphi, dR_thresh=0.2)
+        print("dR  matching:",t_box_match_idx, p_box_match_idx)
+        t_box_dRmatch_pt = t_momenta[t_box_dRmatch_idx]
+        p_box_dRmatch_pt = p_momenta[p_box_dRmatch_idx]
+        t_box_dRmatch_eta = tboxes_ceta[t_box_dRmatch_idx]
+        p_box_dRmatch_eta = pboxes_ceta[p_box_dRmatch_idx]
+        t_box_dRmatch_phi = tboxes_cphi[t_box_dRmatch_idx]
+        p_box_dRmatch_phi = pboxes_cphi[p_box_dRmatch_idx]
 
-        # check if tbox tb is "matched" to any box in pees
-        results['tboxes_matched'].append(t_box_match.to(dtype=torch.int).tolist())
-        # check if pbox pb is "matched" to any box in tees
-        results['pboxes_matched'].append(p_box_match.to(dtype=torch.int).tolist())
+        results['tboxes_dRmatched_pt'].append(t_box_dRmatch_pt)
+        results['pboxes_dRmatched_pt'].append(p_box_dRmatch_pt)
+        results['tboxes_dRmatched_eta'].append(t_box_dRmatch_eta)
+        results['pboxes_dRmatched_eta'].append(p_box_dRmatch_eta)
+        results['tboxes_dRmatched_phi'].append(t_box_dRmatch_phi)
+        results['pboxes_dRmatched_phi'].append(p_box_dRmatch_phi)
 
-        tboxes_ceta = (tees[:,2] + tees[:,0])/2
-        tboxes_cphi = (tees[:,3] + tees[:,1])/2
-        pboxes_ceta = (pees[:,2] + pees[:,0])/2
-        pboxes_cphi = (pees[:,3] + pees[:,1])/2
+
+        # import matplotlib
+        # import matplotlib.pyplot as plt
+        # f,ax = plt.subplots(1,1,figsize=(10,12))   
+        # ax.axhline(y=MIN_CELLS_PHI, color='red', alpha=0.6, linestyle='--',lw=0.7)
+        # ax.axhline(y=MAX_CELLS_PHI, color='red', alpha=0.6, linestyle='--',lw=0.7)
+
+        # for k in range(len(tees)):
+        #     bbx,pt = tees[k],t_momenta[k]
+        #     x,y=float(bbx[0]),float(bbx[1])
+        #     w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
+        #     ls = '--' if torch.isin(k,t_box_match_idx) else '-'
+        #     ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,ls=ls,lw=1.8,ec='limegreen',fc='none'))
+        #     ax.text(x+0.05,y+h-0.15, f"{k}, {pt:.0f}",color='limegreen',fontsize=8)
+
+        # for j in range(len(pees)):
+        #     bbx,scr,pt = pees[j],scores[j],p_momenta[j]
+        #     x,y=float(bbx[0]),float(bbx[1])
+        #     w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
+        #     ls = '--' if torch.isin(j,p_box_match_idx) else '-'
+        #     ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,ls=ls,lw=1.9,ec='red',fc='none'))
+        #     ax.text(x+w-0.3,y+h-0.15, f"{scr.item():.2f}",color='red',fontsize=8)
+        #     ax.text(x+0.05,y+h/20, f"{j},{pt.item():.0f}",color='red',fontsize=8)
+        
+        # ax.scatter(tboxes_ceta[t_box_dRmatch_idx], tboxes_cphi[t_box_dRmatch_idx], alpha=0.6, color='limegreen',s=20,marker='*')
+        # ax.scatter(pboxes_ceta[p_box_dRmatch_idx], pboxes_cphi[p_box_dRmatch_idx], alpha=0.6, color='red',s=20,marker='x')
+
+        # ax.set(xlabel='$\eta$',ylabel='$\phi$',xlim=(extent_i[0],extent_i[1]),ylim=(extent_i[2],extent_i[3]))
+        # plt.tight_layout()
+        # f.savefig(f'ex-NMS-{i}.png',dpi=400)
+        # quit()
+
 
         results['pboxes_scores'].append(scores)
         results['pboxes_pt'].append(p_momenta)
@@ -121,10 +181,10 @@ def calculate_box_metrics(
         results['n_truth'].append(len(tees))
         results['n_preds'].append(len(pees))
         results['delta_n'].append(len(pees)-len(tees))
-        results['n_matched_truth'].append(sum(t_box_match))
-        results['n_unmatched_truth'].append(len(t_box_match[t_box_match==0]))
-        results['n_matched_preds'].append(sum(p_box_match))
-        results['n_unmatched_preds'].append(len(p_box_match[p_box_match==0]))
+        results['n_matched_truth'].append(len(t_box_match_pt))
+        results['n_unmatched_truth'].append(len(tees)-len(t_box_match_pt))
+        results['n_matched_preds'].append(len(p_box_match_pt))
+        results['n_unmatched_preds'].append(len(pees)-len(p_box_match_pt))
 
     save_loc = save_folder + "/box_metrics/"
 
@@ -146,6 +206,17 @@ def calculate_box_metrics(
 
     save_object(results['tboxes_matched_pt'], save_loc+'tboxes_matched_pt.pkl')
     save_object(results['pboxes_matched_pt'], save_loc+'pboxes_matched_pt.pkl')
+    save_object(results['tboxes_matched_eta'], save_loc+'tboxes_matched_eta.pkl')
+    save_object(results['pboxes_matched_eta'], save_loc+'pboxes_matched_eta.pkl')
+    save_object(results['tboxes_matched_phi'], save_loc+'tboxes_matched_phi.pkl')
+    save_object(results['pboxes_matched_phi'], save_loc+'pboxes_matched_phi.pkl')
+
+    save_object(results['tboxes_dRmatched_pt'], save_loc+'tboxes_dRmatched_pt.pkl')
+    save_object(results['pboxes_dRmatched_pt'], save_loc+'pboxes_dRmatched_pt.pkl')
+    save_object(results['tboxes_dRmatched_eta'], save_loc+'tboxes_dRmatched_eta.pkl')
+    save_object(results['pboxes_dRmatched_eta'], save_loc+'pboxes_dRmatched_eta.pkl')
+    save_object(results['tboxes_dRmatched_phi'], save_loc+'tboxes_dRmatched_phi.pkl')
+    save_object(results['pboxes_dRmatched_phi'], save_loc+'pboxes_dRmatched_phi.pkl')
 
     save_object(results['n_truth'],save_loc+'n_truth.pkl')
     save_object(results['n_preds'], save_loc+'n_preds.pkl')
@@ -161,9 +232,9 @@ def calculate_box_metrics(
 
 
 if __name__=="__main__":
-    model_name = "jetSSD_smallconvnext_central_32e"
-    folder_to_look_in = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/JZ4/20250124-13/"
-    save_at = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/JZ4/20250124-13/"
+    model_name = "jetSSD_sq_uconvnext_central_11e"
+    folder_to_look_in = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/JZ4/20250207-13/"
+    save_at = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/JZ4/20250207-13/"
 
     print('Making box metrics')
     calculate_box_metrics(folder_to_look_in,save_at)
