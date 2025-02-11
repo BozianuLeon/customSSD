@@ -1,5 +1,6 @@
 import torch
 import torchvision
+import warnings
 from data.utils import calc_iou_tensor
 
 MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
@@ -176,7 +177,9 @@ class Encoder(object):
 
         bboxes, score, pts = bboxes_in[mask.squeeze(1),:], scores_in[mask], pts_in[mask]
         if score.size(0) == 0:
-            raise IndexError("No scores passed chosen threshold")
+            warnings.warn(f'No scores passed chosen threshold, reducing threshold for this event to {max(scores_in)-0.01}')
+            mask = scores_in > (max(scores_in)-0.01)
+            bboxes, score, pts = bboxes_in[mask.squeeze(1),:], scores_in[mask], pts_in[mask]
 
         # second, if there are more than max_num passing, cut predictions
         score_sorted, score_idx_sorted = score.sort(dim=0)
