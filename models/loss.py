@@ -221,6 +221,11 @@ class NewLoss(torch.nn.Module):
         # Box Regression Loss (Smooth L1)
         vec_gd = self._loc_vec(gloc)
         sl1 = self.sl1_loss(ploc, vec_gd).sum(dim=1)
+        if torch.isnan(sl1).any():
+            print(sl1)
+            print(pos_num, num_mask)
+            print(ploc.shape,plabel.shape,gloc.shape,glabel.shape)
+            quit()
         # print(ploc.shape, vec_gd.shape,'Loss shape:',sl1.shape)
         sl1 = (mask.float()*sl1).sum(dim=1)
         # print("SL1 loss:       ", sl1)
@@ -278,5 +283,3 @@ class NewLoss(torch.nn.Module):
         
         return loss_dict
     
-
-

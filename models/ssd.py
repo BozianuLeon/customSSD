@@ -77,7 +77,7 @@ class CustomFeatureExtractor(nn.Module):
         
 
 class SSD(torch.nn.Module):
-    def __init__(self, backbone_name, in_channels=10):
+    def __init__(self, backbone_name, in_channels=10, diamond_mask=True):
         super().__init__()
 
         # grab chosen feature extractor
@@ -103,7 +103,9 @@ class SSD(torch.nn.Module):
                                          [0, 1, 1, 1, 1, 1, 1, 1, 0],
                                          [0, 0, 1, 1, 1, 1, 1, 0, 0],
                                          [0, 0, 0, 1, 1, 1, 0, 0, 0],],dtype=torch.float32)
-        self.sumpool = MaskSumPool(kernel_size=9, in_channels=in_channels, stride=1, pool_mask=custom_pool_mask)
+        pool_mask = custom_pool_mask if diamond_mask else torch.ones(9,9)
+        print("POOL MASK",pool_mask)
+        self.sumpool = MaskSumPool(kernel_size=9, in_channels=in_channels, stride=1, pool_mask=pool_mask)
         print(f"PT map:            {sum(p.numel() for p in self.sumpool.parameters()):,} (frozen) parameters. Custom pooling mask kernel.")
         
         self._init_weights()
