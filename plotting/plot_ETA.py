@@ -1,6 +1,3 @@
-
-
-
 import numpy as np 
 import scipy
 import math
@@ -31,7 +28,6 @@ save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{mod
 if not os.path.exists(save_folder):
     os.makedirs(save_folder)
 
-square_comp = True
 image_format = "png"
 
 print("=======================================================================================================")
@@ -111,7 +107,6 @@ print(f"Plotting total jet eta: {len(total_p_eta)} predictions, {len(total_t_eta
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(total_p_eta,bins=50,histtype='step',color='red',lw=1.5,label='Predicted Jets')
 freq_tru, bins, _    = ax0.hist(total_t_eta,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-ax0.grid()
 ax0.set_title('Pseudorapidity Total', fontsize=16, fontfamily="TeX Gyre Heros")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
@@ -124,7 +119,6 @@ print(f"Plotting matched jet eta: {len(match_p_eta)} predictions, {len(match_t_e
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(match_p_eta,bins=50,histtype='step',color='red',lw=1.5,label='Predicted Jets')
 freq_tru, bins, _    = ax0.hist(match_t_eta,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-ax0.grid()
 ax0.set_title('Pseudorapidity IoU Matched', fontsize=16, fontfamily="TeX Gyre Heros")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
@@ -136,7 +130,6 @@ print(f"Plotting dR matched jet eta: {len(dRmatch_p_eta)} predictions, {len(dRma
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(dRmatch_p_eta,bins=50,histtype='step',color='red',lw=1.5,label='Predicted Jets')
 freq_tru, bins, _    = ax0.hist(dRmatch_t_eta,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-ax0.grid()
 ax0.set_title('Pseudorapidity deltaR Matched', fontsize=16, fontfamily="TeX Gyre Heros")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
@@ -149,7 +142,6 @@ print(f"Plotting unmatched jet eta: {len(unmatch_p_eta)} predictions, {len(unmat
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(unmatch_p_eta,bins=50,histtype='step',color='red',lw=1.5,label='Predicted Jets')
 freq_tru, bins, _    = ax0.hist(unmatch_t_eta,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-ax0.grid()
 ax0.set_title('Pseudorapidity IoU Unmatched', fontsize=16, fontfamily="TeX Gyre Heros")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
@@ -162,7 +154,6 @@ print(f"Plotting dR unmatched jet eta: {len(dRunmatch_p_eta)} predictions, {len(
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(dRunmatch_p_eta,bins=50,histtype='step',color='red',lw=1.5,label='Predicted Jets')
 freq_tru, bins, _    = ax0.hist(dRunmatch_t_eta,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-ax0.grid()
 ax0.set_title('Pseudorapidity deltaR Unmatched', fontsize=16, fontfamily="TeX Gyre Heros")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)

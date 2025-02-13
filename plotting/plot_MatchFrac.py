@@ -20,9 +20,9 @@ def load_object(fname):
         return pickle.load(file)
 
 
-model_name = "jetSSD_smallconvnext_central_32e"
+model_name = "jetSSD_di_uconvnext_central_11e"
 proc       = "JZ4"
-date       = "20250124-13"
+date       = "20250211-13"
 
 metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics"
 save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/matching/"
@@ -105,6 +105,8 @@ for threshold in pt_thresholds:
     print(f'For jets above {threshold} GeV: {len(matched_above_thresh) / (len(matched_above_thresh)+len(unmatched_above_thresh)):.4f} of target jets are matched')
     print(f'Note that there are {len(matched_above_thresh)+len(unmatched_above_thresh)} target jets above {threshold} GeV\n')
     cumulative_t_match_frac.append(len(matched_above_thresh) / (len(matched_above_thresh)+len(unmatched_above_thresh)))
+    if threshold==40:
+        print(f'\t\t\tFOR ALL JETS ABOVE {threshold} WE MATCH {len(matched_above_thresh) / (len(matched_above_thresh)+len(unmatched_above_thresh)):.4f} targets! NOTICE!')
 print()
 print()
 cumulative_p_match_frac = []
@@ -114,6 +116,8 @@ for threshold in pt_thresholds:
     print(f'For jets above {threshold} GeV: {len(matched_above_thresh) / (len(matched_above_thresh)+len(unmatched_above_thresh)):.4f} of predicted jets are matched')
     print(f'Note that there are {len(matched_above_thresh)+len(unmatched_above_thresh)} predicted jets above {threshold} GeV\n')
     cumulative_p_match_frac.append(len(matched_above_thresh) / (len(matched_above_thresh)+len(unmatched_above_thresh)))
+    if threshold==40:
+        print(f'\t\t\tFOR ALL JETS ABOVE {threshold} WE MATCH {len(matched_above_thresh) / (len(matched_above_thresh)+len(unmatched_above_thresh)):.4f} predictions! NOTICE!')
 
 
 print()
