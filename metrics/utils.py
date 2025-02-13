@@ -14,10 +14,20 @@ EXTENT = (-2.4999826, 2.4999774, -6.217388274177672, 6.2180176992265)
 
 
 def iou_box_matching(tees, pees, iou_thresh=0.5):
-    # find the indices of the truth/predicted boxes that are matched to each other
-    # using hungarian algorithm, linear_sum_assignment based on IoU score
-    # returns two tensors, 1 if this target/pred box is matched, 0 if not
-    # tees and pees in xyxy coordinates
+    """
+    Find the indices of the target/predicted boxes that are matched one-to-one 
+    using the Hungarian algorithm, linear_sum_assignment, based on the IoU 
+    score between the boxes.
+    Additional check if the predicted box modulo 2pi matches any target.
+    Also if there is a degenerate matching of one prediction to multiple targets,
+    this can happen (rarely) and is handled in the if block.
+    IoU score must be less than iou_thresh to match!
+
+    Returns: tuple of tensors
+    good_total_gt_indices, indices of the target boxes that are matched
+    good_total_pred_indices, indices of the predicted boxes that are 
+     matched in the order of the targets
+    """
 
     iou_scores = -torchvision.ops.box_iou(tees,pees)
 
@@ -93,7 +103,7 @@ def iou_box_matching(tees, pees, iou_thresh=0.5):
         # print(combined_get_rid_of)
         # print(combined_mod_get_rid_of)
         final_get_rid_combined_mask = combined_get_rid_of | combined_mod_get_rid_of
-        print(final_get_rid_combined_mask)
+        # print(final_get_rid_combined_mask)
 
         print("Fixed PT tot indixes...",good_total_pred_indices[~final_get_rid_combined_mask], "non-duplicate values")
         print("Fixed GT tot indixes...",good_total_gt_indices[~final_get_rid_combined_mask], "non-duplicate values")
@@ -101,12 +111,25 @@ def iou_box_matching(tees, pees, iou_thresh=0.5):
         good_total_pred_indices = good_total_pred_indices[~final_get_rid_combined_mask]
 
 
-    # returns tensor of matched gt and pred pts in order
     return good_total_gt_indices, good_total_pred_indices
 
 
 def dR_box_matching(t_centre_x, t_centre_y, p_centre_x, p_centre_y, dR_thresh=0.2):
-    
+    """
+    Find the indices of the target/predicted boxes that are matched one-to-one 
+    using the distance between the boxes centres (dR matching).
+    Additional check if the predicted box modulo 2pi matches any target,
+    using fmod which calculates the remainder when divided by 2pi, 
+    always lie in range [0,2pi]. This function essentially adds pi to the difference
+    applies mod 2pi, then subtracts pi. 
+    Distance must be less than dR_thresh to match!
+    See also example: https://en.cppreference.com/w/cpp/numeric/math/fmod 
+
+    Returns: tuple of tensors
+    good_match_gt_indices, indices of the target boxes that are matched
+    good_match_pred_indices, indices of the predicted boxes that are 
+     matched in the order of the targets
+    """
     t_centres = torch.stack((t_centre_x, t_centre_y),dim=1)
     p_centres = torch.stack((p_centre_x, p_centre_y),dim=1)
 
