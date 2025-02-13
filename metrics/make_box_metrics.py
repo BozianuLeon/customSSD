@@ -23,6 +23,10 @@ def save_object(obj, filename):
     with open(filename, 'wb') as outp:  # Overwrites any existing file.
         pickle.dump(obj, outp)
 
+def clip_phi(phi_values):
+    return phi_values - 2 * torch.pi * torch.floor((phi_values + torch.pi) / (2 * torch.pi))
+
+
 
 results = {
            'tboxes_pt':         [],
@@ -121,6 +125,7 @@ def calculate_box_metrics(
         pboxes_ceta = (pees[:,2] + pees[:,0])/2
         tboxes_cphi = (tees[:,3] + tees[:,1])/2
         pboxes_cphi = (pees[:,3] + pees[:,1])/2
+        pboxes_cphi = clip_phi(pboxes_cphi) # ensure phi values in [-pi,pi]
 
 
         # IoU matching
@@ -311,7 +316,7 @@ def calculate_box_metrics(
 if __name__=="__main__":
     model_name = "jetSSD_di_uconvnext_central_11e"
     proc = "JZ4"
-    date = "2025021-13"
+    date = "20250211-13"
     folder_to_look_in = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/"
     save_at = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/"
 
