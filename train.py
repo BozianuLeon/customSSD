@@ -39,8 +39,8 @@ torch.manual_seed(config["seed"])
 
 
 dataset = data.CustomDataset(annotation_file=args.input_file, rnd_flips=True)
-train_len = int(0.78 * len(dataset))
-val_len = int(0.02 * len(dataset))
+train_len = int(0.90 * len(dataset))
+val_len = int(0.08 * len(dataset))
 test_len = len(dataset) - train_len - val_len
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_len, val_len, test_len])
 print('\ttrain / val / test size : ',train_len,'/',val_len,'/',test_len,'\n')
@@ -77,6 +77,7 @@ for epoch in range(config["n_epochs"]):
     model.train()
     running_loss = list()
     s_loss,g_loss,c_loss,f_loss,v_loss = list(),list(),list(),list(),list()
+    # torch.autograd.set_detect_anomaly(True)
     for step, (images, target_dict) in enumerate(train_loader):
         # send data to gpu (annoying)
         images = images.to(config["device"],non_blocking=True)

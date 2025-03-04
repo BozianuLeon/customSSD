@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torchvision
 
 
@@ -933,11 +934,11 @@ class smallConvNeXt_central(nn.Module):
 
         # BLOCK-3 
         self.conv3_1 = smallConvNeXtBlock(in_channels=hidden_channels)
-        self.channel_res3 = nn.Conv2d(hidden_channels, hidden_channels*2, kernel_size=1, stride=1)
+        self.channel_res3 = nn.Conv2d(hidden_channels, hidden_channels*3, kernel_size=1, stride=1)
 
         # BLOCK-4 
-        self.conv4_1 = smallConvNeXtBlock(in_channels=hidden_channels*2)
-        self.conv4_2 = smallConvNeXtBlock(in_channels=hidden_channels*2) # here's where we cut for SSD. reduce channels 32->24
+        self.conv4_1 = smallConvNeXtBlock(in_channels=hidden_channels*3)
+        self.conv4_2 = smallConvNeXtBlock(in_channels=hidden_channels*3) # here's where we cut for SSD. reduce channels 32->24
 
         # in-between res4->res5 down sampling (14,14)->(7,7)
         self.down_ln4 = LayerNorm2d(hidden_channels*3)
@@ -988,6 +989,143 @@ class smallConvNeXt_central(nn.Module):
 
 
 
+
+
+class CustomPad(torch.nn.Module):
+    def __init__(self, kernel_size, stride=1):
+        # Custom pad layer that maintains image size,
+        # via custom padding (cyclic in y-axis, zeros in x-axis)
+        super(CustomPad, self).__init__()
+        self.padding = (kernel_size - 1) // 2
+
+    def forward(self, x):
+        # print(x.shape)
+        # cyclic padding on the y-axis
+        x = F.pad(x, (0, 0, self.padding, self.padding), mode='circular')
+
+        # zero padding on the x-axis 
+        x = F.pad(x, (self.padding, self.padding, 0, 0), mode='constant', value=0)
+        # print(x.shape)
+        return x
+
+
+class CustomPool(torch.nn.Module):
+    def __init__(self, output_size, p=3, eps=1e-6):
+        # Custom pool layer that learns the 
+        # via custom padding (cyclic in y-axis, zeros in x-axis)
+        # The function computed is: :math:`f(X) = pow(sum(pow(X, p)), 1/p)`
+        # - At p = infinity, one gets Max Pooling
+        # - At p = 1, one gets Average Pooling
+        # The output is of size H x W, for any input size.
+        super(CustomPool, self).__init__()
+        assert p > 0
+        self.p = nn.Parameter(torch.ones(1)*p)
+        self.output_size = output_size
+        self.eps = eps
+    
+    def forward(self, x):
+        x = x.clamp(min=self.eps).pow(self.p)
+        return F.adaptive_avg_pool2d(x, self.output_size).pow(1. / self.p)
+
+
+
+class custom_ConvNeXtBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, layer_scale=1e-6):
+        # Simple implementation of convnext block. See https://arxiv.org/abs/2201.03545 
+        # Utilising custom layernorm (taken from https://pytorch.org/vision/main/_modules/torchvision/models/convnext.html)
+        # See also https://github.com/facebookresearch/ConvNeXt/blob/main/models/convnext.py 
+        # for alternative implementation details
+        super(custom_ConvNeXtBlock, self).__init__()
+        self.gelu = nn.GELU()
+
+        self.circ_pad = CustomPad(kernel_size=kernel_size)
+        # depthwise conv, now with custom padding
+        self.conv_d9x9 = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, stride=1, groups=in_channels) 
+        self.ln = LayerNorm2d(in_channels)
+        # Separate "downsampling" layers 1x1 kernels
+        self.conv_1x1_1 = nn.Conv2d(in_channels, in_channels*2, kernel_size=1, stride=1, padding=0, bias=True)
+        self.gelu = nn.GELU()
+        self.conv_1x1_2 = nn.Conv2d(in_channels*2, in_channels, kernel_size=1, stride=1, padding=0, bias=True)
+        self.layer_scale = nn.Parameter(torch.ones(in_channels, 1, 1) * layer_scale)
+
+    def forward(self, inp):
+        out1 = self.circ_pad(inp)
+        out2 = self.conv_d9x9(out1)
+        out3 = self.ln(out2)
+        
+        out4 = self.conv_1x1_1(out3)
+        out5 = self.gelu(out4)
+
+        out6 = self.layer_scale * self.conv_1x1_2(out5)
+
+        ret = out6 + inp
+        return ret
+
+
+class custom_ConvNeXt_central(nn.Module):
+    def __init__(self, num_channels=3, hidden_channels=12):
+        super(custom_ConvNeXt_central, self).__init__()
+
+        self.gelu = nn.GELU()
+        # STEM BLOCK (125,49)->(125,49)
+        self.pad1 = CustomPad(kernel_size=9)
+        self.conv1 = nn.Conv2d(num_channels, hidden_channels, kernel_size=9, stride=1, bias=True)
+        self.ln1 = LayerNorm2d(hidden_channels)
+
+        # DOWN-RES 1 (62, 24)
+        # self.pool = nn.MaxPool2d(2)
+        self.pool1 = CustomPool((62,24), p=3, eps=1e-6)
+        # BLOCK-2 at (62,24)
+        # self.pad2 = CustomPad(kernel_size=7)
+        self.block2 = custom_ConvNeXtBlock(in_channels=hidden_channels, out_channels=int(hidden_channels/2),kernel_size=7)
+
+        # DOWN-RES 2 (31, 12)
+        self.pool2 = CustomPool((31,12), p=3, eps=1e-6)
+        # BLOCK-3 down to (28,28)
+        self.pad3 = CustomPad(kernel_size=5)
+        self.block3 = custom_ConvNeXtBlock(in_channels=hidden_channels, out_channels=int(hidden_channels/2),kernel_size=5)
+
+        # UP-RES 1 (62, 24)
+        # self.up1 = nn.ConvTranspose2d(in_channels=hidden_channels, out_channels=hidden_channels, kernel_size=2, stride=2, padding=0)
+        self.block4 = custom_ConvNeXtBlock(in_channels=hidden_channels*2, out_channels=int(hidden_channels/2),kernel_size=5)
+
+        # UP-RES 2 (125, 49)
+        # self.up2 = nn.ConvTranspose2d(in_channels=hidden_channels*2, out_channels=hidden_channels*2, kernel_size=2, stride=2, padding=0, output_padding=(1,1))
+        self.block5 = custom_ConvNeXtBlock(in_channels=hidden_channels*3, out_channels=hidden_channels,kernel_size=7)
+
+
+    def forward(self,x):
+        # print('Input shape',x.shape)
+
+        # stem
+        out1 = self.gelu(self.ln1(self.conv1(self.pad1(x))))
+        # print('End of stem',out1.shape)
+
+        # block 2
+        out2 = self.pool1(out1)
+        out2 = self.block2(out2)
+        # print('End of block 2',out2.shape)
+
+        # block 3
+        out3 = self.pool2(out2)
+        out3 = self.block3(out3)
+        # print('End of block 3',out3.shape)
+
+        # block 4
+        out4 = F.interpolate(out3, size=[62,24], mode='bilinear', align_corners=True) 
+        # out4 = self.up1(out3)
+        out4 = torch.cat([out4,out2],dim=1)
+        out4 = self.block4(out4)
+        # print('End of block 4',out4.shape)
+        
+        # block 5
+        out5 = F.interpolate(out4, size=[125,49], mode='bilinear', align_corners=True) 
+        # out5 = self.up2(out4)
+        out5 = torch.cat([out5,out1],dim=1)
+        out5 = self.block5(out5)
+        # print('End of block 5',out5.shape)
+        
+        return out5
 
 
 
@@ -1116,6 +1254,17 @@ if __name__=="__main__":
     output_tensor = model(input_tensor)
     total_params = sum(p.numel() for p in model.parameters())
     print(f"{total_params:,} total parameters in custom central UConvNeXt model")
+    print(f"=================== ========== ===================")
+    print()
+
+
+
+    print(f"=================== central custom_ConvNeXt_central ===================")
+    model = custom_ConvNeXt_central(num_channels=10, hidden_channels=20)
+    input_tensor = torch.randn(1, 10, 125, 49)
+    output_tensor = model(input_tensor)
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"{total_params:,} total parameters in custom_ConvNeXt_central model")
     print(f"=================== ========== ===================")
     print()
 
