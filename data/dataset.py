@@ -55,7 +55,7 @@ class CustomDataset(torch.utils.data.Dataset):
             labels = torch.ones(bboxes.shape[0], dtype=torch.int64)
         
         if self.rnd_flips:
-            # Add random horizontal flip!
+            # Add random vertical/horizontal flip!
             bboxes = torchvision.tv_tensors.BoundingBoxes(bboxes,format="XYXY",canvas_size=img.shape[-2:])
             img, bboxes = self.transforms(img, bboxes)
         

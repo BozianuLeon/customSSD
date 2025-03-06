@@ -59,7 +59,7 @@ if __name__=="__main__":
     for file_no in file_nos:
         print('Loading file {}/{}'.format(file_no,len(file_nos)))     
         if args.proc in ["JZ1", "JZ2", "JZ3", "JZ4", "JZ5", "ttbar"]:
-            cells_file = args.path + "user.lbozianu.{}._0000{}.calocellD3PD_mc21_14TeV_{}.h5".format(args.job_id,file_no,tag) 
+            cells_file = args.path + "user.lbozianu.{}._0000{}.calocellD3PD_mc21_14TeV_{}.h5".format(args.job_id, file_no, tag) 
         else:
             print(args.proc," not recognised process, check spelling..")
 

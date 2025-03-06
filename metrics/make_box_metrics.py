@@ -62,8 +62,8 @@ results = {
            'pboxes_dRmatched_phi':[],
            'pboxes_dRmatched_scr':[],
 
-           'tboxes_dRunmatched_pt':[],
-           'pboxes_dRunmatched_pt':[],
+           'tboxes_dRunmatched_pt': [],
+           'pboxes_dRunmatched_pt': [],
            'tboxes_dRunmatched_eta':[],
            'pboxes_dRunmatched_eta':[],
            'tboxes_dRunmatched_phi':[],
@@ -103,13 +103,16 @@ def calculate_box_metrics(
         p_momenta = a[i]['p_pt']
         trues = a[i]['t_boxes']
         t_momenta = a[i]['t_pt']
+        print(i)
 
         #remove padding, boxes in xyxy coordinates
-        pees = preds[(preds[:, 2] - preds[:, 0]) >= 0.01]
-        scores = scores[scores > 0.01]
-        p_momenta = p_momenta[p_momenta > 0.01]
-        tees = trues[(trues[:, 2] - trues[:, 0]) >= 0.01]
-        t_momenta = t_momenta[t_momenta > 0.01]
+        pred_mask = ((preds[:, 2] - preds[:, 0]) >= 0.01) & (scores > 0.01) & (p_momenta > 0.01)
+        pees = preds[pred_mask]
+        scores = scores[pred_mask]
+        p_momenta = p_momenta[pred_mask]
+        targ_mask = ((trues[:, 2] - trues[:, 0]) >= 0.01) & (t_momenta > 0.01)
+        tees = trues[targ_mask]
+        t_momenta = t_momenta[targ_mask]
 
         if (len(pees)==0) or (len(tees)==0):
             print("No predicted jets")
@@ -118,7 +121,6 @@ def calculate_box_metrics(
         pees, scores, p_momenta = wrap_check_NMS3(pees,scores,p_momenta,iou_thresh=0.3)
         tees, t_momenta = wrap_check_truth3(tees,t_momenta,MIN_CELLS_PHI,MAX_CELLS_PHI)
     
-        print(i)
 
         # centre of the truth/pred boxes
         tboxes_ceta = (tees[:,2] + tees[:,0])/2
@@ -159,7 +161,7 @@ def calculate_box_metrics(
         results['pboxes_unmatched_scr'].append(scores[~match_p_mask])
 
         # dR matching
-        t_box_dRmatch_idx, p_box_dRmatch_idx = dR_box_matching(tboxes_ceta, tboxes_cphi, pboxes_ceta, pboxes_cphi, dR_thresh=0.4)
+        t_box_dRmatch_idx, p_box_dRmatch_idx = dR_box_matching(tboxes_ceta, tboxes_cphi, pboxes_ceta, pboxes_cphi, dR_thresh=0.3)
         t_box_dRmatch_pt = t_momenta[t_box_dRmatch_idx]
         p_box_dRmatch_pt = p_momenta[p_box_dRmatch_idx]
         t_box_dRmatch_eta = tboxes_ceta[t_box_dRmatch_idx]
@@ -314,9 +316,9 @@ def calculate_box_metrics(
 
 
 if __name__=="__main__":
-    model_name = "jetSSD_di_uconvnext_central_11e"
-    proc = "JZ4"
-    date = "20250211-13"
+    model_name = "jetSSD_custom_convnext_central_32e"
+    proc = "JZcomb0_test"
+    date = "20250305-17"
     folder_to_look_in = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/"
     save_at = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/"
 

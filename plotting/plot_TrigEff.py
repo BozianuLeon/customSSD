@@ -20,9 +20,9 @@ def load_object(fname):
         return pickle.load(file)
 
 
-model_name = "jetSSD_di_uconvnext_central_11e"
-proc       = "JZ4"
-date       = "20250211-13"
+model_name = "jetSSD_custom_convnext_central_32e"
+proc = "JZcomb0_test"
+date = "20250305-17"
 
 metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics"
 save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/trig/"
