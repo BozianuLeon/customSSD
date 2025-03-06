@@ -1,5 +1,5 @@
 from models.ssd import SSD
-from models.convnext import petiteConvNeXt, tinyConvNeXt, UConvNeXt, UConvNeXt_central
+from models.convnext import petiteConvNeXt, tinyConvNeXt, UConvNeXt, UConvNeXt_central, custom_ConvNeXt_central
 from models.resnext import ResNeXt20
 from models.sumpool import MaskSumPool
 from models.layernorm import LayerNorm2d

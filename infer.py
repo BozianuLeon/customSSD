@@ -37,9 +37,9 @@ MIN_CELLS_ETA,MAX_CELLS_ETA = -2.5, 2.5
 torch.manual_seed(config["seed"])
 
 dataset = data.CustomDataset(annotation_file=args.input_file)
-train_len = int(0.11 * len(dataset))
-val_len = int(0.11 * len(dataset))
-test_len = len(dataset) - train_len - val_len
+train_len = int(0.01 * len(dataset))
+val_len   = int(0.01 * len(dataset))
+test_len  = len(dataset) - train_len - val_len
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_len, val_len, test_len])
 print('\ttrain / val / test size : ',train_len,'/',val_len,'/',test_len,'\n')
 
@@ -51,7 +51,7 @@ test_loader = torch.utils.data.DataLoader(test_dataset, collate_fn=dataset.colla
 # load trained model
 model = models.SSD(backbone_name=args.backbone,in_channels=5,diamond_mask=True)
 model = model.to(config["device"]) 
-model_name = "jetSSD_di_{}_{}e".format(model.backbone_name,config["n_epochs"])
+model_name = "jetSSD_{}_{}e".format(model.backbone_name,config["n_epochs"])
 model_save_path = args.model_dir + f"/{model_name}.pth"
 model.load_state_dict(torch.load(model_save_path, map_location=torch.device(config["device"])))
 total_params = sum(p.numel() for p in model.parameters())
@@ -72,8 +72,7 @@ encoder = data.Encoder(dboxes)
 save_loc = args.output_dir + "/" + model_name + "/" + args.proc + "/" + time.strftime("%Y%m%d-%H") + "/"
 print("Save location: ", save_loc)
 
-if not os.path.exists(save_loc):
-    os.makedirs(save_loc)
+if not os.path.exists(save_loc): os.makedirs(save_loc)
 
 # let's infer on all events in the test set and store the results in a numpy structured array
 # with the following data types:
