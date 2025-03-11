@@ -68,17 +68,15 @@ encoder = data.Encoder(dboxes)
 
 
 
-
 save_loc = args.output_dir + "/" + model_name + "/" + args.proc + "/" + time.strftime("%Y%m%d-%H") + "/"
 print("Save location: ", save_loc)
-
 if not os.path.exists(save_loc): os.makedirs(save_loc)
 
 # let's infer on all events in the test set and store the results in a numpy structured array
 # with the following data types:
 # event_no: int, h5file: int, img: numpy array?, ground truth boxes: list, predicted_boxes: list, predicted_scores: list, predicted_pt (sumpool): list, extent
 beginning = time.perf_counter()
-dt = np.dtype([('event_no', 'i4'), ('h5file', 'S2'), ('h5event', 'i4'), ('extent', 'f8', (4)),  #S2 for a string of length exactly 2
+dt = np.dtype([('event_no', 'i4'), ('event_weight', 'f4'), ('h5file', 'S2'), ('h5event', 'i4'), ('extent', 'f8', (4)),  #S2 for a string of length exactly 2
                 ('t_boxes', 'f4', (250,4)), ('t_pt', 'f4', (250)), 
                 ('p_boxes', 'f4', (config["max_num"], 4)), ('p_scores', 'f4', (config["max_num"])), ('p_pt', 'f4', (config["max_num"]))])
 BS = config["BS"]
@@ -98,7 +96,7 @@ with torch.inference_mode():
         boxes, labels, scores, pts = zip(*output)
 
         #remove from GPU
-        tru_boxes,extents,h5files,h5events,event_nos,tru_pt = [], [], [], [], [], []
+        tru_boxes,extents,h5files,h5events,event_nos,event_weights,tru_pt = [], [], [], [], [], [], []
         det_boxes, det_scores, det_pts = [], [], []
         for i in range(BS):
             extent_i = targets[i]["extent"].detach().cpu().numpy()
@@ -113,6 +111,7 @@ with torch.inference_mode():
             h5files.append(targets[i]["h5file"])
             h5events.append(targets[i]["h5event"])
             event_nos.append(targets[i]["event_no"])
+            event_weights.append(targets[i]["event_weight"])
 
             # make boxes cover extent
             det_boxes_scr = scores[i].detach().cpu().numpy()
@@ -180,6 +179,7 @@ with torch.inference_mode():
 
         dataset_idx = step*BS
         Large['event_no'][dataset_idx:dataset_idx+BS] = event_nos
+        Large['event_weight'][dataset_idx:dataset_idx+BS] = event_weights
         Large['h5file'][dataset_idx:dataset_idx+BS] = h5files
         Large['h5event'][dataset_idx:dataset_idx+BS] = h5events
         Large['extent'][dataset_idx:dataset_idx+BS] = extents  

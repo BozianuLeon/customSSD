@@ -317,8 +317,8 @@ def calculate_box_metrics(
 
 if __name__=="__main__":
     model_name = "jetSSD_custom_convnext_central_32e"
-    proc = "JZcomb0_test"
-    date = "20250305-17"
+    proc = "ttbar_test"
+    date = "20250306-16"
     folder_to_look_in = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/"
     save_at = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/"
 
