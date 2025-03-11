@@ -98,13 +98,13 @@ def get_jet_bounding_boxes(jet_data,event_no,extent,min_max_tuple):
         
         else:
             print('NO JETS IN THIS EVENT',len(real_jets))
-            clipped_boxes = torch.tensor([[0.0,0.0,0.0,0.0]]) #placeholder value
-            tensor_of_pts = torch.tensor([0.0]) 
+            clipped_boxes = torch.tensor([[-0.4,-0.4,0.4,0.4]]) #placeholder value
+            tensor_of_pts = torch.tensor([0.99]) 
 
     else:
         print('NO JETS IN THIS EVENT',len(real_jets))
-        clipped_boxes = torch.tensor([[0.0,0.0,0.0,0.0]]) #placeholder value
-        tensor_of_pts = torch.tensor([0.0]) 
+        clipped_boxes = torch.tensor([[-0.4,-0.4,0.4,0.4]]) #placeholder value
+        tensor_of_pts = torch.tensor([0.99]) 
 
     return clipped_boxes, tensor_of_pts
 
@@ -142,7 +142,9 @@ if __name__=="__main__":
     global_counter = 0
 
     if args.proc == "ttbar":
-        file_nos = [22,23,26,27,28,30,31,32,33,34,35,36,37,38,39,40,41,42]
+        # approx 1700 events per file 
+        # file_nos = [22,23,26,27,28,30,31,32,33,34,35,36,37,38,39,40,41,42]
+        file_nos = [22,23,26,27,28,30,31,32,33,34,35,36,37,38,39,40,41,42,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62]
         # file_nos = [22,23,26,27,28,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100]
         tag = args.proc + ".r15583"
     elif args.proc == "JZ4":
@@ -203,7 +205,7 @@ if __name__=="__main__":
 
             with h5py.File(jets_file,"r") as f:
                 j_data = f["caloCells"]
-                # event_data = j_data["1d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
+                event_data = j_data["1d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
                 jet_data = j_data["2d"][chunk_size*chunk_counter : chunk_size*(chunk_counter+1)]
 
             #now we'll look at each event individually
@@ -225,15 +227,18 @@ if __name__=="__main__":
                     "image":{
                         "id": global_counter,
                         "file_name": "cell-img-{}.pt".format(unique_file_chunk_event_no),
-                        "img_path": args.output_dir+"cell-img-{}.pt".format(unique_file_chunk_event_no),
+                        "img_path": args.output_dir+"/cell-img-{}.pt".format(unique_file_chunk_event_no),
                         "height": len(yedges),
                         "width": len(xedges),
                         "file": file_no,
+                        "proc": args.proc,
+                        "grid_id": tag,
                         "event": chunk_size*chunk_counter + event_no,
                     },
 
                     "anns":{
                         "id": global_counter,
+                        "mc_event_weight": float(event_data["ei_mc_event_weight"][event_no]),
                         "n_jets": len(GT_jet_boxes),
                         "bboxes": GT_jet_boxes.tolist(),
                         "jet_pt": GT_jet_pts.tolist(),

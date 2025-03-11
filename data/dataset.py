@@ -59,14 +59,15 @@ class CustomDataset(torch.utils.data.Dataset):
             bboxes = torchvision.tv_tensors.BoundingBoxes(bboxes,format="XYXY",canvas_size=img.shape[-2:])
             img, bboxes = self.transforms(img, bboxes)
         
-        event_no = anns_i["image"]["id"]
-        h5file   = anns_i["image"]["file"]
-        h5event  = anns_i["image"]["event"]
-        pT       = anns_i["anns"]["jet_pt"]
-        extent   = anns_i["anns"]["extent"]
+        event_no   = anns_i["image"]["id"]
+        h5file     = anns_i["image"]["file"]
+        h5event    = anns_i["image"]["event"]
+        pT         = anns_i["anns"]["jet_pt"]
+        mc_event_w = anns_i["anns"]["mc_event_weight"]
+        extent     = anns_i["anns"]["extent"]
         extent_tensor = torch.tensor(extent).float()
 
-        return img, {'boxes': bboxes, 'labels': labels, 'jet_pt': pT, 'extent': extent_tensor, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
+        return img, {'boxes': bboxes, 'labels': labels, 'jet_pt': pT, 'extent': extent_tensor, 'event_weight': mc_event_w, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
 
     def collate_fn(self,batch):
         images, targets = zip(*batch) 
