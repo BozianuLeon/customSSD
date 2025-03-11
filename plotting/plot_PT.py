@@ -20,8 +20,10 @@ def load_object(fname):
 
 
 model_name = "jetSSD_custom_convnext_central_32e"
-proc = "JZcomb0_test"
-date = "20250305-17"
+# proc = "JZcomb0_test"
+# date = "20250305-17"
+proc = "ttbar_test"
+date = "20250306-16"
 
 metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics"
 save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/jet_kin/"
@@ -37,9 +39,10 @@ print("=========================================================================
 print(f"Loading all jets from\n{metrics_folder}")
 print("=======================================================================================================\n")
 
-
-total_t_pt      = np.concatenate(load_object(metrics_folder+"/tboxes_pt.pkl"))
-total_p_pt      = np.concatenate(load_object(metrics_folder+"/pboxes_pt.pkl"))
+event_t_pt      = load_object(metrics_folder+"/tboxes_pt.pkl")
+event_p_pt      = load_object(metrics_folder+"/pboxes_pt.pkl")
+total_t_pt      = np.concatenate(event_t_pt)
+total_p_pt      = np.concatenate(event_p_pt)
 total_p_scr     = np.concatenate(load_object(metrics_folder+"/pboxes_scores.pkl"))
 # IOU matched
 match_t_pt      = np.concatenate(load_object(metrics_folder+"/tboxes_matched_pt.pkl"))
@@ -107,7 +110,7 @@ f.savefig(save_folder + f'/jet_pt_total.{image_format}',dpi=400,format=image_for
 plt.close()
 
 
-print(f"Plotting matched jet pT: {len(match_p_pt)} predictions, {len(match_t_pt)} targets")
+print(f"Plotting IOU matched jet pT: {len(match_p_pt)} predictions, {len(match_t_pt)} targets")
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(match_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
 freq_tru, bins, _    = ax0.hist(match_t_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
@@ -130,7 +133,7 @@ f.savefig(save_folder + f'/jet_pt_dRmatch.{image_format}',dpi=400,format=image_f
 plt.close()
 
 
-print(f"Plotting unmatched jet pT: {len(unmatch_p_pt)} predictions, {len(unmatch_t_pt)} targets")
+print(f"Plotting IOU unmatched jet pT: {len(unmatch_p_pt)} predictions, {len(unmatch_t_pt)} targets")
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(unmatch_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
 freq_tru, bins, _    = ax0.hist(unmatch_t_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
@@ -156,8 +159,35 @@ plt.close()
 
 
 
+print(f"Plotting total jet pT in match fraction bins!: {len(total_p_pt)} predictions, {len(total_t_pt)} targets")
+bin_edges = [20, 40, 60, 80, 100, 120, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 850]
+bin_centers = bin_edges[:-1] + 0.5 * np.diff(bin_edges)
+bin_width = np.diff(bin_edges)
+
+f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+freq_pred, bins, _   = ax0.hist(total_p_pt,bins=bin_edges,histtype='step',color='red',alpha=0.6,lw=1.5,label='Predicted Jets')
+freq_tru, bins, _    = ax0.hist(total_t_pt,bins=bin_edges,histtype='step',color='green',alpha=0.6,lw=1.5,label='Target Jets')
+ax0.set_title('Transverse Momentum', fontsize=16, fontfamily="TeX Gyre Heros")
+ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+f.savefig(save_folder + f'/jet_pt_total_binning.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+plt.close()
 
 
+print(f"Plotting leading jet pT in each event: {len(event_t_pt)} events, {len(event_p_pt)} events")
+t_lead_pt = np.array([max(x) for x in event_t_pt])
+p_lead_pt = np.array([max(x) for x in event_p_pt])
+
+f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+freq_pred, bins, _   = ax0.hist(p_lead_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+freq_tru, bins, _    = ax0.hist(t_lead_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+ax0.set_title('Transverse Momentum', fontsize=16, fontfamily="TeX Gyre Heros")
+ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+ax0.set(yscale='log',xlabel='Leading Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+f.savefig(save_folder + f'/jet_pt_lead.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+plt.close()
 
 
 

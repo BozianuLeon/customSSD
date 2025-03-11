@@ -20,8 +20,8 @@ def load_object(fname):
  
  
 model_name = "jetSSD_custom_convnext_central_32e"
-proc = "JZcomb0_test"
-date = "20250305-17"
+proc = "ttbar_test"
+date = "20250306-16"
 
 metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics"
 save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/box_stat/"

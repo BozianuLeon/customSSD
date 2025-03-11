@@ -20,11 +20,12 @@ def load_object(fname):
         return pickle.load(file)
 
 
-model_name = "jetSSD_smallconvnext_central_32e"
-# open metrics folder and prepare figure directory
-metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/ttbar/20250124-12/box_metrics"
-save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/ttbar/20250124-12/jet_res/"
+model_name = "jetSSD_custom_convnext_central_32e"
+proc = "ttbar_test"
+date = "20250306-16"
 
+metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics/"
+save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/jet_res/"
 if not os.path.exists(save_folder):
     os.makedirs(save_folder)
 
@@ -71,7 +72,8 @@ for bin_idx in range(len(bin_edges)-1):
     
     jet_resp_hist, bins = np.histogram(jet_pt_response_bin_i, bins=50)
     bin_centres = np.array([0.5 * (bins[i] + bins[i+1]) for i in range(len(bins)-1)])
-    popt_g, pcov_g = scipy.optimize.curve_fit(gaussian, xdata=bin_centres, ydata=jet_resp_hist, p0=[1.0,1.0,0.1])
+    # popt_g, pcov_g = scipy.optimize.curve_fit(gaussian, xdata=bin_centres, ydata=jet_resp_hist, p0=[1.0,1.0,0.1])
+    popt_g, pcov_g = scipy.optimize.curve_fit(gaussian, xdata=bin_centres, ydata=jet_resp_hist, p0=[len(jet_pt_response_bin_i),1.0,0.1])
     fit_mu = popt_g[1]
     fit_var = popt_g[2]
     fit_mu_unc = np.sqrt(np.diag(pcov_g))[1]

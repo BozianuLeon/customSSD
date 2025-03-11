@@ -41,13 +41,6 @@ total_p_pt      = load_object(metrics_folder+"/pboxes_pt.pkl")
 total_p_scr     = load_object(metrics_folder+"/pboxes_scores.pkl")
 
 
-
-print("=======================================================================================================")
-print(f"Making leading jet trigger decision")
-print("=======================================================================================================\n")
-
-
-
 def leading_jet_pt(list_of_jet_pts_in_event):
     try:
         return max(list_of_jet_pts_in_event)
@@ -111,11 +104,11 @@ def get_errorbars(success_array, total_array, alpha=0.05):
 
 
 
+print("=======================================================================================================")
+print(f"Making leading jet trigger decision")
+print("=======================================================================================================\n")
 
-# Set the x-axis and binning
-start,end = 350,750
-step = 10
-bins = np.arange(start, end, step)
+
 
 # Make a trigger decision based on leading antikt jet pt
 t_lead_pt = np.array([leading_jet_pt(x) for x in total_t_pt])
@@ -125,6 +118,10 @@ lead_jet_pt_cut = 225 # GeV
 trig_decision_akt = np.argwhere(t_lead_pt>lead_jet_pt_cut).T[0]
 trig_decision_pred = np.argwhere(p_lead_pt>lead_jet_pt_cut).T[0]
 
+# Set the x-axis and binning
+start,end = 100,550
+step = 10
+bins = np.arange(start, end, step)
 
 
 f,ax = plt.subplots(3,1,figsize=(8,14))
@@ -167,7 +164,7 @@ f,a = plt.subplots(1,1,figsize=(8,8))
 a.axvline(x=lead_jet_pt_cut,ymin=0,ymax=1,ls='--',color='red',alpha=0.3)
 a.errorbar(bin_centers,pred_eff,xerr=bin_width/2,yerr=pred_err,elinewidth=0.4,marker='.',ls='none',label='Pred Boxes',color='red')
 a.set(xlabel="Leading jet pT (GeV)",ylabel='Efficiency')
-a.legend(loc='upper left')
+a.legend(loc='lower right')
 hep.atlas.label(ax=a,label='Work in Progress',data=False,lumi=None,loc=1)
 f.subplots_adjust(hspace=0.4)
 f.savefig(save_folder + f'/leading{lead_jet_pt_cut:.0f}GeV_efficiency.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
@@ -232,7 +229,7 @@ a.axvline(x=nth_lead_jet_pt_cut,ymin=0,ymax=1,ls='--',color='red',alpha=0.3)
 a.errorbar(bin_centers,pred_eff,xerr=bin_width/2,yerr=pred_err,elinewidth=0.4,marker='.',ls='none',label='Pred Boxes',color='red')
 a.grid()
 a.set(xlabel=f"${{{nth_jet}}}^{{th}}$ Leading jet pT (GeV)",ylabel='Efficiency')
-a.legend(loc='upper left')
+a.legend(loc='lower right')
 hep.atlas.label(ax=a,label='Work in Progress',data=False,lumi=None,loc=1)
 f.subplots_adjust(hspace=0.4)
 f.savefig(save_folder + f'/{nth_jet}leading{nth_lead_jet_pt_cut:.0f}GeV_efficiency.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
