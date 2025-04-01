@@ -7,7 +7,7 @@ import json
 
 
 class CustomDataset(torch.utils.data.Dataset):
-    def __init__(self, annotation_file, rnd_flips=False):
+    def __init__(self, annotation_file, rnd_flips=False, truth_info=False):
         # Custom dataset that takes in the annotations folder 
         # and will randomly flip the images/bounding boxes during training
         # returns 
@@ -18,6 +18,7 @@ class CustomDataset(torch.utils.data.Dataset):
         with open(annotation_file, 'r') as f:
             self.data = json.load(f)
         
+        self.truth_info = truth_info
         self.rnd_flips = rnd_flips
         self.transforms = v2.Compose([
                                     v2.RandomHorizontalFlip(p=0.5),
@@ -63,11 +64,25 @@ class CustomDataset(torch.utils.data.Dataset):
         h5file     = anns_i["image"]["file"]
         h5event    = anns_i["image"]["event"]
         pT         = anns_i["anns"]["jet_pt"]
-        mc_event_w = anns_i["anns"]["mc_event_weight"]
+        # mc_event_w = anns_i["anns"]["mc_event_weight"]
         extent     = anns_i["anns"]["extent"]
         extent_tensor = torch.tensor(extent).float()
 
-        return img, {'boxes': bboxes, 'labels': labels, 'jet_pt': pT, 'extent': extent_tensor, 'event_weight': mc_event_w, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
+        if not self.truth_info:
+            return img, {'boxes': bboxes, 'labels': labels, 'jet_pt': pT, 'extent': extent_tensor, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
+            # return img, {'boxes': bboxes, 'labels': labels, 'jet_pt': pT, 'extent': extent_tensor, 'event_weight': mc_event_w, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
+        else:
+            # Same checks for truth jets
+            truth_bboxes = torch.tensor(anns_i["anns"]["truth_jet_boxes"], dtype=torch.float32)
+            height_width_mask = (truth_bboxes[:,2] > 0) & (truth_bboxes[:,3] > 0)
+            truth_bboxes = truth_bboxes[height_width_mask]
+
+            # turn truth boxes from xywh to x1,y1,x2,y2
+            truth_bboxes[:,2] = truth_bboxes[:,0] + truth_bboxes[:,2] 
+            truth_bboxes[:,3] = truth_bboxes[:,1] + truth_bboxes[:,3] 
+            truth_pt = anns_i["anns"]["truth_jet_pt"]
+            return img, {'akt_boxes': bboxes, 'akt_labels': labels, 'akt_jet_pt': pT, 'truth_boxes': truth_bboxes, 'truth_jet_pt': truth_pt, 'extent': extent_tensor, 'event_weight': mc_event_w, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
+            
 
     def collate_fn(self,batch):
         images, targets = zip(*batch) 
