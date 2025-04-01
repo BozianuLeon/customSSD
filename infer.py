@@ -36,7 +36,7 @@ MIN_CELLS_PHI,MAX_CELLS_PHI = -3.1334076, 3.134037
 MIN_CELLS_ETA,MAX_CELLS_ETA = -2.5, 2.5
 torch.manual_seed(config["seed"])
 
-dataset = data.CustomDataset(annotation_file=args.input_file)
+dataset = data.CustomDataset(annotation_file=args.input_file,truth_info=True)
 train_len = int(0.01 * len(dataset))
 val_len   = int(0.01 * len(dataset))
 test_len  = len(dataset) - train_len - val_len
@@ -77,7 +77,8 @@ if not os.path.exists(save_loc): os.makedirs(save_loc)
 # event_no: int, h5file: int, img: numpy array?, ground truth boxes: list, predicted_boxes: list, predicted_scores: list, predicted_pt (sumpool): list, extent
 beginning = time.perf_counter()
 dt = np.dtype([('event_no', 'i4'), ('event_weight', 'f4'), ('h5file', 'S2'), ('h5event', 'i4'), ('extent', 'f8', (4)),  #S2 for a string of length exactly 2
-                ('t_boxes', 'f4', (250,4)), ('t_pt', 'f4', (250)), 
+                ('tar_boxes', 'f4', (250,4)), ('tar_pt', 'f4', (250)), 
+                ('tru_boxes', 'f4', (100,4)), ('tru_pt', 'f4', (100)), 
                 ('p_boxes', 'f4', (config["max_num"], 4)), ('p_scores', 'f4', (config["max_num"])), ('p_pt', 'f4', (config["max_num"]))])
 BS = config["BS"]
 Large = np.zeros((len(test_loader)*BS), dtype=dt)    
@@ -96,24 +97,33 @@ with torch.inference_mode():
         boxes, labels, scores, pts = zip(*output)
 
         #remove from GPU
-        tru_boxes,extents,h5files,h5events,event_nos,event_weights,tru_pt = [], [], [], [], [], [], []
+        tar_boxes,extents,h5files,h5events,event_nos,event_weights,tar_pt = [], [], [], [], [], [], []
+        tru_boxes,tru_pt = [], []
         det_boxes, det_scores, det_pts = [], [], []
         for i in range(BS):
             extent_i = targets[i]["extent"].detach().cpu().numpy()
-            tru_boxes_ext = targets[i]['boxes'].detach().cpu().numpy()
+            # make target/truth boxes cover extent
+            tar_boxes_ext = targets[i]['akt_boxes'].detach().cpu().numpy()
+            tar_boxes_ext[:,(0,2)] = (tar_boxes_ext[:,(0,2)]*((extent_i[1]-extent_i[0])/img_tensor[i].shape[2]))+extent_i[0]
+            tar_boxes_ext[:,(1,3)] = (tar_boxes_ext[:,(1,3)]*((extent_i[3]-extent_i[2])/img_tensor[i].shape[1]))+extent_i[2]
+            tar_pts = targets[i]['akt_jet_pt']
+
+            tru_boxes_ext = targets[i]['truth_boxes'].detach().cpu().numpy()
             tru_boxes_ext[:,(0,2)] = (tru_boxes_ext[:,(0,2)]*((extent_i[1]-extent_i[0])/img_tensor[i].shape[2]))+extent_i[0]
             tru_boxes_ext[:,(1,3)] = (tru_boxes_ext[:,(1,3)]*((extent_i[3]-extent_i[2])/img_tensor[i].shape[1]))+extent_i[2]
-            tru_pts = targets[i]['jet_pt']
+            tru_pts = targets[i]['truth_jet_pt']
 
+            tar_boxes.append(tar_boxes_ext)
+            tar_pt.append(tar_pts)
             tru_boxes.append(tru_boxes_ext)
-            tru_pt.append(targets[i]['jet_pt'])
+            tru_pt.append(tru_pts)
             extents.append(extent_i)
             h5files.append(targets[i]["h5file"])
             h5events.append(targets[i]["h5event"])
             event_nos.append(targets[i]["event_no"])
             event_weights.append(targets[i]["event_weight"])
 
-            # make boxes cover extent
+            # make pred boxes cover extent
             det_boxes_scr = scores[i].detach().cpu().numpy()
             det_boxes_pts = pts[i].detach().cpu().numpy()
             det_boxes_ext = boxes[i].detach().cpu().numpy()
@@ -150,8 +160,15 @@ with torch.inference_mode():
             # ax.axhline(y=MIN_CELLS_PHI, color='red', alpha=0.6, linestyle='--',lw=0.7)
             # ax.axhline(y=MAX_CELLS_PHI, color='red', alpha=0.6, linestyle='--',lw=0.7)
     
-            # for k in range(len(tru_boxes_ext)):
-            #     bbx,pt = tru_boxes_ext[k],tru_pts[k]
+            # for i in range(len(tru_boxes_ext)):
+            #     bbx,pt = tru_boxes_ext[i],tru_pts[i]
+            #     x,y=float(bbx[0]),float(bbx[1])
+            #     w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
+            #     ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1.8,ec='gold',fc='none'))
+            #     ax.text(x+0.05,y+h-0.15, f"{pt:.0f}",color='gold',fontsize=8)
+    
+            # for k in range(len(tar_boxes_ext)):
+            #     bbx,pt = tar_boxes_ext[k],tar_pts[k]
             #     x,y=float(bbx[0]),float(bbx[1])
             #     w,h=float(bbx[2])-float(bbx[0]),float(bbx[3])-float(bbx[1])  
             #     ax.add_patch(matplotlib.patches.Rectangle((x,y),w,h,lw=1.8,ec='limegreen',fc='none'))
@@ -171,6 +188,7 @@ with torch.inference_mode():
             # plt.close()
             # print(step*BS + i)
             # print("\t",len(tru_boxes_ext),len(det_boxes_ext),len(det_boxes_pts))
+            # quit()
             # if (step*BS + i) == 16:
             #     quit()
             # ###############################
@@ -184,14 +202,18 @@ with torch.inference_mode():
         Large['h5event'][dataset_idx:dataset_idx+BS] = h5events
         Large['extent'][dataset_idx:dataset_idx+BS] = extents  
     
-        t_boxes = [np.pad(trub, ((0,250-len(trub)),(0,0)), 'constant', constant_values=(0)) for trub in tru_boxes]
-        t_pt = [np.pad(trub, ((0,250-len(trub))), 'constant', constant_values=(0)) for trub in tru_pt]
+        tar_boxes = [np.pad(tarb, ((0,250-len(tarb)),(0,0)), 'constant', constant_values=(0)) for tarb in tar_boxes]
+        tar_pt = [np.pad(tarb, ((0,250-len(tarb))), 'constant', constant_values=(0)) for tarb in tar_pt]
+        tru_jet_boxes = [np.pad(trub, ((0,100-len(trub)),(0,0)), 'constant', constant_values=(0)) for trub in tru_boxes]
+        tru_jet_pt = [np.pad(trub, ((0,100-len(trub))), 'constant', constant_values=(0)) for trub in tru_pt]
         p_boxes = [np.pad(preb, ((0,config["max_num"]-len(preb)),(0,0)), 'constant', constant_values=(0)) for preb in det_boxes]
         p_scores = [np.pad(pres, ((0,config["max_num"]-len(pres))), 'constant', constant_values=(0)) for pres in det_scores]
         p_pts = [np.pad(prept, ((0,config["max_num"]-len(prept))), 'constant', constant_values=(0)) for prept in det_pts]
     
-        Large['t_boxes'][dataset_idx:dataset_idx+BS] = t_boxes   
-        Large['t_pt'][dataset_idx:dataset_idx+BS] = t_pt   
+        Large['tar_boxes'][dataset_idx:dataset_idx+BS] = tar_boxes   
+        Large['tar_pt'][dataset_idx:dataset_idx+BS] = tar_pt   
+        Large['tru_boxes'][dataset_idx:dataset_idx+BS] = tru_jet_boxes   
+        Large['tru_pt'][dataset_idx:dataset_idx+BS] = tru_jet_pt   
         Large['p_boxes'][dataset_idx:dataset_idx+BS] = p_boxes   
         Large['p_scores'][dataset_idx:dataset_idx+BS] = p_scores 
         Large['p_pt'][dataset_idx:dataset_idx+BS] = p_pts 
