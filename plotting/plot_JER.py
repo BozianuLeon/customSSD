@@ -21,8 +21,10 @@ def load_object(fname):
 
 
 model_name = "jetSSD_custom_convnext_central_32e"
-proc = "ttbar_test"
-date = "20250306-16"
+# proc = "ttbar_test"
+# date = "20250306-16"
+proc = "JZcomb0_test"
+date = "20250313-06"
 
 metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics/"
 save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/jet_res/"
@@ -34,13 +36,21 @@ if not os.path.exists(save_folder):
 print("==================================================================================================")
 print(f"Loading matched jets from\n{metrics_folder}")
 print("==================================================================================================\n")
-total_matched_tru_pt = np.concatenate(load_object(metrics_folder+"/tboxes_matched_pt.pkl"))
+total_matched_tar_pt = np.concatenate(load_object(metrics_folder+"/tarboxes_matched_pt.pkl"))
 total_matched_pred_pt = np.concatenate(load_object(metrics_folder+"/pboxes_matched_pt.pkl"))
-total_matched_tru_eta = np.concatenate(load_object(metrics_folder+"/tboxes_matched_eta.pkl"))
+total_matched_tar_eta = np.concatenate(load_object(metrics_folder+"/tarboxes_matched_eta.pkl"))
 total_matched_pred_eta = np.concatenate(load_object(metrics_folder+"/pboxes_matched_eta.pkl"))
 
+total_dRmatched_tar_pt = np.concatenate(load_object(metrics_folder+"/tarboxes_dRmatched_pt.pkl"))
+total_dRmatched_pred_pt = np.concatenate(load_object(metrics_folder+"/pboxes_dRmatched_pt.pkl"))
+total_dRmatched_tar_eta = np.concatenate(load_object(metrics_folder+"/tarboxes_dRmatched_eta.pkl"))
+total_dRmatched_pred_eta = np.concatenate(load_object(metrics_folder+"/pboxes_dRmatched_eta.pkl"))
 
-
+# dR truth matched
+total_dRtruthmatch_tru_pt    = np.concatenate(load_object(metrics_folder+"/truboxes_dRtruthmatched_pt.pkl"))
+total_dRtruthmatch_p_pt    = np.concatenate(load_object(metrics_folder+"/pboxes_dRtruthmatched_pt.pkl"))
+total_dRtruthmatch_tru_eta    = np.concatenate(load_object(metrics_folder+"/truboxes_dRtruthmatched_eta.pkl"))
+total_dRtruthmatch_p_eta    = np.concatenate(load_object(metrics_folder+"/pboxes_dRtruthmatched_eta.pkl"))
 
 # homemade Gaussian to fit
 def gaussian(x, a, mean, variance):
@@ -62,10 +72,10 @@ fitted_mu, fitted_mu_unc = list(), list()
 fitted_sigma, fitted_sigma_unc = list(), list()
 for bin_idx in range(len(bin_edges)-1):
     # find jets in each bin
-    bin_mask = (bin_edges[bin_idx]<total_matched_tru_pt) & (total_matched_tru_pt<bin_edges[bin_idx+1])
+    bin_mask = (bin_edges[bin_idx]<total_dRmatched_tar_pt) & (total_dRmatched_tar_pt<bin_edges[bin_idx+1])
 
-    target_jet_pt_in_this_bin = total_matched_tru_pt[bin_mask]
-    pred_jet_pt_in_this_bin = total_matched_pred_pt[bin_mask]
+    target_jet_pt_in_this_bin = total_dRmatched_tar_pt[bin_mask]
+    pred_jet_pt_in_this_bin = total_dRmatched_pred_pt[bin_mask]
     jet_pt_response_bin_i = pred_jet_pt_in_this_bin / target_jet_pt_in_this_bin
     print(f"Number of jets in bin {bin_idx}: {len(jet_pt_response_bin_i)}")
     print(f"pT in [{bin_edges[bin_idx],bin_edges[bin_idx+1]}], np.mean {np.mean(jet_pt_response_bin_i):.4f}")
@@ -116,35 +126,125 @@ for bin_idx in range(len(bin_edges)-1):
 
 
 plt.figure()
-plt.errorbar(bin_centers, average_response, xerr=bin_width/2, fmt='o', capsize=5, color='blue',label='Simple mean')
-plt.errorbar(bin_centers, fitted_mu, xerr=bin_width/2, yerr=fitted_mu_unc, fmt='o', capsize=5, color='orange',label='Fit param')
+# plt.errorbar(bin_centers, average_response, xerr=bin_width/2, fmt='o', capsize=5, color='blue',label='Simple mean')
+plt.errorbar(bin_centers, fitted_mu, xerr=bin_width/2, yerr=fitted_mu_unc, fmt='o', capsize=5, color='tomato',label='CNN jets')
 plt.axhline(y=1, color='red', linestyle='--', linewidth=2)
-plt.xlabel('AntiKt4EMTopo Jet pT (jet constituent scale)')
+plt.xlabel(r'AntiKt4EMTopo Jet $p_T$ (jet constituent scale)')
 plt.ylabel('Jet Energy Response')
 plt.legend()
+hep.atlas.label(ax=plt.gca(),label='Work in Progress',data=False,lumi=None,loc=0)
+plt.text(60,1.23, r"MC21, $\sqrt{s}=14\,$TeV $<\mu >=200$")
+plt.text(60,1.21, r"Dijet JZ1-4")
 plt.savefig(save_folder+'jet_response_simple.png')
 
 plt.figure()
 # plt.errorbar(bin_centers, std_response, xerr=bin_width/2, fmt='o', capsize=5, color='blue',label='Simple np.std')
-plt.errorbar(bin_centers, fitted_sigma, xerr=bin_width/2, yerr=fitted_sigma_unc, fmt='o', capsize=5, color='orange',label='Fit param')
-plt.errorbar(bin_centers, abs(np.array(fitted_sigma)), xerr=bin_width/2, yerr=fitted_sigma_unc,alpha=0.5, capsize=5, color='pink')
+plt.errorbar(bin_centers, fitted_sigma, xerr=bin_width/2, yerr=fitted_sigma_unc, fmt='o', capsize=5, color='tomato',label='CNN jets')
+# plt.errorbar(bin_centers, abs(np.array(fitted_sigma)), xerr=bin_width/2, yerr=fitted_sigma_unc,alpha=0.5, capsize=5, color='pink')
 plt.axhline(y=0, color='red', linestyle='--', linewidth=2)
-plt.xlabel('AntiKt4EMTopo Jet pT (jet constituent scale)')
+plt.xlabel(r'AntiKt4EMTopo Jet $p_T$ (jet constituent scale)')
 plt.ylabel('Jet Energy Resolution')
 plt.legend()
+hep.atlas.label(ax=plt.gca(),label='Work in Progress',data=False,lumi=None,loc=0)
+plt.text(80,0.23, r"MC21, $\sqrt{s}=14\,$TeV $<\mu >=200$")
+plt.text(80,0.21, r"Dijet JZ1-4")
 plt.savefig(save_folder+'jet_resolution_simple.png')
 
+
+
+
+
+
+print()
+print()
+print()
+print()
+print()
+print("\nNow comparing to truth jets")
+
+
+average_response, std_response = list(), list()
+fitted_mu, fitted_mu_unc = list(), list()
+fitted_sigma, fitted_sigma_unc = list(), list()
+for bin_idx in range(len(bin_edges)-1):
+    # find jets in each bin
+    bin_mask = (bin_edges[bin_idx]<total_dRtruthmatch_tru_pt) & (total_dRtruthmatch_tru_pt<bin_edges[bin_idx+1])
+
+    target_jet_pt_in_this_bin = total_dRtruthmatch_tru_pt[bin_mask]
+    pred_jet_pt_in_this_bin = total_dRtruthmatch_p_pt[bin_mask]
+    jet_pt_response_bin_i = pred_jet_pt_in_this_bin / target_jet_pt_in_this_bin
+    print(f"Number of jets in bin {bin_idx}: {len(jet_pt_response_bin_i)}")
+    print(f"pT in [{bin_edges[bin_idx],bin_edges[bin_idx+1]}], np.mean {np.mean(jet_pt_response_bin_i):.4f}")
+    
+    jet_resp_hist, bins = np.histogram(jet_pt_response_bin_i, bins=50)
+    bin_centres = np.array([0.5 * (bins[i] + bins[i+1]) for i in range(len(bins)-1)])
+    # popt_g, pcov_g = scipy.optimize.curve_fit(gaussian, xdata=bin_centres, ydata=jet_resp_hist, p0=[1.0,1.0,0.1])
+    popt_g, pcov_g = scipy.optimize.curve_fit(gaussian, xdata=bin_centres, ydata=jet_resp_hist, p0=[len(jet_pt_response_bin_i),1.0,0.1])
+    fit_mu = popt_g[1]
+    fit_var = popt_g[2]
+    fit_mu_unc = np.sqrt(np.diag(pcov_g))[1]
+    fit_var_unc = np.sqrt(np.diag(pcov_g))[2]
+    print(f"Fit parameters: A = {popt_g[0]:.4f}, mu = {fit_mu:.4f}, var = {fit_var:.4f} ")
+    print(f"Fit error:        +- {np.sqrt(np.diag(pcov_g))[0]:.3f},    +- {fit_mu_unc:.5f},   +- {fit_var_unc:.5f}")
+
+
+    average_response.append(np.mean(jet_pt_response_bin_i))
+    std_response.append(np.std(jet_pt_response_bin_i))
+    fitted_mu.append(popt_g[1])
+    fitted_mu_unc.append(np.sqrt(np.diag(pcov_g))[1])
+    print("Because the fit produces the variance we need the standard deviation. Propogate uncertainties!")
+    V = popt_g[2]
+    sigma_V = np.sqrt(np.diag(pcov_g))[2]
+
+    fitted_sigma.append(np.sqrt(V))
+    fitted_sigma_unc.append((sigma_V*np.sqrt(V)) / (2*V))
+    print("---------------------------------------------------------")
+    
+    plt.figure()
+    plt.stairs(jet_resp_hist, bins, fill=True, color='orange',alpha=0.5)
+    plt.hist(jet_pt_response_bin_i,bins=50,alpha=0.6,histtype='step',color='blue')
+    x = np.linspace(0,jet_pt_response_bin_i.max(),100)
+    plt.plot(x, gaussian(x, *popt_g), linewidth=2.5)
+    plt.xlabel('reco/target jet pt')
+    plt.ylabel(f'jets in bin {bin_idx}')
+    # plt.yscale('log')
+    ax = plt.gca()
+    text = (f'mu = {popt_g[1]:.4f} +- {np.sqrt(np.diag(pcov_g))[1]:.4f}  \n'
+            f'std = {np.sqrt(V):.4f} +- {(sigma_V*np.sqrt(V)) / (2*V):.5f}\n'
+            f'std / pT = {np.sqrt(V) / bin_centers[bin_idx]:.6f}')
+    ax.text(0.95, 0.95, f'Fit parameters:\n'+text, transform=ax.transAxes, va='top', ha='right')
+    plt.title(f'Jet pT in [{bin_edges[bin_idx]},{bin_edges[bin_idx+1]}]')
+    plt.savefig(save_folder + f'truth_pt_response_bin_{bin_idx}.png')
+    plt.close()
+    
+    print()
+
+
+
 plt.figure()
-plt.errorbar(bin_centers, np.array(fitted_sigma)/np.array(bin_centers), xerr=bin_width/2, yerr=fitted_sigma_unc, fmt='o', capsize=5, color='orange',label='Fit param')
-ax = plt.gca()
-ax.ticklabel_format(style='plain')
-plt.xlabel('AntiKt4EMTopo Jet pT (jet constituent scale)')
-plt.ylabel('Relative Jet Energy Resolution, sigma(pT) / pT')
+# plt.errorbar(bin_centers, average_response, xerr=bin_width/2, fmt='o', capsize=5, color='blue',label='Simple mean')
+plt.errorbar(bin_centers, fitted_mu, xerr=bin_width/2, yerr=fitted_mu_unc, fmt='o', capsize=5, color='red',label='CNN jets')
+plt.axhline(y=1, color='red', linestyle='--', linewidth=2)
+plt.xlabel(r'Truth Jet $p_T$')
+plt.ylabel('Jet Energy Response')
 plt.legend()
-plt.savefig(save_folder+'jet_relative_resolution_simple.png')
+hep.atlas.label(ax=plt.gca(),label='Work in Progress',data=False,lumi=None,loc=0)
+plt.text(80,1.07, r"MC21, $\sqrt{s}=14\,$TeV $<\mu >=200$")
+plt.text(80,1.05, r"Dijet JZ1-4")
+plt.savefig(save_folder+'truth_jet_response_simple.png')
 
-
-
+plt.figure()
+# plt.errorbar(bin_centers, std_response, xerr=bin_width/2, fmt='o', capsize=5, color='blue',label='Simple np.std')
+plt.errorbar(bin_centers, fitted_sigma, xerr=bin_width/2, yerr=fitted_sigma_unc, fmt='o', capsize=5, color='red',label='CNN jets')
+# plt.errorbar(bin_centers, abs(np.array(fitted_sigma)), xerr=bin_width/2, yerr=fitted_sigma_unc,alpha=0.5, capsize=5, color='pink')
+plt.axhline(y=0, color='red', linestyle='--', linewidth=2)
+plt.xlabel(r'Truth Jet $p_T$')
+plt.ylabel('Jet Energy Resolution')
+plt.legend()
+hep.atlas.label(ax=plt.gca(),label='Work in Progress',data=False,lumi=None,loc=0)
+plt.text(80,0.32, r"MC21, $\sqrt{s}=14\,$TeV $<\mu >=200$")
+plt.text(80,0.30, r"Dijet JZ1-4")
+plt.savefig(save_folder+'truth_jet_resolution_simple.png')
 
 
 
@@ -171,10 +271,10 @@ fitted_mu, fitted_mu_unc = list(), list()
 fitted_sigma, fitted_sigma_unc = list(), list()
 
 for bin_idx in range(len(eta_bins)-1):
-    bin_mask = (eta_bins[bin_idx]<total_matched_tru_eta) & (total_matched_tru_eta<eta_bins[bin_idx+1])
+    bin_mask = (eta_bins[bin_idx]<total_dRmatched_tar_eta) & (total_dRmatched_tar_eta<eta_bins[bin_idx+1])
 
-    target_jet_pt_in_this_bin = total_matched_tru_pt[bin_mask]
-    pred_jet_pt_in_this_bin = total_matched_pred_pt[bin_mask]
+    target_jet_pt_in_this_bin = total_dRmatched_tar_pt[bin_mask]
+    pred_jet_pt_in_this_bin = total_dRmatched_pred_pt[bin_mask]
     jet_pt_response_bin_i = pred_jet_pt_in_this_bin / target_jet_pt_in_this_bin
     print(f"Number of jets in bin {bin_idx}: {len(jet_pt_response_bin_i)}")
     print(f"eta in [{eta_bins[bin_idx],eta_bins[bin_idx+1]}], np.mean {np.mean(jet_pt_response_bin_i):.4f}")

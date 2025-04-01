@@ -20,8 +20,8 @@ def load_object(fname):
  
  
 model_name = "jetSSD_custom_convnext_central_32e"
-proc = "ttbar_test"
-date = "20250306-16"
+proc = "JZcomb0_test"
+date = "20250313-06"
 
 metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics"
 save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/box_stat/"
@@ -38,20 +38,25 @@ print("=========================================================================
 
 
 # Event-level vars
+n_targets = load_object(metrics_folder+"/n_targets.pkl")    
 n_truth = load_object(metrics_folder+"/n_truth.pkl")    
 n_preds = load_object(metrics_folder+"/n_preds.pkl")    
 delta_n = load_object(metrics_folder+"/delta_n.pkl")    
 
-n_matched_truth   = load_object(metrics_folder+"/n_matched_truth.pkl")    
-n_unmatched_truth = load_object(metrics_folder+"/n_unmatched_truth.pkl")    
+n_matched_targets   = load_object(metrics_folder+"/n_matched_targets.pkl")    
+n_unmatched_targets = load_object(metrics_folder+"/n_unmatched_targets.pkl")    
 n_matched_preds   = load_object(metrics_folder+"/n_matched_preds.pkl")    
 n_unmatched_preds = load_object(metrics_folder+"/n_unmatched_preds.pkl")    
 
-n_dRmatched_truth   = load_object(metrics_folder+"/n_dRmatched_truth.pkl")    
-n_dRunmatched_truth = load_object(metrics_folder+"/n_dRunmatched_truth.pkl")    
+n_dRmatched_targets   = load_object(metrics_folder+"/n_dRmatched_targets.pkl")    
+n_dRunmatched_targets = load_object(metrics_folder+"/n_dRunmatched_targets.pkl")    
 n_dRmatched_preds   = load_object(metrics_folder+"/n_dRmatched_preds.pkl")    
 n_dRunmatched_preds = load_object(metrics_folder+"/n_dRunmatched_preds.pkl")    
- 
+
+n_dRtruthmatched_truths   = load_object(metrics_folder+"/n_dRtruthmatched_truths.pkl")    
+n_dRtruthunmatched_truths = load_object(metrics_folder+"/n_dRtruthunmatched_truths.pkl")    
+n_dRtruthmatched_preds   = load_object(metrics_folder+"/n_dRtruthmatched_preds.pkl")    
+n_dRtruthunmatched_preds = load_object(metrics_folder+"/n_dRtruthunmatched_preds.pkl")    
  
 # total_t_pt      = load_object(metrics_folder+"/tboxes_pt.pkl") #num_truth = [len(x) for x in total_t_pt]
 # total_p_pt      = load_object(metrics_folder+"/pboxes_pt.pkl")
@@ -78,10 +83,11 @@ print("=========================================================================
 
 
 
-print(f"Plotting total number of jets per event: avg {np.mean(n_preds):.3f} predictions, avg {np.mean(n_truth):.3f} targets")
+print(f"Plotting total number of jets per event: avg {np.mean(n_preds):.3f} predictions, avg {np.mean(n_targets):.3f} targets, avg {np.mean(n_truth):.3f} truth")
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(n_preds,bins=max(n_preds),histtype='step',color='red',lw=1.5,label='Predicted Jets')
-freq_tru, bins, _    = ax0.hist(n_truth,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+freq_tar, bins, _    = ax0.hist(n_targets,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+freq_tru, bins, _    = ax0.hist(n_truth,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
 # ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.6, 0.75),fontsize="small")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
@@ -89,10 +95,10 @@ ax0.set(yscale='log',xlabel='Jet multiplicity per event')
 f.savefig(save_folder + f'/n_jets.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
 plt.close()
 
-print(f"Plotting number of matched jets per event: avg {np.mean(n_matched_preds):.3f} predictions, avg {np.mean(n_matched_truth):.3f} targets")
+print(f"Plotting number of matched jets per event: avg {np.mean(n_matched_preds):.3f} predictions, avg {np.mean(n_matched_targets):.3f} targets")
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(n_matched_preds,bins=max(n_matched_preds),histtype='step',color='red',lw=1.5,ls='--',zorder=10,label='Predicted Jets')
-freq_tru, bins, _    = ax0.hist(n_matched_truth,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+freq_tar, bins, _    = ax0.hist(n_matched_targets,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
 # ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.6, 0.75),fontsize="small")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
@@ -100,10 +106,10 @@ ax0.set(yscale='log',xlabel='Matched jets per event')
 f.savefig(save_folder + f'/n_match_jets.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
 plt.close()
 
-print(f"Plotting number of unmatched jets per event: avg {np.mean(n_unmatched_preds):.3f} predictions, avg {np.mean(n_unmatched_truth):.3f} targets")
+print(f"Plotting number of unmatched jets per event: avg {np.mean(n_unmatched_preds):.3f} predictions, avg {np.mean(n_unmatched_targets):.3f} targets")
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(n_unmatched_preds,bins=max(n_unmatched_preds),histtype='step',color='red',lw=1.5,label='Predicted Jets')
-freq_tru, bins, _    = ax0.hist(n_unmatched_truth,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+freq_tar, bins, _    = ax0.hist(n_unmatched_targets,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
 # ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.6, 0.75),fontsize="small")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
@@ -111,10 +117,12 @@ ax0.set(yscale='log',xlabel='Unmatched jets per event')
 f.savefig(save_folder + f'/n_unmatch_jets.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
 plt.close()
 
-print(f"Plotting number of dR matched jets per event: avg {np.mean(n_dRmatched_preds):.3f} predictions, avg {np.mean(n_dRmatched_truth):.3f} targets")
+print(f"Plotting number of dR matched jets per event: avg {np.mean(n_dRmatched_preds):.3f} predictions, avg {np.mean(n_dRmatched_targets):.3f} targets, avg {np.mean(n_dRtruthmatched_truths):.3f} truth ({np.mean(n_dRtruthmatched_preds):.3f})")
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(n_dRmatched_preds,bins=max(n_dRmatched_preds),histtype='step',color='red',ls='--',zorder=10,lw=1.5,label='Predicted Jets')
-freq_tru, bins, _    = ax0.hist(n_dRmatched_truth,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+freq_tar, bins, _    = ax0.hist(n_dRmatched_targets,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+freq_pred, bins, _   = ax0.hist(n_dRtruthmatched_preds,bins=bins,histtype='step',color='firebrick',ls='--',zorder=10,lw=1.5,label='Predicted Jets (Truth matched)')
+freq_tru, bins, _    = ax0.hist(n_dRtruthmatched_truths,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
 # ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.6, 0.75),fontsize="small")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
@@ -122,10 +130,12 @@ ax0.set(yscale='log',xlabel='dR Matched jets per event')
 f.savefig(save_folder + f'/n_dRmatch_jets.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
 plt.close()
 
-print(f"Plotting number of dR unmatched jets per event: avg {np.mean(n_dRunmatched_preds):.3f} predictions, avg {np.mean(n_dRunmatched_truth):.3f} targets")
+print(f"Plotting number of dR unmatched jets per event: avg {np.mean(n_dRunmatched_preds):.3f} predictions, avg {np.mean(n_dRunmatched_targets):.3f} targets, avg {np.mean(n_dRtruthunmatched_preds):.3f} preds to truth, avg {np.mean(n_dRtruthunmatched_truths):.3f} truth")
 f,ax0 = plt.subplots(1,1,figsize=(9, 6))
 freq_pred, bins, _   = ax0.hist(n_dRunmatched_preds,bins=max(n_dRunmatched_preds),histtype='step',color='red',lw=1.5,label='Predicted Jets')
-freq_tru, bins, _    = ax0.hist(n_dRunmatched_truth,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+freq_tar, bins, _    = ax0.hist(n_dRunmatched_targets,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+freq_pred, bins, _   = ax0.hist(n_dRtruthunmatched_preds,bins=bins,histtype='step',color='firebrick',lw=1.5,label='Predicted Jets (Truth unmatched)')
+freq_tru, bins, _    = ax0.hist(n_dRtruthunmatched_truths,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
 # ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.82),fontsize="medium")
 ax0.legend(loc='lower left',bbox_to_anchor=(0.6, 0.75),fontsize="small")
 hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
