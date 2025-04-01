@@ -66,45 +66,84 @@ def get_jet_bounding_boxes(jet_data,event_no,extent,min_max_tuple):
     MAX_PHI_VALUE = min_max_tuple[1]
 
     jets = jet_data[event_no]
-    real_jets = remove_nan(jets)
+
+    # filter jet pt and eta
+    filtered_pt_jets = jets[jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_pt'] > 20_000] # Select the pt threshold (in MeV)
+    filtered_jets = filtered_pt_jets[abs(filtered_pt_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta']) < 2.1] # Select the eta threshold
     #loop over all jets in this event 
-    if len(real_jets) > 0:
-        filtered_pt_jets = real_jets[real_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_pt'] > 20_000] # Select the pt threshold (in MeV)
-        filtered_jets = filtered_pt_jets[abs(filtered_pt_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta']) < 2.1] # Select the eta threshold
-        
-        if len(filtered_jets)>0:
-            box_list = []
-            pt_list  = []
-            for jet_no in range(len(filtered_jets)):
-                jet_eta = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta'][jet_no]
-                jet_phi = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_phi'][jet_no]
-                jet_pt  = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_pt'][jet_no] / 1000 
-                xmin = jet_eta - R
-                ymin = jet_phi - R
+    if len(filtered_jets)>0:
+        box_list = []
+        pt_list  = []
+        for jet_no in range(len(filtered_jets)):
+            jet_eta = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_eta'][jet_no]
+            jet_phi = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_phi'][jet_no]
+            jet_pt  = filtered_jets['AntiKt4EMTopoJets_JetConstitScaleMomentum_pt'][jet_no] / 1000 
+            xmin = jet_eta - R
+            ymin = jet_phi - R
 
-                # jet boxes that cross the discontinuity/wrap around
-                if (jet_phi+R > MAX_PHI_VALUE - (extent[3]-MAX_PHI_VALUE)) or (jet_phi-R < MIN_PHI_VALUE - (extent[2]-MIN_PHI_VALUE)):
-                    wrapped_jet_phi = jet_phi - np.sign(jet_phi)*2*np.pi
-                    box_list.append([xmin,wrapped_jet_phi-R,WIDTH,HEIGHT])
-                    box_list.append([xmin,ymin,WIDTH,HEIGHT])
-                    pt_list.append(jet_pt)
-                    pt_list.append(jet_pt)
+            # jet boxes that cross the discontinuity/wrap around
+            if (jet_phi+R > MAX_PHI_VALUE - (extent[3]-MAX_PHI_VALUE)) or (jet_phi-R < MIN_PHI_VALUE - (extent[2]-MIN_PHI_VALUE)):
+                wrapped_jet_phi = jet_phi - np.sign(jet_phi)*2*np.pi
+                box_list.append([xmin,wrapped_jet_phi-R,WIDTH,HEIGHT])
+                box_list.append([xmin,ymin,WIDTH,HEIGHT])
+                pt_list.append(jet_pt)
+                pt_list.append(jet_pt)
 
-                else:
-                    box_list.append([xmin,ymin,WIDTH,HEIGHT])
-                    pt_list.append(jet_pt)
+            else:
+                box_list.append([xmin,ymin,WIDTH,HEIGHT])
+                pt_list.append(jet_pt)
 
-            tensor_of_boxes = torch.tensor(box_list)
-            tensor_of_pts = torch.tensor(pt_list)
-            clipped_boxes = clip_boxes_to_image(tensor_of_boxes,extent) # Custom from detectron + xywh->xyxy->xywh
-        
-        else:
-            print('NO CENTRAL JETS IN THIS EVENT, will not be saved in JSON file',len(real_jets))
-            clipped_boxes = torch.tensor([[-0.4,-0.4,0.4,0.4]]) #placeholder value
-            tensor_of_pts = torch.tensor([0.99]) 
-
+        tensor_of_boxes = torch.tensor(box_list)
+        tensor_of_pts = torch.tensor(pt_list)
+        clipped_boxes = clip_boxes_to_image(tensor_of_boxes,extent) # Custom from detectron + xywh->xyxy->xywh
+    
     else:
-        print('NO CENTRAL JETS IN THIS EVENT, will not be saved in JSON file',len(real_jets))
+        print('NO CENTRAL AKT4  JETS IN THIS EVENT, placeholder values',len(filtered_jets))
+        clipped_boxes = torch.tensor([[-0.4,-0.4,0.4,0.4]]) #placeholder value
+        tensor_of_pts = torch.tensor([0.99]) 
+    return clipped_boxes, tensor_of_pts
+
+
+def get_truth_jets(jet_data,event_no,extent,min_max_tuple):
+    R = 0.4 # anti-kt 
+    WIDTH,HEIGHT = 2*R, 2*R 
+    MIN_PHI_VALUE = min_max_tuple[0]
+    MAX_PHI_VALUE = min_max_tuple[1]
+
+    jets = jet_data[event_no]
+
+    # filter jet pt and eta
+    filtered_pt_jets = jets[jets['AntiKt4TruthJets_pt'] > 15_000] # Select the pt threshold (in MeV)
+    filtered_jets = filtered_pt_jets[abs(filtered_pt_jets['AntiKt4TruthJets_eta']) < 2.1] # Select the eta threshold
+    #loop over all jets in this event 
+    if len(filtered_jets)>0:
+        box_list = []
+        pt_list  = []
+        for jet_no in range(len(filtered_jets)):
+            jet_eta = filtered_jets['AntiKt4TruthJets_eta'][jet_no]
+            jet_phi = filtered_jets['AntiKt4TruthJets_phi'][jet_no]
+            jet_pt  = filtered_jets['AntiKt4TruthJets_pt'][jet_no] / 1000 
+            xmin = jet_eta - R
+            ymin = jet_phi - R
+
+            # jet boxes that cross the discontinuity/wrap around
+            if (jet_phi+R > MAX_PHI_VALUE - (extent[3]-MAX_PHI_VALUE)) or (jet_phi-R < MIN_PHI_VALUE - (extent[2]-MIN_PHI_VALUE)):
+                wrapped_jet_phi = jet_phi - np.sign(jet_phi)*2*np.pi
+                box_list.append([xmin,wrapped_jet_phi-R,WIDTH,HEIGHT])
+                box_list.append([xmin,ymin,WIDTH,HEIGHT])
+                pt_list.append(jet_pt)
+                pt_list.append(jet_pt)
+
+            else:
+                box_list.append([xmin,ymin,WIDTH,HEIGHT])
+                pt_list.append(jet_pt)
+
+        tensor_of_boxes = torch.tensor(box_list)
+        tensor_of_pts = torch.tensor(pt_list)
+        clipped_boxes = clip_boxes_to_image(tensor_of_boxes,extent) # Custom from detectron + xywh->xyxy->xywh
+    
+    else:
+        print('NO CENTRAL TRUTH JETS IN THIS EVENT, placeholder values',len(filtered_jets))
         clipped_boxes = torch.tensor([[-0.4,-0.4,0.4,0.4]]) #placeholder value
         tensor_of_pts = torch.tensor([0.99]) 
 
@@ -136,7 +175,6 @@ def examine_one_image(boxes_array,extent):
 
 
 
-
 if __name__=="__main__":
 
     annotation_dict = {}
@@ -144,21 +182,20 @@ if __name__=="__main__":
     global_counter = 0
 
     JZ_file_dict = {
-        # training files
+        # # training files
         # "JZ2" : ["000001","000002","000003","000004","000005","000006","000007","000008","000009","000010","000011","000012","000013","000014","000015","000016","000017","000018","000019","000020","000021","000022","000023","000024","000025","000026",],
         # "JZ3" : ["000011","000012","000015","000016","000017","000018","000019","000021","000022","000023","000025","000026","000027","000028","000029","000030","000031","000032","000033","000034","000035","000036","000037","000038","000039","000040"],
-        # "JZ4" : ["000013","000015","000016","000019","000022","000023","000024","000025","000026","000027","000028","000029","000030","000031","000032","000033","000034","000035","000036","000037","000038","000039","000040","000041","000042","000043","000044","000045","000046","000047","000048","000049","000050","000051","000052","000053","000054","000055","000056","000057","000058","000059","000060","000061","000062"],
-        # test files
+        # "JZ4"   : ["000014","000015","000016","000017","000018","000019","000020","000021","000022","000023","000049","000050","000051","000052","000053","000054","000055","000056","000057","000058","000059","000060","000061","000062","000063","000064","000065","000066","000067","000068","000069","000070","000071","000072","000073","000074","000075","000076","000077","000078","000079","000080","000081","000083","000084"]
+        # # test files
         "JZ2" : ["000027","000028","000029","000030","000041","000042","000043","000044","000045","000046","000047","000048","000049","000050"],
         "JZ3" : ["000041","000042","000043","000044","000045","000046","000047","000048","000049","000050","000051","000052","000053"],
-        "JZ4" : ["000063","000064","000065","000066","000067","000068","000069","000070","000071","000072","000073","000074","000075","000076","000077","000078","000079","000080","000081","000082","000083","000084","000085",],
+        "JZ4" : ["000085","000086","000087","000090","000092","000093","000095","000097","000101","000103","000104","000105","000107","000108","000109","000110","000111","000112","000113","000114","000115","000116","000117"],
     }
 
-    
     JZ_grid_dict = {
         "JZ2" : "43186502",
         "JZ3" : "43186499",
-        "JZ4" : "42998779",
+        "JZ4" : "43589851",
     }
 
 
@@ -222,6 +259,7 @@ if __name__=="__main__":
                     unique_file_chunk_event_no = "0"+str(file_no)+"-"+str(chunk_counter)+"-"+str(event_no)
 
                     GT_jet_boxes, GT_jet_pts = get_jet_bounding_boxes(jet_data, event_no, extent, (min(cell_phis),max(cell_phis)))
+                    truth_jet_boxes, truth_jet_pts = get_truth_jets(jet_data, event_no, extent, (min(cell_phis),max(cell_phis)))
                     # if torch.equal(GT_jet_pts,torch.tensor([0.0])): continue
                         
                     print('\tProcessing image {}, id: {}, adding to dictionary...'.format(global_counter,unique_file_chunk_event_no))
@@ -230,6 +268,11 @@ if __name__=="__main__":
                     GT_jet_boxes[:,1] = (H_tot.shape[0]) * (GT_jet_boxes[:,1]-extent[2])/(extent[3] - extent[2])
                     GT_jet_boxes[:,2] = (H_tot.shape[1]) * GT_jet_boxes[:,2]/(extent[1] - extent[0])
                     GT_jet_boxes[:,3] = (H_tot.shape[0]) * GT_jet_boxes[:,3]/(extent[3] - extent[2])
+        
+                    truth_jet_boxes[:,0] = (H_tot.shape[1]) * (truth_jet_boxes[:,0]-extent[0])/(extent[1] - extent[0])
+                    truth_jet_boxes[:,1] = (H_tot.shape[0]) * (truth_jet_boxes[:,1]-extent[2])/(extent[3] - extent[2])
+                    truth_jet_boxes[:,2] = (H_tot.shape[1]) * truth_jet_boxes[:,2]/(extent[1] - extent[0])
+                    truth_jet_boxes[:,3] = (H_tot.shape[0]) * truth_jet_boxes[:,3]/(extent[3] - extent[2])
 
                     # examine_one_image(GT_jet_boxes,extent)
 
@@ -252,6 +295,8 @@ if __name__=="__main__":
                             "n_jets": len(GT_jet_boxes),
                             "bboxes": GT_jet_boxes.tolist(),
                             "jet_pt": GT_jet_pts.tolist(),
+                            "truth_jet_boxes": truth_jet_boxes.tolist(),
+                            "truth_jet_pt": truth_jet_pts.tolist(),
                             "extent": (float(xedges[0]),float(xedges[-1]),float(yedges[0])-(repeat_rows*one_box_height),float(yedges[-1])+(repeat_rows*one_box_height))
                         }
                     }
@@ -261,7 +306,7 @@ if __name__=="__main__":
 
     print('Saving jet json annotations json file...')
 
-    with open(args.output_json+"anns_central_jets_JZcomb0_test.json",'w') as json_file:
+    with open(args.output_json+"anns_central_jets_truth_JZcomb0_test.json",'w') as json_file:
         json.dump(annotation_dict_jet,json_file)
 
 
