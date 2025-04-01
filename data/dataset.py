@@ -64,13 +64,12 @@ class CustomDataset(torch.utils.data.Dataset):
         h5file     = anns_i["image"]["file"]
         h5event    = anns_i["image"]["event"]
         pT         = anns_i["anns"]["jet_pt"]
-        # mc_event_w = anns_i["anns"]["mc_event_weight"]
+        mc_event_w = anns_i["anns"]["mc_event_weight"]
         extent     = anns_i["anns"]["extent"]
         extent_tensor = torch.tensor(extent).float()
 
         if not self.truth_info:
-            return img, {'boxes': bboxes, 'labels': labels, 'jet_pt': pT, 'extent': extent_tensor, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
-            # return img, {'boxes': bboxes, 'labels': labels, 'jet_pt': pT, 'extent': extent_tensor, 'event_weight': mc_event_w, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
+            return img, {'boxes': bboxes, 'labels': labels, 'jet_pt': pT, 'extent': extent_tensor, 'event_weight': mc_event_w, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
         else:
             # Same checks for truth jets
             truth_bboxes = torch.tensor(anns_i["anns"]["truth_jet_boxes"], dtype=torch.float32)
