@@ -4,6 +4,7 @@ import scipy
 import matplotlib
 import matplotlib.pyplot as plt
 
+import os
 
 import h5py
 import argparse
@@ -56,12 +57,29 @@ if __name__=="__main__":
         file_nos = [13,15,16,19,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42]
         # file_nos = [13,15,16,19,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85]
         tag = args.proc + ".r14365"
+    elif args.proc == "mu0":
+        file_nos = [1,2,3,4,5,6,7,8,9]
+        tag = "mc16_JZW4.r14423"
+    elif args.proc == "mu32":
+        file_nos = [10,11,12,13,14,15,16,17,18,19,20]
+        tag = "MC16JZW4"
+    elif args.proc == "mu60":
+        file_nos = [0]
+        tag = "tag"
+        
 
+    if not os.path.exists(args.output_dir): os.makedirs(args.output_dir)
     print(len(file_nos), " files")
     for file_no in file_nos:
         print('Loading file {}/{}'.format(file_no,len(file_nos)))     
         if args.proc in ["JZ1", "JZ2", "JZ3", "JZ4", "JZ5", "ttbar"]:
             cells_file = args.path + "user.lbozianu.{}._0000{}.calocellD3PD_mc21_14TeV_{}.h5".format(args.job_id, file_no, tag) 
+        elif args.proc=="mu0":
+            cells_file = args.path + "user.cantel.33075755._00000{}.calocellD3PD_{}.h5".format(file_no, tag)
+        elif args.proc=="mu32":
+            cells_file = args.path + "user.cantel.31789573._0000{}.calocellD3PD_{}.h5".format(file_no, tag)
+        elif args.proc=="mu60":
+            cells_file = args.path + "calocellD3PD_mc23_13p6TeV.h5"
         else:
             print(args.proc," not recognised process, check spelling..")
 
