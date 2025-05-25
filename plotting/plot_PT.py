@@ -18,22 +18,18 @@ def load_object(fname):
         return pickle.load(file)
 
 
-
 model_name = "jetSSD_custom_convnext_central_32e"
 proc = "JZcomb0_test"
 date = "20250313-06"
+# date = "20250406-23"
 # proc = "ttbar_test"
-# date = "20250306-16"
+# date = "20250407-14"
 
-metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics"
+metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics/"
 save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/jet_kin/"
-# metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/ttbar/20250124-12/box_metrics"
-# save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/ttbar/20250124-12/"
-if not os.path.exists(save_folder):
-    os.makedirs(save_folder)
-
-square_comp = False
+if not os.path.exists(save_folder): os.makedirs(save_folder)
 image_format = "png"
+
 
 print("=======================================================================================================")
 print(f"Loading all jets from\n{metrics_folder}")
@@ -42,6 +38,22 @@ print("=========================================================================
 event_tar_pt      = load_object(metrics_folder+"/tarboxes_pt.pkl")
 event_tru_pt      = load_object(metrics_folder+"/truboxes_pt.pkl")
 event_p_pt        = load_object(metrics_folder+"/pboxes_pt.pkl")
+total_jet_weight  = np.concatenate(load_object(metrics_folder+"/jet_evt_weight.pkl"))
+total_tar_jet_weight = total_jet_weight 
+total_evt_weight  = load_object(metrics_folder+"/evt_weight.pkl")
+
+total_tru_jet_weight = list()
+for i in range(len(total_evt_weight)):
+    total_tru_jet_weight.append([total_evt_weight[i] for j in range(len(event_tru_pt[i]))])
+total_tru_jet_weight = np.concatenate(total_tru_jet_weight)
+
+total_p_weight = list()
+for i in range(len(total_evt_weight)):
+    total_p_weight.append([total_evt_weight[i] for j in range(len(event_p_pt[i]))])
+total_p_weight = np.concatenate(total_p_weight)
+print(total_tar_jet_weight.shape, len(total_evt_weight), total_tru_jet_weight.shape, total_p_weight.shape)
+print(len(event_tar_pt),len(event_tru_pt),len(event_p_pt))
+print(len(np.concatenate(event_tar_pt)),len(np.concatenate(event_tru_pt)),len(np.concatenate(event_p_pt)))
 
 total_tar_pt      = np.concatenate(event_tar_pt)
 total_tru_pt      = np.concatenate(event_tru_pt)
@@ -85,6 +97,7 @@ print(f"Number dR (truth) unmatched truth: {len(dRtruthunmatch_tru_pt)}\nNumber 
 scr_threshold = 0.5
 total_scr_mask = total_p_scr > scr_threshold
 total_p_pt = total_p_pt[total_scr_mask]
+total_p_weight = total_p_weight[total_scr_mask]
 
 match_scr_mask = match_p_scr > scr_threshold
 match_tar_pt = match_tar_pt[match_scr_mask]
@@ -119,108 +132,136 @@ print(f"Number dR (truth) matched truth: {len(dRtruthmatch_tru_pt)}\nNumber dR (
 print(f"Number dR (truth) unmatched truth: {len(dRtruthunmatch_tru_pt)}\nNumber dR (truth) unmatched preds: {len(dRtruthunmatch_p_pt)}")
 
 
+
+nominal = False
+square_comp = False
+total_unc = False
+jet_lead_pt = False
+jet_sublead_pt = False
+jet_asymmetry = True
+
+
 ################################################################
 print("=======================================================================================================")
 print(f"Plotting jet pT, saving to {save_folder}")
 print("=======================================================================================================\n")
 
+if nominal:
+    print(f"Plotting total jet pT: {len(total_p_pt)} predictions, {len(total_tar_pt)} targets")
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(total_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(total_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+    freq_tru, bins, _    = ax0.hist(total_tru_pt,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    # hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_total.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
 
-print(f"Plotting total jet pT: {len(total_p_pt)} predictions, {len(total_tar_pt)} targets")
-f,ax0 = plt.subplots(1,1,figsize=(9, 6))
-freq_pred, bins, _   = ax0.hist(total_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
-freq_tar, bins, _    = ax0.hist(total_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-freq_tru, bins, _    = ax0.hist(total_tru_pt,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
-ax0.set_title('Transverse Momentum', fontsize=16, fontfamily="TeX Gyre Heros")
-ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
-hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
-ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
-f.savefig(save_folder + f'/jet_pt_total.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
-plt.close()
-
-
-print(f"Plotting IOU matched jet pT: {len(match_p_pt)} predictions, {len(match_tar_pt)} targets")
-f,ax0 = plt.subplots(1,1,figsize=(9, 6))
-freq_pred, bins, _   = ax0.hist(match_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
-freq_tar, bins, _    = ax0.hist(match_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-ax0.set_title('Transverse Momentum IoU Matched', fontsize=16, fontfamily="TeX Gyre Heros")
-ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
-hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
-ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
-f.savefig(save_folder + f'/jet_pt_match.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
-plt.close()
-
-print(f"Plotting dR matched jet pT: {len(dRmatch_p_pt)} predictions, {len(dRmatch_tar_pt)} targets")
-f,ax0 = plt.subplots(1,1,figsize=(9, 6))
-freq_pred, bins, _   = ax0.hist(dRmatch_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
-freq_tar, bins, _    = ax0.hist(dRmatch_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-freq_tru, bins, _    = ax0.hist(dRtruthmatch_tru_pt,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
-ax0.set_title('Transverse Momentum deltaR Matched', fontsize=16, fontfamily="TeX Gyre Heros")
-ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
-hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
-ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
-f.savefig(save_folder + f'/jet_pt_dRmatch.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
-plt.close()
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(total_p_pt,bins=100,weights=total_p_weight,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(total_tar_pt,bins=bins,weights=total_jet_weight,histtype='step',color='green',lw=1.5,label='Target Jets')
+    # freq_tru, bins, _    = ax0.hist(total_tru_pt,bins=bins,weights=total_tru_jet_weight,histtype='step',color='gold',lw=1.5,label='Truth Jets')
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    # hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_total2.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
 
 
-print(f"Plotting IOU unmatched jet pT: {len(unmatch_p_pt)} predictions, {len(unmatch_tar_pt)} targets")
-f,ax0 = plt.subplots(1,1,figsize=(9, 6))
-freq_pred, bins, _   = ax0.hist(unmatch_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
-freq_tar, bins, _    = ax0.hist(unmatch_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-ax0.set_title('Transverse Momentum IoU Unmatched', fontsize=16, fontfamily="TeX Gyre Heros")
-ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
-hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
-ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
-f.savefig(save_folder + f'/jet_pt_unmatch.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
-plt.close()
+    print(f"Plotting IOU matched jet pT: {len(match_p_pt)} predictions, {len(match_tar_pt)} targets")
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(match_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(match_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+    ax0.set_title('Transverse Momentum IoU Matched', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_match.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+    print(f"Plotting dR matched jet pT: {len(dRmatch_p_pt)} predictions, {len(dRmatch_tar_pt)} targets")
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(dRmatch_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(dRmatch_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+    freq_tru, bins, _    = ax0.hist(dRtruthmatch_tru_pt,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
+    ax0.set_title('Transverse Momentum deltaR Matched', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_dRmatch.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
 
 
-print(f"Plotting dR unmatched jet pT: {len(dRunmatch_p_pt)} predictions, {len(dRunmatch_tar_pt)} targets")
-f,ax0 = plt.subplots(1,1,figsize=(9, 6))
-freq_pred, bins, _   = ax0.hist(dRunmatch_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
-freq_tar, bins, _    = ax0.hist(dRunmatch_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-freq_tru, bins, _    = ax0.hist(dRtruthunmatch_tru_pt,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
-ax0.set_title('Transverse Momentum deltaR Unmatched', fontsize=16, fontfamily="TeX Gyre Heros")
-ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
-hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
-ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
-f.savefig(save_folder + f'/jet_pt_dRunmatch.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
-plt.close()
+    print(f"Plotting IOU unmatched jet pT: {len(unmatch_p_pt)} predictions, {len(unmatch_tar_pt)} targets")
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(unmatch_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(unmatch_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+    ax0.set_title('Transverse Momentum IoU Unmatched', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_unmatch.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+    print(f"Plotting dR unmatched jet pT: {len(dRunmatch_p_pt)} predictions, {len(dRunmatch_tar_pt)} targets")
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(dRunmatch_p_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(dRunmatch_tar_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+    freq_tru, bins, _    = ax0.hist(dRtruthunmatch_tru_pt,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
+    ax0.set_title('Transverse Momentum deltaR Unmatched', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_dRunmatch.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
 
 
 
 
-print(f"Plotting total jet pT in match fraction bins!: {len(total_p_pt)} predictions, {len(total_tar_pt)} targets")
-bin_edges = [20, 40, 60, 80, 100, 120, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 850]
-bin_centers = bin_edges[:-1] + 0.5 * np.diff(bin_edges)
-bin_width = np.diff(bin_edges)
+    print(f"Plotting total jet pT in match fraction bins!: {len(total_p_pt)} predictions, {len(total_tar_pt)} targets")
+    bin_edges = [20, 40, 60, 80, 100, 120, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 850]
+    bin_centers = bin_edges[:-1] + 0.5 * np.diff(bin_edges)
+    bin_width = np.diff(bin_edges)
 
-f,ax0 = plt.subplots(1,1,figsize=(9, 6))
-freq_pred, bins, _   = ax0.hist(total_p_pt,bins=bin_edges,histtype='step',color='red',alpha=0.6,lw=1.5,label='Predicted Jets')
-freq_tar, bins, _    = ax0.hist(total_tar_pt,bins=bin_edges,histtype='step',color='green',alpha=0.6,lw=1.5,label='Target Jets')
-freq_tru, bins, _    = ax0.hist(total_tru_pt,bins=bin_edges,histtype='step',color='gold',alpha=0.6,lw=1.5,label='Truth Jets')
-ax0.set_title('Transverse Momentum', fontsize=16, fontfamily="TeX Gyre Heros")
-ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
-hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
-ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
-f.savefig(save_folder + f'/jet_pt_total_binning.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
-plt.close()
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(total_p_pt,bins=bin_edges,histtype='step',color='red',alpha=0.6,lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(total_tar_pt,bins=bin_edges,histtype='step',color='green',alpha=0.6,lw=1.5,label='Target Jets')
+    freq_tru, bins, _    = ax0.hist(total_tru_pt,bins=bin_edges,histtype='step',color='gold',alpha=0.6,lw=1.5,label='Truth Jets')
+    ax0.set_title('Transverse Momentum', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_total_binning.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
 
 
-print(f"Plotting leading jet pT in each event: {len(event_tar_pt)} events, {len(event_p_pt)} events, {len(event_tru_pt)} events")
-tar_lead_pt = np.array([max(x) for x in event_tar_pt])
-tru_lead_pt = np.array([max(x) for x in event_tru_pt])
-p_lead_pt = np.array([max(x) for x in event_p_pt])
+    print(f"Plotting leading jet pT in each event: {len(event_tar_pt)} events, {len(event_p_pt)} events, {len(event_tru_pt)} events")
+    tar_lead_pt = np.array([max(x) for x in event_tar_pt])
+    tru_lead_pt = np.array([max(x) for x in event_tru_pt])
+    p_lead_pt = np.array([max(x) for x in event_p_pt])
 
-f,ax0 = plt.subplots(1,1,figsize=(9, 6))
-freq_pred, bins, _   = ax0.hist(p_lead_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
-freq_tar, bins, _    = ax0.hist(tar_lead_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
-freq_tru, bins, _    = ax0.hist(tru_lead_pt,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
-ax0.set_title('Transverse Momentum', fontsize=16, fontfamily="TeX Gyre Heros")
-ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
-hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
-ax0.set(yscale='log',xlabel='Leading Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
-f.savefig(save_folder + f'/jet_pt_lead.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
-plt.close()
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(p_lead_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(tar_lead_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+    freq_tru, bins, _    = ax0.hist(tru_lead_pt,bins=bins,histtype='step',color='gold',lw=1.5,label='Truth Jets')
+    ax0.set_title('Transverse Momentum', fontsize=16, fontfamily="TeX Gyre Heros")
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Leading Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_lead.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(p_lead_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(tar_lead_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Leading Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_leadb.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
 
 
 
@@ -331,6 +372,671 @@ if square_comp:
     plt.close()
 
 
- 
+
+
+
+
+
+if total_unc:
+    # pt w/ errors
+    print("Plotting pT with stat. unc and ratio ")
+    unc_save_folder = save_folder + "/unc/"
+    if not os.path.exists(unc_save_folder): os.makedirs(unc_save_folder)
+
+    bin_start = min(min(total_p_pt),min(total_tar_pt),min(total_tru_pt))
+    bin_stop = max(max(total_p_pt),max(total_tar_pt),max(total_tru_pt))
+    print(bin_start, bin_stop)
+    bin_start = (np.floor(bin_start / 10) * 10) - 1
+    # bin_start = -21
+    bin_stop = np.ceil(bin_stop / 10) * 10
+    bin_width = 20
+    n_bins = int(np.ceil((bin_stop - bin_start) / bin_width))
+    bins = np.linspace(bin_start, bin_stop, n_bins)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    # plot 1
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(total_tru_pt,bins=bins,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(total_tar_pt,bins=bins,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(total_p_pt,bins=bins,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+
+    ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=20, xmax=bin_centers[-2], color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    # ratio_errors1 = ratio_pred_tru * np.sqrt((pred_errors / freq_pred) ** 2 + (tru_errors / freq_tru) ** 2)
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    # ax[1].fill_between(bin_centers, ratio_pred_tru - ratio_pred_erro, ratio_pred_tru + ratio_pred_erro, alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of jets',ylim=(1,5e5))
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Jet $p_T$ [GeV]')
+    ax[1].set(ylim=(0.0,2.5))
+    ax[1].set(xlim=(-50.0,bin_stop+10))
+    ax[1].set_yticks(np.arange(0.0, 3.0, 1.0))
+    new_yticklabels = [f'{int(tick)}' for tick in np.arange(0.0, 3.0, 1.0)]  
+    ax[1].set_yticklabels(new_yticklabels)
+    tick_labels = ax[1].get_xticklabels()
+    tick_positions = ax[1].get_xticks()
+    for label in tick_labels:
+        label.set_verticalalignment('bottom')  
+        label.set_y(label.get_position()[1] - 0.22)
+    f.savefig(unc_save_folder + f'/jet_pt_total_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+
+
+    # plot 2
+    print(total_tar_jet_weight.shape, len(total_evt_weight), total_tru_jet_weight.shape, total_p_weight.shape)
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(total_tru_pt,bins=bins,weights=total_tru_jet_weight,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(total_tar_pt,bins=bins,weights=total_tar_jet_weight,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(total_p_pt,bins=bins,weights=total_p_weight,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+
+    ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=20, xmax=bin_centers[-2], color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    # ratio_errors1 = ratio_pred_tru * np.sqrt((pred_errors / freq_pred) ** 2 + (tru_errors / freq_tru) ** 2)
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    # ax[1].fill_between(bin_centers, ratio_pred_tru - ratio_pred_erro, ratio_pred_tru + ratio_pred_erro, alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(ylabel='Number of jets (weighted)')
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Jet $p_T$ [GeV]')
+    ax[1].set(ylim=(0.0,2.5))
+    ax[1].set(xlim=(-50.0,bin_stop+10))
+    ax[1].set_yticks(np.arange(0.0, 3.0, 1.0))
+    new_yticklabels = [f'{int(tick)}' for tick in np.arange(0.0, 3.0, 1.0)]  
+    ax[1].set_yticklabels(new_yticklabels)
+    tick_labels = ax[1].get_xticklabels()
+    tick_positions = ax[1].get_xticks()
+    for label in tick_labels:
+        label.set_verticalalignment('bottom')  
+        label.set_y(label.get_position()[1] - 0.22)
+    f.savefig(unc_save_folder + f'/jet_pt_weight_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+    ##########################################################################################################
+    # plot 1b
+    bin_start = min(min(total_p_pt),min(total_tar_pt))
+    bin_stop = max(max(total_p_pt),max(total_tar_pt))
+    print(bin_start, bin_stop)
+    bin_start = (np.floor(bin_start / 10) * 10) - 1
+    # bin_start = -21
+    bin_stop = np.ceil(bin_stop / 10) * 10
+    bin_width = 20
+    n_bins = int(np.ceil((bin_stop - bin_start) / bin_width))
+    bins = np.linspace(bin_start, bin_stop, n_bins)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tar, bins, _   = ax[0].hist(total_tar_pt,bins=bins,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(total_p_pt,bins=bins,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+
+    ratio_pred_tar = np.divide(freq_pre, freq_tar, out=np.zeros_like(freq_pre), where=freq_tar != 0)
+    ax[1].hlines(y=1, xmin=20, xmax=bin_centers[-2], color='green', linestyle='-', lw=1.6)
+    # uncertainty on the ratio
+    # ratio_errors1 = ratio_pred_tru * np.sqrt((pred_errors / freq_pred) ** 2 + (tru_errors / freq_tru) ** 2)
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tar) ** 2 + (freq_pre * tar_errors / freq_tar**2)**2)
+    # ax[1].fill_between(bin_centers, ratio_pred_tru - ratio_pred_erro, ratio_pred_tru + ratio_pred_erro, alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[:-1], ratio_pred_tar[:-1] - ratio_pred_erro[:-1], ratio_pred_tar[:-1] + ratio_pred_erro[:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    print(freq_tar)
+    print(freq_pre)
+    print(ratio_pred_tar)
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    ax[0].legend([tar_line,pre_line], ['Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of jets',ylim=(1,5e5))
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Jet $p_T$ [GeV]')
+    ax[1].set(ylim=(0.0,2.5))
+    ax[1].set(xlim=(-50.0,bin_stop+10))
+    ax[1].set_yticks(np.arange(0.0, 3.0, 1.0))
+    new_yticklabels = [f'{int(tick)}' for tick in np.arange(0.0, 3.0, 1.0)]  
+    ax[1].set_yticklabels(new_yticklabels)
+    tick_labels = ax[1].get_xticklabels()
+    tick_positions = ax[1].get_xticks()
+    for label in tick_labels:
+        label.set_verticalalignment('bottom')  
+        label.set_y(label.get_position()[1] - 0.22)
+    f.savefig(unc_save_folder + f'/jet_pt_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+
+if jet_lead_pt:
+    print(f"Plotting leading jet pT in each event: {len(event_tar_pt)} events, {len(event_p_pt)} events, {len(event_tru_pt)} events")
+    tar_lead_pt = np.array([max(x) for x in event_tar_pt])
+    tru_lead_pt = np.array([max(x) for x in event_tru_pt])
+    p_lead_pt = np.array([max(x) for x in event_p_pt])
+
+    bin_start = min(min(p_lead_pt),min(tar_lead_pt),min(tru_lead_pt))
+    bin_stop = max(max(p_lead_pt),max(tar_lead_pt),max(tru_lead_pt))
+    print(bin_start, bin_stop)
+    bin_start = (np.floor(bin_start / 10) * 10) - 1
+    # bin_start = -21
+    bin_stop = np.ceil(bin_stop / 10) * 10
+    bin_width = 20
+    n_bins = int(np.ceil((bin_stop - bin_start) / bin_width))
+    bins = np.linspace(bin_start, bin_stop, n_bins)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    # plot 1
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(tru_lead_pt,bins=bins,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(tar_lead_pt,bins=bins,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(p_lead_pt,bins=bins,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=20, xmax=bin_centers[-2], color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    # ratio_errors1 = ratio_pred_tru * np.sqrt((pred_errors / freq_pred) ** 2 + (tru_errors / freq_tru) ** 2)
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events',ylim=(1,5e5))
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Leading Jet $p_T$ [GeV]')
+    ax[1].set(ylim=(0.0,2.5))
+    ax[1].set(xlim=(-50.0,bin_stop+10))
+    ax[1].set_yticks(np.arange(0.0, 3.0, 1.0))
+    new_yticklabels = [f'{int(tick)}' for tick in np.arange(0.0, 3.0, 1.0)]  
+    ax[1].set_yticklabels(new_yticklabels)
+    tick_labels = ax[1].get_xticklabels()
+    tick_positions = ax[1].get_xticks()
+    for label in tick_labels:
+        label.set_verticalalignment('bottom')  
+        label.set_y(label.get_position()[1] - 0.22)
+    f.savefig(save_folder + f'/jet_lead_pt_total_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+   
+    ########################################################################################################################
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(tru_lead_pt,bins=bins,weights=total_evt_weight,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(tar_lead_pt,bins=bins,weights=total_evt_weight,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(p_lead_pt,bins=bins,weights=total_evt_weight,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    # ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    # ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    # ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=20, xmax=bin_centers[-2], color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    # ratio_errors1 = ratio_pred_tru * np.sqrt((pred_errors / freq_pred) ** 2 + (tru_errors / freq_tru) ** 2)
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events (weighted)')
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Leading Jet $p_T$ [GeV]')
+    ax[1].set(ylim=(0.0,2.5))
+    ax[1].set(xlim=(-50.0,bin_stop+10))
+    ax[1].set_yticks(np.arange(0.0, 3.0, 1.0))
+    new_yticklabels = [f'{int(tick)}' for tick in np.arange(0.0, 3.0, 1.0)]  
+    ax[1].set_yticklabels(new_yticklabels)
+    tick_labels = ax[1].get_xticklabels()
+    tick_positions = ax[1].get_xticks()
+    for label in tick_labels:
+        label.set_verticalalignment('bottom')  
+        label.set_y(label.get_position()[1] - 0.22)
+    f.savefig(save_folder + f'/jet_lead_pt_weight_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+    #################################################################################################################
+    # plot 1b
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tar, bins, _   = ax[0].hist(tar_lead_pt,bins=bins,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(p_lead_pt,bins=bins,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+
+    ratio_pred_tar = np.divide(freq_pre, freq_tar, out=np.zeros_like(freq_pre), where=freq_tar != 0)
+    ax[1].hlines(y=1, xmin=20, xmax=bin_centers[-2], color='green', linestyle='-', lw=1.6)
+    # uncertainty on the ratio
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tar) ** 2 + (freq_pre * tar_errors / freq_tar**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tar[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tar[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tar_line,pre_line], ['Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events',ylim=(1,5e5))
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Leading Jet $p_T$ [GeV]')
+    ax[1].set(ylim=(0.0,2.5))
+    ax[1].set(xlim=(-50.0,bin_stop+10))
+    ax[1].set_yticks(np.arange(0.0, 3.0, 1.0))
+    new_yticklabels = [f'{int(tick)}' for tick in np.arange(0.0, 3.0, 1.0)]  
+    ax[1].set_yticklabels(new_yticklabels)
+    tick_labels = ax[1].get_xticklabels()
+    tick_positions = ax[1].get_xticks()
+    for label in tick_labels:
+        label.set_verticalalignment('bottom')  
+        label.set_y(label.get_position()[1] - 0.22)
+    f.savefig(save_folder + f'/jet_lead_pt_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+
+
+def nth_leading_jet_pt(list_of_jet_pts_in_event,n):
+    try:
+        return sorted(list_of_jet_pts_in_event,reverse=True)[n-1]
+    except IndexError or ValueError:
+        # Doesn't have enough (or any) jets, automatically lost in cut
+        return np.nan
+
+
+
+if jet_sublead_pt:
+    print(f"Plotting subleading jet pT in each event: {len(event_tar_pt)} events, {len(event_p_pt)} events, {len(event_tru_pt)} events")
+    tar_sublead_pt = np.array([nth_leading_jet_pt(x,2) for x in event_tar_pt])
+    tru_sublead_pt = np.array([nth_leading_jet_pt(x,2) for x in event_tru_pt])
+    p_sublead_pt = np.array([nth_leading_jet_pt(x,2) for x in event_p_pt])
+
+    bin_start = min(min(p_sublead_pt),min(tar_sublead_pt),min(tru_sublead_pt))
+    bin_stop = max(max(p_sublead_pt),max(tar_sublead_pt),max(tru_sublead_pt))
+    print(bin_start, bin_stop)
+    bin_start = (np.floor(bin_start / 10) * 10) - 1
+    bin_stop = np.ceil(bin_stop / 10) * 10
+    bin_width = 20
+    n_bins = int(np.ceil((bin_stop - bin_start) / bin_width))
+    bins = np.linspace(bin_start, bin_stop, n_bins)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    # plot 1
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(tru_lead_pt,bins=bins,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(tar_lead_pt,bins=bins,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(p_lead_pt,bins=bins,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=20, xmax=bin_centers[-2], color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    # ratio_errors1 = ratio_pred_tru * np.sqrt((pred_errors / freq_pred) ** 2 + (tru_errors / freq_tru) ** 2)
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events',ylim=(1,5e5))
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Subleading Jet $p_T$ [GeV]')
+    ax[1].set(ylim=(0.0,2.5))
+    ax[1].set(xlim=(-50.0,bin_stop+10))
+    ax[1].set_yticks(np.arange(0.0, 3.0, 1.0))
+    new_yticklabels = [f'{int(tick)}' for tick in np.arange(0.0, 3.0, 1.0)]  
+    ax[1].set_yticklabels(new_yticklabels)
+    tick_labels = ax[1].get_xticklabels()
+    tick_positions = ax[1].get_xticks()
+    for label in tick_labels:
+        label.set_verticalalignment('bottom')  
+        label.set_y(label.get_position()[1] - 0.22)
+    f.savefig(save_folder + f'/jet_sublead_pt_total_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+    
+
+
+    ####################################################################################################################
+    # weighted plot
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(tru_lead_pt,bins=bins,weights=total_evt_weight,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(tar_lead_pt,bins=bins,weights=total_evt_weight,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(p_lead_pt,bins=bins,weights=total_evt_weight,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    # ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    # ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    # ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=20, xmax=bin_centers[-2], color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    # ratio_errors1 = ratio_pred_tru * np.sqrt((pred_errors / freq_pred) ** 2 + (tru_errors / freq_tru) ** 2)
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events (weighted)')
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Subleading Jet $p_T$ [GeV]')
+    ax[1].set(ylim=(0.0,2.5))
+    ax[1].set(xlim=(-50.0,bin_stop+10))
+    ax[1].set_yticks(np.arange(0.0, 3.0, 1.0))
+    new_yticklabels = [f'{int(tick)}' for tick in np.arange(0.0, 3.0, 1.0)]  
+    ax[1].set_yticklabels(new_yticklabels)
+    tick_labels = ax[1].get_xticklabels()
+    tick_positions = ax[1].get_xticks()
+    for label in tick_labels:
+        label.set_verticalalignment('bottom')  
+        label.set_y(label.get_position()[1] - 0.22)
+    f.savefig(save_folder + f'/jet_sublead_pt_weight_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+    #####################################################################################################
+    # plot 1b
+    bin_start = min(min(p_sublead_pt),min(tar_sublead_pt))
+    bin_stop = max(max(p_sublead_pt),max(tar_sublead_pt))
+    print(bin_start, bin_stop)
+    bin_start = (np.floor(bin_start / 10) * 10) - 1
+    bin_stop = np.ceil(bin_stop / 10) * 10
+    bin_width = 20
+    n_bins = int(np.ceil((bin_stop - bin_start) / bin_width))
+    bins = np.linspace(bin_start, bin_stop, n_bins)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tar, bins, _   = ax[0].hist(tar_lead_pt,bins=bins,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(p_lead_pt,bins=bins,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+
+    ratio_pred_tar = np.divide(freq_pre, freq_tar, out=np.zeros_like(freq_pre), where=freq_tar != 0)
+    ax[1].hlines(y=1, xmin=20, xmax=bin_centers[-2], color='green', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    # ratio_errors1 = ratio_pred_tru * np.sqrt((pred_errors / freq_pred) ** 2 + (tru_errors / freq_tru) ** 2)
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tar) ** 2 + (freq_pre * tar_errors / freq_tar**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tar[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tar[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    ax[0].legend([tar_line,pre_line], ['Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events',ylim=(1,5e5))
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Subleading Jet $p_T$ [GeV]')
+    ax[1].set(ylim=(0.0,2.5))
+    ax[1].set(xlim=(-50.0,bin_stop+10))
+    ax[1].set_yticks(np.arange(0.0, 3.0, 1.0))
+    new_yticklabels = [f'{int(tick)}' for tick in np.arange(0.0, 3.0, 1.0)]  
+    ax[1].set_yticklabels(new_yticklabels)
+    tick_labels = ax[1].get_xticklabels()
+    tick_positions = ax[1].get_xticks()
+    for label in tick_labels:
+        label.set_verticalalignment('bottom')  
+        label.set_y(label.get_position()[1] - 0.22)
+    f.savefig(save_folder + f'/jet_sublead_pt_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+
+if jet_asymmetry:
+    print(f"Plotting jet asymmetry 2 ways: {len(event_tar_pt)} events, {len(event_p_pt)} events, {len(event_tru_pt)} events")
+    tar_lead_pt = np.array([max(x) for x in event_tar_pt])
+    tru_lead_pt = np.array([max(x) for x in event_tru_pt])
+    p_lead_pt = np.array([max(x) for x in event_p_pt])
+
+    tar_sublead_pt = np.array([nth_leading_jet_pt(x,2) for x in event_tar_pt])
+    tru_sublead_pt = np.array([nth_leading_jet_pt(x,2) for x in event_tru_pt])
+    p_sublead_pt   = np.array([nth_leading_jet_pt(x,2) for x in event_p_pt])
+
+    # first asymmetry: diff/avg
+    tar_jet_num   = tar_lead_pt - tar_sublead_pt
+    tar_jet_denom = (tar_lead_pt + tar_sublead_pt) / 2
+    tar_jet_asym  = tar_jet_num / tar_jet_denom
+
+    tru_jet_num   = tru_lead_pt - tru_sublead_pt
+    tru_jet_denom = (tru_lead_pt + tru_sublead_pt) / 2
+    tru_jet_asym  = tru_jet_num / tru_jet_denom
+
+    pre_jet_num   = p_lead_pt - p_sublead_pt
+    pre_jet_denom = (p_lead_pt + p_sublead_pt) / 2
+    pre_jet_asym  = pre_jet_num / pre_jet_denom
+
+    ###################################################################################################################
+    bin_start = min(min(pre_jet_asym),min(tru_jet_asym),min(tar_jet_asym))
+    bin_stop = max(max(pre_jet_asym),max(tru_jet_asym),max(tar_jet_asym))
+    print(bin_start, bin_stop)
+    # bin_start = (np.floor(bin_start / 10) * 10) - 1
+    # bin_stop = np.ceil(bin_stop / 10) * 10
+    n_bins = 150
+    bins = np.linspace(bin_start, bin_stop, n_bins)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+
+    # plot 1
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(tru_jet_asym,bins=bins,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(tar_jet_asym,bins=bins,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(pre_jet_asym,bins=bins,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=bin_start, xmax=bin_stop, color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events')
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Jet $p_T$ Asymmetry',xlim=(-0.1,2.1),ylim=(0,2))
+    f.savefig(save_folder + f'/jet_pt_asym_total_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+    # plot 1b
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(tru_jet_asym,bins=bins,weights=total_evt_weight,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(tar_jet_asym,bins=bins,weights=total_evt_weight,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(pre_jet_asym,bins=bins,weights=total_evt_weight,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    # ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    # ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    # ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=bin_start, xmax=bin_stop, color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events')
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Jet $p_T$ Asymmetry',xlim=(-0.1,2.1),ylim=(0,10))
+    f.savefig(save_folder + f'/jet_pt_asym_weight_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
+    ###################################################################################################################
+    # second asymmetry: jet pt1/jet pt2
+    tar_jet_asym2   = tar_lead_pt / tar_sublead_pt
+    tru_jet_asym2   = tru_lead_pt / tru_sublead_pt
+    pre_jet_asym2   = p_lead_pt / p_sublead_pt
+    bin_start = min(min(pre_jet_asym2),min(tru_jet_asym2),min(tar_jet_asym2))
+    bin_stop = max(max(pre_jet_asym2),max(tru_jet_asym2),max(tar_jet_asym2))
+    print(bin_start, bin_stop)
+    n_bins = 150
+    bins = np.linspace(bin_start, bin_stop, n_bins)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+
+    # plot 2
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(tru_jet_asym2,bins=bins,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(tar_jet_asym2,bins=bins,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(pre_jet_asym2,bins=bins,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=bin_start, xmax=bin_stop, color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events')
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Leading/Subleading Jet $p_T$ Ratio',ylim=(0,2))
+    f.savefig(save_folder + f'/jet_pt_asym2_total_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+    # plot 2b
+    f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
+    freq_tru, bins, _   = ax[0].hist(tru_jet_asym2,bins=bins,weights=total_evt_weight,histtype='step',color='gold',lw=2,label='Truth Jets')
+    freq_tar, bins, _   = ax[0].hist(tar_jet_asym2,bins=bins,weights=total_evt_weight,histtype='step',color='green',lw=2,label='AKT jets')
+    freq_pre, bins, _   = ax[0].hist(pre_jet_asym2,bins=bins,weights=total_evt_weight,histtype='step',color='red',lw=2,label='CNN Jets')
+    # stat. unc sqrt(counts)
+    tru_errors = np.sqrt(freq_tru)
+    tar_errors = np.sqrt(freq_tar)
+    pre_errors = np.sqrt(freq_pre)
+    # ax[0].errorbar(bin_centers, freq_tru,  yerr=tru_errors, color='gold', ls='none')
+    # ax[0].errorbar(bin_centers, freq_tar, yerr=tar_errors, color='green', ls='none')
+    # ax[0].errorbar(bin_centers, freq_pre, yerr=pre_errors, color='red',  ls='none')
+    ratio_pred_tru = np.divide(freq_pre, freq_tru, out=np.zeros_like(freq_pre), where=freq_tru != 0)
+    ratio_tar_tru  = np.divide(freq_tar, freq_tru, out=np.zeros_like(freq_tar), where=freq_tru != 0)
+    ax[1].hlines(y=1, xmin=bin_start, xmax=bin_stop, color='gold', linestyle='-', lw=1.6)
+
+    # uncertainty on the ratio
+    ratio_pred_erro = np.sqrt((pre_errors / freq_tru) ** 2 + (freq_pre * tru_errors / freq_tru**2)**2)
+    ratio_tar_erro = np.sqrt((tar_errors / freq_tru) ** 2 + (freq_tar * tru_errors / freq_tru**2)**2)
+    ax[1].fill_between(bin_centers[1:-1], ratio_pred_tru[1:-1] - ratio_pred_erro[1:-1], ratio_pred_tru[1:-1] + ratio_pred_erro[1:-1], alpha=0.5, edgecolor='crimson', facecolor='red')
+    ax[1].fill_between(bin_centers[1:-1], ratio_tar_tru[1:-1] - ratio_tar_erro[1:-1], ratio_tar_tru[1:-1] + ratio_tar_erro[1:-1], alpha=0.5, edgecolor='forestgreen', facecolor='green')
+
+    tar_line =  matplotlib.lines.Line2D([0], [0], color='green', lw=3) 
+    pre_line =  matplotlib.lines.Line2D([0], [0], color='red', lw=3)  
+    tru_line =  matplotlib.lines.Line2D([0], [0], color='gold', lw=3)  
+    ax[0].legend([tru_line,tar_line,pre_line], ['Truth jets','Target jets', 'CNN Jets'], loc='lower left', bbox_to_anchor=(0.65, 0.78), fontsize=12) 
+    ax[0].set(yscale='log',ylabel='Number of events')
+    y_ticks = ax[0].yaxis.get_major_ticks()
+    y_ticks[0].label1.set_visible(False)
+    ax[1].set(xlabel='Leading/Subleading Jet $p_T$ Ratio',ylim=(0,10))
+    f.savefig(save_folder + f'/jet_pt_asym2_weight_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
+
+
 
 
