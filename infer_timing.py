@@ -7,10 +7,15 @@ import time
 import os
 from statistics import mean
 import argparse
+import pickle
 
 import models
 import data
 
+
+def save_object(obj, filename):
+    with open(filename, 'wb') as outp:  # Overwrites any existing file.
+        pickle.dump(obj, outp)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--backbone', type=str, required=True, help='Name of backbone model (e.g resnet50)',)
@@ -39,15 +44,17 @@ MIN_CELLS_ETA,MAX_CELLS_ETA = -2.5, 2.5
 EXTENT = [-2.4999826, 2.4999774, -6.217388, 6.2180176]
 torch.manual_seed(config["seed"])
 
-dataset = data.CustomDataset(annotation_file=args.input_file,truth_info=False) # set truth info to false, won't have it/return it during deployment
-time_test_dataset, _ = torch.utils.data.random_split(dataset, [1000, len(dataset)-1000])
+# dataset = data.CustomDataset(annotation_file=args.input_file,truth_info=False) # set truth info to false, won't have it/return it during deployment
+dataset = data.Custom60Dataset(annotation_file=args.input_file,truth_info=False) # old-style dataset
+time_test_dataset, _ = torch.utils.data.random_split(dataset, [10000, len(dataset)-10000])
+# time_test_dataset = dataset
 print('\tdatatset size for timing test : ',len(time_test_dataset),'\n')
 
 dataloader = torch.utils.data.DataLoader(time_test_dataset, collate_fn=dataset.collate_fn, batch_size=config["BS"], shuffle=False, num_workers=config["NW"]) # force batch size to be 1
 
 
 # load trained model
-model = models.SSD(backbone_name=args.backbone,in_channels=5,diamond_mask=True)
+model = models.SSD(backbone_name=args.backbone,in_channels=5)
 model = model.to(config["device"]) 
 model_name = "jetSSD_{}_{}e".format(model.backbone_name,config["n_epochs"])
 model_save_path = args.model_dir + f"/{model_name}.pth"
@@ -113,6 +120,10 @@ print(f"Time taken for entire test set: {(end-beginning)/60:.3f} mins, (or {(end
 
 
 
+save_object(time_per_event, save_loc+'time_per_event.pkl')
+save_object(time_only_inference, save_loc+'time_only_inference.pkl')
+save_object(n_jets_per_event, save_loc+'n_jets_per_event.pkl')
+save_object(n_pred_per_event, save_loc+'n_pred_per_event.pkl')
 
 mean = np.mean(time_per_event)
 std_dev = np.std(time_per_event[1:])

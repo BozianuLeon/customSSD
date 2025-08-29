@@ -67,6 +67,59 @@ class Loss(torch.nn.Module):
         ret = (total_loss*num_mask/pos_num).mean(dim=0)
         
         return ret
+
+class Loss2(torch.nn.Module):
+    """
+        Implements the loss as the sum of the followings:
+        1. Confidence Loss: All labels, with hard negative mining
+        2. Localization Loss: Only on positive labels
+        Suppose input dboxes has the shape 8732x4
+    """
+    def __init__(self, dboxes, device=torch.device("cuda" if torch.cuda.is_available() else "cpu")):
+        super(Loss2, self).__init__()
+        self.scale_xy = 1.0
+        self.scale_wh = 1.0
+        self.dboxes = nn.Parameter(dboxes(order="xywh").transpose(0, 1).unsqueeze(dim = 0).to(device),requires_grad=False)
+        # REG LOSS
+        self.sl1_loss = nn.SmoothL1Loss(reduction='none')
+
+        # CLF LOSS
+        self.con_loss = nn.BCEWithLogitsLoss(reduction='none')
+        self.foc_loss = tv.ops.focal_loss.sigmoid_focal_loss
+    
+    def _loc_vec(self, loc):
+        """
+            Generate Location Vectors
+        """
+
+        gxy = self.scale_xy*(loc[:, :2, :] - self.dboxes[:, :2, :])/self.dboxes[:, 2:, ]
+        gwh = self.scale_wh*(loc[:, 2:, :]/self.dboxes[:, 2:, :]).log()
+        return torch.cat((gxy, gwh), dim=1).contiguous()
+
+    def forward(self, ploc, plabel, gloc, glabel):
+        """
+            ploc, plabel: Nx4x8732, Nxlabel_numx8732
+                predicted location and labels
+
+            gloc, glabel: Nx4x8732, Nx8732
+                ground truth location and labels
+        """
+        mask = glabel > 0 
+        pos_num = mask.sum(dim=1) 
+        num_mask = (pos_num > 0).float() # does the image contain any positive anchors
+        vec_gd = self._loc_vec(gloc)
+        
+        # Regression loss smooth L1
+        sl1 = self.sl1_loss(ploc, vec_gd).sum(dim=1)
+        sl1 = (mask.float()*sl1).sum(dim=1)
+
+        # Classification loss focal
+        plabel = plabel.squeeze(1).float()
+        glabel = glabel.float()
+        floss = self.foc_loss(plabel,glabel,alpha=0.25,gamma=3,reduction='sum')
+        
+        # normalise by the number of anchors assigned to a ground truth box
+        return (sl1*num_mask/pos_num).mean(dim=0), (floss*num_mask/pos_num).mean(dim=0)
     
 
 # Source: https://github.com/hyz-xmaster/VarifocalNet
@@ -182,7 +235,7 @@ class NewLoss(torch.nn.Module):
         # CLF LOSS
         self.con_loss = nn.BCEWithLogitsLoss(reduction='none')
         self.foc_loss = tv.ops.focal_loss.sigmoid_focal_loss
-        self.vfoc_loss = VariFocalLoss(alpha=0.25,gamma=3,reduction='sum')
+        # self.vfoc_loss = VariFocalLoss(alpha=0.25,gamma=3,reduction='sum')
 
         self.dboxes = nn.Parameter(dboxes(order="xywh").transpose(0, 1).unsqueeze(dim = 0).to(device),requires_grad=False)
 
@@ -235,13 +288,13 @@ class NewLoss(torch.nn.Module):
         # print("SL1 loss:       ", sl1)
 
         # Box Regression Loss (GIOU)
-        gloss = torch.empty(0, device=self.device)
-        for batch_id in range(gloc.shape[0]):
-            pred = self.xywh2xyxy(ploc[batch_id].permute(1,0))
-            tar = self.xywh2xyxy(gloc[batch_id].permute(1,0))
-            loss_batch_i = self.giou_loss(pred, tar,reduction='sum')
-            # print(loss_batch_i.shape,loss_batch_i)
-            gloss = torch.cat((gloss, loss_batch_i.unsqueeze(0)), dim=-1)
+        # gloss = torch.empty(0, device=self.device)
+        # for batch_id in range(gloc.shape[0]):
+        #     pred = self.xywh2xyxy(ploc[batch_id].permute(1,0))
+        #     tar = self.xywh2xyxy(gloc[batch_id].permute(1,0))
+        #     loss_batch_i = self.giou_loss(pred, tar,reduction='sum')
+        #     # print(loss_batch_i.shape,loss_batch_i)
+        #     gloss = torch.cat((gloss, loss_batch_i.unsqueeze(0)), dim=-1)
         # print(gloss.shape)
         # print("GIOU loss:       ", gloss)
 
@@ -259,9 +312,9 @@ class NewLoss(torch.nn.Module):
         # total_loss = sl1 + self.scalar*fcloss  
 
         # Classification Loss (VariFocal)
-        vfloss = self.vfoc_loss(plabel,glabel)
-        # normalise by the number of anchors assigned to a ground truth box
-        vfloss = vfloss / pos_num
+        # vfloss = self.vfoc_loss(plabel,glabel)
+        # # normalise by the number of anchors assigned to a ground truth box
+        # vfloss = vfloss / pos_num
         # print("VariFocal loss:      ", vfloss)
         
 
@@ -278,10 +331,10 @@ class NewLoss(torch.nn.Module):
 
         loss_dict = {
             "SL1"   : (sl1*num_mask/pos_num).mean(dim=0),
-            "GIOU"  : (gloss*num_mask/pos_num).mean(dim=0),
+            # "GIOU"  : (gloss*num_mask/pos_num).mean(dim=0),
             "BCE"   : (closs*num_mask/pos_num).mean(dim=0),
             "FCL"   : (floss*num_mask/pos_num).mean(dim=0),
-            "VFCL"  : (vfloss*num_mask/pos_num).mean(dim=0),
+            # "VFCL"  : (vfloss*num_mask/pos_num).mean(dim=0),
         }
 
         

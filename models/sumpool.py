@@ -83,7 +83,7 @@ class MaskSumPool(nn.Module):
         with torch.no_grad():
             self.pool_mask = self.pool_mask.expand(self.in_channels,-1,-1).unsqueeze(0)
             self.pool_mask = self.pool_mask.permute(1,0,2,3)
-            self.conv.weight = nn.Parameter(self.pool_mask)
+            self.conv.weight = nn.Parameter(self.pool_mask.clone())
 
         # Freeze the weights so that they are not updated during backpropagation
         self.conv.weight.requires_grad = False

@@ -89,6 +89,88 @@ class CustomDataset(torch.utils.data.Dataset):
         return images, targets
 
 
+class Custom60Dataset(torch.utils.data.Dataset):
+    def __init__(self, annotation_file, rnd_flips=False, truth_info=False):
+        # Custom dataset that takes in the annotations folder 
+        # and will randomly flip the images/bounding boxes during training
+        # returns 
+        # img: pytorch tensor [5,125,49]
+        # validation dict: contains lists/tensors of dict_keys(['boxes', 'labels', 'jet_pt', 'extent', 'h5file', 'h5event', 'event_no'])
+        # here the channel order is: 
+        # [H_sum_pt,H_max_pt,H_sum_signif,H_max_signif,H_max_noise]
+        with open(annotation_file, 'r') as f:
+            self.data = json.load(f)
+        
+        self.truth_info = truth_info
+        self.rnd_flips = rnd_flips
+        self.transforms = v2.Compose([
+                                    v2.RandomHorizontalFlip(p=0.5),
+                                    v2.RandomVerticalFlip(p=0.5),
+                                    v2.ToPureTensor()
+                                ])
+        
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        # get event number: index from annotations.json
+        anns_i = self.data[str(index)] 
+
+        # load pytorch tensor from annotations path
+        img = torch.load(anns_i["image"]["img_path"])
+        img[0, :, :] /= 1000 # rescale sum_pt into GeV
+        img[1, :, :] /= 1000 # rescale max_pt into GeV
+        img[4, :, :] /= 1000 # rescale max_noise into GeV
+        img = img.type('torch.FloatTensor') # correct RunTime error DoubleTensor vs FloatTensor
+
+        # Check if there are bounding boxes with width & height > 0
+        bboxes = torch.tensor(anns_i["anns"]["bboxes"], dtype=torch.float32)
+        height_width_mask = (bboxes[:,2] > 0) & (bboxes[:,3] > 0)
+        bboxes = bboxes[height_width_mask]
+
+        # turn boxes from xywh to x1,y1,x2,y2
+        bboxes[:,2] = bboxes[:,0] + bboxes[:,2] 
+        bboxes[:,3] = bboxes[:,1] + bboxes[:,3] 
+
+        if len(bboxes)==0:
+            bboxes = torch.tensor([[-0.4,-0.4,0.4,0.4]], dtype=torch.float32)
+            labels = torch.tensor([0], dtype=torch.int64)
+        else:
+            labels = torch.ones(bboxes.shape[0], dtype=torch.int64)
+        
+        if self.rnd_flips:
+            # Add random vertical/horizontal flip!
+            bboxes = torchvision.tv_tensors.BoundingBoxes(bboxes,format="XYXY",canvas_size=img.shape[-2:])
+            img, bboxes = self.transforms(img, bboxes)
+        
+        event_no   = anns_i["image"]["id"]
+        h5file     = anns_i["image"]["file"]
+        h5event    = anns_i["image"]["event"]
+        pT         = anns_i["anns"]["jet_pt"]
+        extent     = anns_i["anns"]["extent"]
+        extent_tensor = torch.tensor(extent).float()
+
+        if not self.truth_info:
+            return img, {'boxes': bboxes, 'labels': labels, 'jet_pt': pT, 'extent': extent_tensor, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
+        else:
+            # Same checks for truth jets
+            truth_bboxes = torch.tensor(anns_i["anns"]["truth_jet_boxes"], dtype=torch.float32)
+            height_width_mask = (truth_bboxes[:,2] > 0) & (truth_bboxes[:,3] > 0)
+            truth_bboxes = truth_bboxes[height_width_mask]
+
+            # turn truth boxes from xywh to x1,y1,x2,y2
+            truth_bboxes[:,2] = truth_bboxes[:,0] + truth_bboxes[:,2] 
+            truth_bboxes[:,3] = truth_bboxes[:,1] + truth_bboxes[:,3] 
+            truth_pt = anns_i["anns"]["truth_jet_pt"]
+            return img, {'akt_boxes': bboxes, 'akt_labels': labels, 'akt_jet_pt': pT, 'truth_boxes': truth_bboxes, 'truth_jet_pt': truth_pt, 'extent': extent_tensor, 'h5file': h5file, 'h5event': h5event, 'event_no': event_no}
+            
+
+    def collate_fn(self,batch):
+        images, targets = zip(*batch) 
+        images = torch.stack(images, dim=0)
+        return images, targets
+
+
 
 if __name__=="__main__":
 

@@ -41,6 +41,8 @@ torch.manual_seed(config["seed"])
 dataset = data.CustomDataset(annotation_file=args.input_file, rnd_flips=True)
 train_len = int(0.90 * len(dataset))
 val_len = int(0.08 * len(dataset))
+# train_len = int(0.3 * len(dataset))
+# val_len = int(0.0001 * len(dataset))
 test_len = len(dataset) - train_len - val_len
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_len, val_len, test_len])
 print('\ttrain / val / test size : ',train_len,'/',val_len,'/',test_len,'\n')
@@ -51,7 +53,7 @@ test_loader  = torch.utils.data.DataLoader(test_dataset, collate_fn=dataset.coll
 
 
 # instantiate model
-model = models.SSD(backbone_name=args.backbone,in_channels=5,diamond_mask=True)
+model = models.SSD(backbone_name=args.backbone,in_channels=5)
 model = model.to(config["device"]) 
 total_params = sum(p.numel() for p in model.parameters())
 print(model.backbone_name, f'\t{total_params:,} total! parameters.\n')
@@ -67,6 +69,7 @@ print("Generated prior boxes, ",dboxes.dboxes.shape, ", default boxes", dboxes.d
 # encoder and loss
 encoder = data.Encoder(dboxes)
 loss = models.Loss(dboxes)
+loss2 = models.Loss2(dboxes)
 newloss = models.NewLoss(dboxes,scalar=1.0)
 
 
@@ -88,19 +91,25 @@ for epoch in range(config["n_epochs"]):
         # # encode targets/default boxes
         gloc,glabel = encoder.encode_batch(target_dict, config["BS"])
         # train_loss = loss(plocs, plabel, gloc, glabel)
-        newtrain_loss_dict = newloss(plocs, plabel, gloc, glabel)
-        s_loss.append(newtrain_loss_dict["SL1"].item())
-        g_loss.append(newtrain_loss_dict["GIOU"].item())
-        c_loss.append(newtrain_loss_dict["BCE"].item())
-        f_loss.append(newtrain_loss_dict["FCL"].item())
-        v_loss.append(newtrain_loss_dict["VFCL"].item())
-        train_loss = newtrain_loss_dict["SL1"] + newtrain_loss_dict["FCL"]
+        reg_loss, clf_loss = loss2(plocs, plabel, gloc, glabel)
+        s_loss.append(reg_loss.item())
+        f_loss.append(clf_loss.item())
+        train_loss = reg_loss + clf_loss
+        # new loss:
+        # newtrain_loss_dict = newloss(plocs, plabel, gloc, glabel)
+        # s_loss.append(newtrain_loss_dict["SL1"].item())
+        # # g_loss.append(newtrain_loss_dict["GIOU"].item())
+        # c_loss.append(newtrain_loss_dict["BCE"].item())
+        # f_loss.append(newtrain_loss_dict["FCL"].item())
+        # # v_loss.append(newtrain_loss_dict["VFCL"].item())
+        # train_loss = newtrain_loss_dict["SL1"] + newtrain_loss_dict["FCL"]
         running_loss.append(train_loss.item())
 
         # back prop
         optimizer.zero_grad()
         train_loss.backward()
         optimizer.step()
+        # print(step,'/',len(train_loader))
 
 # ###
 #         f,ax = plt.subplots()
@@ -122,11 +131,13 @@ for epoch in range(config["n_epochs"]):
 # ###
 
     print(f"\tEpoch {epoch} / {config['n_epochs']}: train loss {mean(running_loss):.4f}, train time {time.perf_counter() - beginning:.2f}s, LR: {optimizer.param_groups[0]['lr']:.4f}")
-    print(f"\t\tSL1 Loss: {mean(s_loss):.3f}, GIOU Loss: {mean(g_loss):.3f}, BCE Loss: {mean(c_loss):.3f}, Focal Loss: {mean(f_loss):.3f}, VariFocal Loss: {mean(v_loss):.3f}")
+    print(f"\tLoss2: Focal Loss: {mean(f_loss):.3f}, SL1 Loss: {mean(s_loss):.3f}")
+    # print(f"\t\tSL1 Loss: {mean(s_loss):.3f}, GIOU Loss: {0.0:.3f}, BCE Loss: {mean(c_loss):.3f}, Focal Loss: {mean(f_loss):.3f}, VariFocal Loss: {0.00:.3f}")
 
     # validation step
     model.eval()
     with torch.inference_mode():
+        beginning = time.perf_counter()
         running_val_loss = list()
         for step, (val_images, val_dict) in enumerate(val_loader):
             # send data to gpu (annoying)

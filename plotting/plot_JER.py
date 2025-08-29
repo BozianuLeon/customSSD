@@ -26,6 +26,9 @@ date = "20250313-06"
 # date = "20250406-23"
 # proc = "ttbar_test"
 # date = "20250407-14"
+# proc = "mu0"
+# date = "20250526-06"
+proc_dict = {"ttbar_test": "MC21 ttbar singleLep", "JZcomb0_test":f"MC21 Dijet JZ1-4"}
 
 metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics/"
 save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/jet_res/"
@@ -79,10 +82,10 @@ inclusive_target = False
 central_target   = False
 inclusive_truth  = False
 central_truth    = False
-eta_target       = False
-eta_target_var   = False
-eta_truth        = False
-phi_target       = True
+eta_target       = True
+eta_target_var   = True
+eta_truth        = True
+phi_target       = False
 phi_truth        = False
 
 
@@ -162,7 +165,7 @@ if inclusive_target:
     plt.text(60,1.23, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(185,1.23, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(60,1.215, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(60,1.202, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(60,1.202, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(save_folder+'/inclusive/jet_response_simple.png')
 
     plt.figure()
@@ -176,7 +179,7 @@ if inclusive_target:
     plt.text(80,0.23, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(200,0.23, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(80,0.2175, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(80,0.2055, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(80,0.2055, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(save_folder+'/inclusive/jet_resolution_simple.png')
 
 ####################################################################################################################################################################################
@@ -255,7 +258,7 @@ if central_target:
     plt.text(80,1.22, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(200,1.22, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(80,1.205, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(80,1.192, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV, $0.2<|\eta|<0.7$",fontfamily='sans-serif',fontsize=12)
+    plt.text(80,1.192, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV, $0.2<|\eta|<0.7$",fontfamily='sans-serif',fontsize=12)
     plt.savefig(super_central_save_folder+'central_jet_response_simple.png')
 
     plt.figure()
@@ -266,7 +269,7 @@ if central_target:
     plt.text(80,0.18, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(200,0.18, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(80,0.169, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(80,0.159, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV, $0.2<|\eta|<0.7$",fontfamily='sans-serif',fontsize=12)
+    plt.text(80,0.159, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV, $0.2<|\eta|<0.7$",fontfamily='sans-serif',fontsize=12)
     plt.savefig(super_central_save_folder+'central_jet_resolution_simple.png')
 
 
@@ -348,7 +351,7 @@ if inclusive_truth:
     plt.text(80,1.07, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(200,1.07, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(80,1.055, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(80,1.041, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(80,1.041, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(save_folder+'/inclusive_truth/truth_jet_response_simple.png')
 
     plt.figure()
@@ -361,7 +364,7 @@ if inclusive_truth:
     plt.text(80,0.32, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(200,0.32, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(80,0.303, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(80,0.289, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(80,0.289, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(save_folder+'/inclusive_truth/truth_jet_resolution_simple.png')
 
 
@@ -456,7 +459,7 @@ if inclusive_truth:
     plt.text(80,1.07, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(200,1.07, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(80,1.052, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(80,1.036, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(80,1.036, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(save_folder+'/inclusive_truth/comp_truth_jet_response_simple.png')
 
     plt.figure()
@@ -468,7 +471,7 @@ if inclusive_truth:
     plt.text(80,0.32, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(200,0.32, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(80,0.303, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(80,0.289, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(80,0.289, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(save_folder+'/inclusive_truth/comp_truth_jet_resolution_simple.png')
 
 
@@ -625,7 +628,7 @@ if central_truth:
     plt.text(80,1.15, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(200,1.15, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(80,1.12, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(80,1.095, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV, $0.2<|\eta|<0.7$",fontfamily='sans-serif',fontsize=12)
+    plt.text(80,1.095, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV, $0.2<|\eta|<0.7$",fontfamily='sans-serif',fontsize=12)
     plt.savefig(super_central_truth_save_folder+'comp_central_truth_jet_response_simple.png')
 
     plt.figure()
@@ -638,7 +641,7 @@ if central_truth:
     plt.text(80,0.28, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(200,0.28, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(80,0.264, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(80,0.251, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV, $0.2<|\eta|<0.7$",fontfamily='sans-serif',fontsize=12)
+    plt.text(80,0.251, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV, $0.2<|\eta|<0.7$",fontfamily='sans-serif',fontsize=12)
     plt.savefig(super_central_truth_save_folder+'comp_central_truth_jet_resolution_simple.png')
 
 
@@ -652,6 +655,135 @@ if central_truth:
 
 
 ####################################################################################################################################################################################
+
+
+
+
+if eta_target:
+    print()
+    print("\nNow binning in eta")
+    eta_save_folder = save_folder + "/eta_target/"
+    if not os.path.exists(eta_save_folder): os.makedirs(eta_save_folder)
+
+    # eta_bins = [-2.5,-1.8,-1.3,-1.0,-0.7,-0.2,0.0,0.2,0.7,1.0,1.3,1.8,2.5] #
+    eta_bins = np.arange(-2.1,2.2,step=0.1)
+    eta_bin_centers = eta_bins[:-1] + 0.5 * np.diff(eta_bins)
+    eta_bin_width = np.diff(eta_bins)
+
+
+    high_pt_mask = (total_dRmatched_tar_pt>0)
+    high_pt_dRmatch_tar_pt = total_dRmatched_tar_pt[high_pt_mask]
+    high_pt_dRmatch_tar_eta = total_dRmatched_tar_eta[high_pt_mask]
+    high_pt_dRmatch_pre_pt = total_dRmatched_pred_pt[high_pt_mask]
+    print("Important that these shapes match: ",high_pt_dRmatch_tar_pt.shape, high_pt_dRmatch_pre_pt.shape)
+
+    average_response, std_response = list(), list()
+    fitted_mu, fitted_mu_unc = list(), list()
+    fitted_sigma, fitted_sigma_unc = list(), list()
+    for bin_idx in range(len(eta_bins)-1):
+        bin_mask = (eta_bins[bin_idx]<high_pt_dRmatch_tar_eta) & (high_pt_dRmatch_tar_eta<eta_bins[bin_idx+1])
+
+        target_jet_pt_in_this_bin = high_pt_dRmatch_tar_pt[bin_mask]
+        pred_jet_pt_in_this_bin = high_pt_dRmatch_pre_pt[bin_mask]
+        jet_pt_response_bin_i = pred_jet_pt_in_this_bin / target_jet_pt_in_this_bin
+        print(f"Number of jets in bin {bin_idx}: {len(jet_pt_response_bin_i)}")
+        print(f"eta in [{eta_bins[bin_idx]:.2f},{eta_bins[bin_idx+1]:.2f}], np.mean {np.mean(jet_pt_response_bin_i):.4f}")
+
+        if len(jet_pt_response_bin_i)==0:
+            average_response.append(0)
+            std_response.append(0)
+            fitted_mu.append(0)
+            fitted_mu_unc.append(0)
+            fitted_sigma.append(0)
+            fitted_sigma_unc.append(0)
+            continue
+
+        jet_resp_hist, bins = np.histogram(jet_pt_response_bin_i, bins=100)
+        bin_centres = np.array([0.5 * (bins[i] + bins[i+1]) for i in range(len(bins)-1)])
+        # popt_g, pcov_g = scipy.optimize.curve_fit(gausmyfunc, xdata=bin_centres, ydata=jet_resp_hist, bounds=[(0.5,0.0, -np.inf),(np.inf, np.inf, np.inf)])
+        # popt_g, pcov_g = scipy.optimize.curve_fit(gaussian, xdata=bin_centres, ydata=jet_resp_hist, p0=[1.0,1.0,0.1])
+        popt_g, pcov_g = scipy.optimize.curve_fit(gaussian, xdata=bin_centres, ydata=jet_resp_hist, p0=[len(jet_pt_response_bin_i),1.0,0.1],maxfev=1200)
+        fit_mu = popt_g[1]
+        fit_var = popt_g[2]
+        fit_mu_unc = np.sqrt(np.diag(pcov_g))[1]
+        fit_var_unc = np.sqrt(np.diag(pcov_g))[2]
+        print(f"Fit parameters: A = {popt_g[0]:.4f}, mu = {fit_mu:.4f}, var = {fit_var:.4f} ")
+        print(f"Fit error:        +- {np.sqrt(np.diag(pcov_g))[0]:.3f},    +- {fit_mu_unc:.5f},   +- {fit_var_unc:.5f}")
+
+        average_response.append(np.mean(jet_pt_response_bin_i))
+        std_response.append(np.std(jet_pt_response_bin_i))
+        fitted_mu.append(popt_g[1])
+        fitted_mu_unc.append(np.sqrt(np.diag(pcov_g))[1])
+        print("Because the fit produces the variance we need the standard deviation. Propogate uncertainties!")
+        V = popt_g[2]
+        sigma_V = np.sqrt(np.diag(pcov_g))[2]
+
+        fitted_sigma.append(np.sqrt(V))
+        fitted_sigma_unc.append((sigma_V*np.sqrt(V)) / (2*V))
+        print("---------------------------------------------------------")
+        plt.figure()
+        plt.stairs(jet_resp_hist, bins, fill=True, color='orange',alpha=0.5)
+        plt.hist(jet_pt_response_bin_i,bins=50,alpha=0.6,histtype='step',color='blue')
+        x = np.linspace(0,jet_pt_response_bin_i.max(),100)
+        plt.plot(x, gaussian(x, *popt_g), linewidth=2.5, label='Custom gausmyfunc')
+        plt.xlabel('reco/target jet pt')
+        plt.ylabel(f'jets in bin {bin_idx}')
+        ax = plt.gca()
+        # ax.text(0.95, 0.95, f'Fit parameters:\nmu = {popt_g[1]:.4f} +- {np.sqrt(np.diag(pcov_g))[1]:.3f}\nstd = {popt_g[2]:.4f} +- {np.sqrt(np.diag(pcov_g))[2]:.5f}', transform=ax.transAxes, va='top', ha='right')
+        text = (f'mu = {popt_g[1]:.4f} +- {np.sqrt(np.diag(pcov_g))[1]:.4f}  \n'
+                f'std = {np.sqrt(V):.4f} +- {(sigma_V*np.sqrt(V)) / (2*V):.5f}\n'
+                f'std / pT = {np.sqrt(V) / eta_bin_centers[bin_idx]:.6f}')
+        ax.text(0.95, 0.95, f'Fit parameters:\n'+text, transform=ax.transAxes, va='top', ha='right')
+        plt.title(f'Jet eta in [{eta_bins[bin_idx]:.3f},{eta_bins[bin_idx+1]:.3f}], {len(jet_pt_response_bin_i)} jets')
+        plt.savefig(eta_save_folder + f'pt_response_eta_bin_{bin_idx}.png')
+        plt.close()
+        print()
+
+
+    plt.figure()
+    plt.errorbar(eta_bin_centers, fitted_mu, xerr=eta_bin_width/2, yerr=fitted_mu_unc, fmt='o', capsize=5, color='orange',label='CNN jets')
+    plt.axhline(y=1, color='red', linestyle='--', linewidth=2)
+    plt.xlabel(r'AntiKt4EMTopo Jet $\eta$ (jet constituent scale)')
+    plt.ylabel('Jet Energy Response')
+    plt.xlim(-2.5,2.5)
+    plt.ylim(0.8,1.5)
+    plt.legend()
+    plt.text(-2.1,1.45, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
+    plt.text(-1.35,1.45, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
+    plt.text(-2.1,1.426, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
+    plt.text(-2.1,1.404, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.savefig(eta_save_folder+'jet_response_eta_simple.png')
+
+    plt.figure()
+    plt.errorbar(eta_bin_centers, fitted_mu, xerr=eta_bin_width/2, yerr=fitted_mu_unc, fmt='o', capsize=5, color='orange',label='CNN jets')
+    plt.errorbar(eta_bin_centers, average_response, xerr=eta_bin_width/2, yerr=fitted_mu_unc, fmt='o', capsize=5,alpha=0.5, color='blue',label='np.mean')
+    plt.axhline(y=1, color='red', linestyle='--', linewidth=2)
+    plt.xlabel(r'AntiKt4EMTopo Jet $\eta$ (jet constituent scale)')
+    plt.ylabel('Jet Energy Response')
+    plt.xlim(-2.5,2.5)
+    plt.ylim(0.8,1.5)
+    plt.legend()
+    plt.savefig(eta_save_folder+'jet_response_eta_simple2.png')
+
+    plt.figure()
+    # plt.errorbar(eta_bin_centers, std_response, xerr=eta_bin_width/2, fmt='o', capsize=5, color='blue',label='Simple np.std')
+    plt.errorbar(eta_bin_centers, fitted_sigma, xerr=eta_bin_width/2, yerr=fitted_sigma_unc, fmt='o', capsize=5, color='orange',label='CNN jets')
+    # plt.errorbar(eta_bin_centers, abs(np.array(fitted_sigma)), xerr=eta_bin_width/2, yerr=fitted_sigma_unc,alpha=0.5, capsize=5, color='pink')
+    # plt.errorbar(eta_bin_centers, std_response, xerr=eta_bin_width/2, yerr=fitted_sigma_unc,alpha=0.5, capsize=5, color='blue')
+    plt.axhline(y=0, color='red', linestyle='--', linewidth=2)
+    plt.xlabel(r'AntiKt4EMTopo Jet $\eta$ (jet constituent scale)')
+    plt.ylabel('Jet Energy Resolution')
+    plt.xlim(-2.5,2.5)
+    plt.legend()
+    plt.text(-2.1,0.32, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
+    plt.text(-1.35,0.32, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
+    plt.text(-2.1,0.305, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
+    plt.text(-2.1,0.29, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.savefig(eta_save_folder+'jet_resolution_eta_simple.png')
+
+
+
+
 
 
 
@@ -786,7 +918,7 @@ if eta_target_var:
     # plt.text(-2.1,1.45, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     # plt.text(-1.35,1.45, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     # plt.text(-2.1,1.426, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    # plt.text(-2.1,1.407, r"MC21 Dijet JZ1-4, $p_T > 100\,$GeV",fontfamily='sans-serif',fontsize=12)
+    # plt.text(-2.1,1.407, f"{proc_dict[proc]}" + r", $p_T > 100\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(eta_save_folder+'comp_jet_pt_response_eta.png')
 
     plt.figure()
@@ -837,116 +969,6 @@ if eta_target_var:
 
 
 
-
-
-
-if eta_target:
-    print()
-    print("\nNow binning in eta")
-    eta_save_folder = save_folder + "/eta_target/"
-    if not os.path.exists(eta_save_folder): os.makedirs(eta_save_folder)
-
-    # eta_bins = [-2.5,-1.8,-1.3,-1.0,-0.7,-0.2,0.0,0.2,0.7,1.0,1.3,1.8,2.5] #
-    eta_bins = np.arange(-2.1,2.2,step=0.1)
-    eta_bin_centers = eta_bins[:-1] + 0.5 * np.diff(eta_bins)
-    eta_bin_width = np.diff(eta_bins)
-
-
-    high_pt_mask = (total_dRmatched_tar_pt>0)
-    high_pt_dRmatch_tar_pt = total_dRmatched_tar_pt[high_pt_mask]
-    high_pt_dRmatch_tar_eta = total_dRmatched_tar_eta[high_pt_mask]
-    high_pt_dRmatch_pre_pt = total_dRmatched_pred_pt[high_pt_mask]
-    print("Important that these shapes match: ",high_pt_dRmatch_tar_pt.shape, high_pt_dRmatch_pre_pt.shape)
-
-    average_response, std_response = list(), list()
-    fitted_mu, fitted_mu_unc = list(), list()
-    fitted_sigma, fitted_sigma_unc = list(), list()
-    for bin_idx in range(len(eta_bins)-1):
-        bin_mask = (eta_bins[bin_idx]<high_pt_dRmatch_tar_eta) & (high_pt_dRmatch_tar_eta<eta_bins[bin_idx+1])
-
-        target_jet_pt_in_this_bin = high_pt_dRmatch_tar_pt[bin_mask]
-        pred_jet_pt_in_this_bin = high_pt_dRmatch_pre_pt[bin_mask]
-        jet_pt_response_bin_i = pred_jet_pt_in_this_bin / target_jet_pt_in_this_bin
-        print(f"Number of jets in bin {bin_idx}: {len(jet_pt_response_bin_i)}")
-        print(f"eta in [{eta_bins[bin_idx],eta_bins[bin_idx+1]}], np.mean {np.mean(jet_pt_response_bin_i):.4f}")
-
-        if len(jet_pt_response_bin_i)==0:
-            average_response.append(0)
-            std_response.append(0)
-            fitted_mu.append(0)
-            fitted_mu_unc.append(0)
-            fitted_sigma.append(0)
-            fitted_sigma_unc.append(0)
-            continue
-
-        jet_resp_hist, bins = np.histogram(jet_pt_response_bin_i, bins=100)
-        bin_centres = np.array([0.5 * (bins[i] + bins[i+1]) for i in range(len(bins)-1)])
-        # popt_g, pcov_g = scipy.optimize.curve_fit(gausmyfunc, xdata=bin_centres, ydata=jet_resp_hist, bounds=[(0.5,0.0, -np.inf),(np.inf, np.inf, np.inf)])
-        # popt_g, pcov_g = scipy.optimize.curve_fit(gaussian, xdata=bin_centres, ydata=jet_resp_hist, p0=[1.0,1.0,0.1])
-        popt_g, pcov_g = scipy.optimize.curve_fit(gaussian, xdata=bin_centres, ydata=jet_resp_hist, p0=[len(jet_pt_response_bin_i),1.0,0.1])
-        fit_mu = popt_g[1]
-        fit_var = popt_g[2]
-        fit_mu_unc = np.sqrt(np.diag(pcov_g))[1]
-        fit_var_unc = np.sqrt(np.diag(pcov_g))[2]
-        print(f"Fit parameters: A = {popt_g[0]:.4f}, mu = {fit_mu:.4f}, var = {fit_var:.4f} ")
-        print(f"Fit error:        +- {np.sqrt(np.diag(pcov_g))[0]:.3f},    +- {fit_mu_unc:.5f},   +- {fit_var_unc:.5f}")
-
-        average_response.append(np.mean(jet_pt_response_bin_i))
-        std_response.append(np.std(jet_pt_response_bin_i))
-        fitted_mu.append(popt_g[1])
-        fitted_mu_unc.append(np.sqrt(np.diag(pcov_g))[1])
-        print("Because the fit produces the variance we need the standard deviation. Propogate uncertainties!")
-        V = popt_g[2]
-        sigma_V = np.sqrt(np.diag(pcov_g))[2]
-
-        fitted_sigma.append(np.sqrt(V))
-        fitted_sigma_unc.append((sigma_V*np.sqrt(V)) / (2*V))
-        print("---------------------------------------------------------")
-        plt.figure()
-        plt.stairs(jet_resp_hist, bins, fill=True, color='orange',alpha=0.5)
-        plt.hist(jet_pt_response_bin_i,bins=50,alpha=0.6,histtype='step',color='blue')
-        x = np.linspace(0,jet_pt_response_bin_i.max(),100)
-        plt.plot(x, gaussian(x, *popt_g), linewidth=2.5, label='Custom gausmyfunc')
-        plt.xlabel('reco/target jet pt')
-        plt.ylabel(f'jets in bin {bin_idx}')
-        ax = plt.gca()
-        # ax.text(0.95, 0.95, f'Fit parameters:\nmu = {popt_g[1]:.4f} +- {np.sqrt(np.diag(pcov_g))[1]:.3f}\nstd = {popt_g[2]:.4f} +- {np.sqrt(np.diag(pcov_g))[2]:.5f}', transform=ax.transAxes, va='top', ha='right')
-        text = (f'mu = {popt_g[1]:.4f} +- {np.sqrt(np.diag(pcov_g))[1]:.4f}  \n'
-                f'std = {np.sqrt(V):.4f} +- {(sigma_V*np.sqrt(V)) / (2*V):.5f}\n'
-                f'std / pT = {np.sqrt(V) / eta_bin_centers[bin_idx]:.6f}')
-        ax.text(0.95, 0.95, f'Fit parameters:\n'+text, transform=ax.transAxes, va='top', ha='right')
-        plt.title(f'Jet eta in [{eta_bins[bin_idx]:.3f},{eta_bins[bin_idx+1]:.3f}], {len(jet_pt_response_bin_i)} jets')
-        plt.savefig(eta_save_folder + f'pt_response_eta_bin_{bin_idx}.png')
-        plt.close()
-        print()
-
-
-    plt.figure()
-    plt.errorbar(eta_bin_centers, fitted_mu, xerr=eta_bin_width/2, yerr=fitted_mu_unc, fmt='o', capsize=5, color='orange',label='Fit param')
-    plt.errorbar(eta_bin_centers, average_response, xerr=eta_bin_width/2, yerr=fitted_mu_unc, fmt='o', capsize=5,alpha=0.5, color='blue',label='np.mean')
-    plt.axhline(y=1, color='red', linestyle='--', linewidth=2)
-    plt.xlabel(r'AntiKt4EMTopo Jet $\eta$ (jet constituent scale)')
-    plt.ylabel('Jet Energy Response')
-    plt.xlim(-2.5,2.5)
-    plt.ylim(0.8,1.5)
-    plt.legend()
-    plt.text(-2.1,1.45, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
-    plt.text(-1.35,1.45, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
-    plt.text(-2.1,1.426, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(-2.1,1.407, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
-    plt.savefig(eta_save_folder+'jet_response_eta_simple.png')
-
-    plt.figure()
-    # plt.errorbar(eta_bin_centers, std_response, xerr=eta_bin_width/2, fmt='o', capsize=5, color='blue',label='Simple np.std')
-    plt.errorbar(eta_bin_centers, fitted_sigma, xerr=eta_bin_width/2, yerr=fitted_sigma_unc, fmt='o', capsize=5, color='orange',label='Fit param')
-    plt.errorbar(eta_bin_centers, abs(np.array(fitted_sigma)), xerr=eta_bin_width/2, yerr=fitted_sigma_unc,alpha=0.5, capsize=5, color='pink')
-    plt.errorbar(eta_bin_centers, std_response, xerr=eta_bin_width/2, yerr=fitted_sigma_unc,alpha=0.5, capsize=5, color='blue')
-    plt.axhline(y=0, color='red', linestyle='--', linewidth=2)
-    plt.xlabel(r'AntiKt4EMTopo Jet $\eta$ (jet constituent scale)')
-    plt.ylabel('Jet Energy Resolution')
-    plt.xlim(-2.5,2.5)
-    plt.legend()
-    plt.savefig(eta_save_folder+'jet_resolution_eta_simple.png')
 
 
 
@@ -1122,10 +1144,10 @@ if eta_truth:
     plt.xlabel(r'Truth Jet $\eta$')
     plt.ylabel('Jet Energy Response')
     plt.legend()
-    plt.text(-2.1,0.95, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
-    plt.text(-1.35,0.95, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
-    plt.text(-2.1,0.93, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(-2.1,0.91, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(-2.1,1.06, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
+    plt.text(-1.35,1.06, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
+    plt.text(-2.1,1.04, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
+    plt.text(-2.1,1.02, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(eta_save_folder+'comp_truth_jet_response_eta.png')
 
     plt.figure()
@@ -1136,10 +1158,10 @@ if eta_truth:
     plt.xlabel(r'Truth Jet $\eta$')
     plt.ylabel('Jet Energy Resolution')
     plt.legend()
-    plt.text(-2.2,0.245, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
-    plt.text(-1.4,0.245, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
-    plt.text(-2.2,0.235, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(-2.2,0.226, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(-2.2,0.285, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
+    plt.text(-1.4,0.285, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
+    plt.text(-2.2,0.275, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
+    plt.text(-2.2,0.268, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(eta_save_folder+'comp_truth_jet_resolution_eta.png')
 
 
@@ -1271,7 +1293,7 @@ if phi_target:
     plt.text(-3.15,1.185, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(-2.11,1.185, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(-3.15,1.176, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(-3.15,1.168, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(-3.15,1.168, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(phi_save_folder+'jet_response_phi_simple.png')
 
     plt.figure()
@@ -1285,7 +1307,7 @@ if phi_target:
     plt.text(-3.1,0.28, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(-2.,0.28, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(-3.1,0.27, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(-3.1,0.263, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(-3.1,0.263, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(phi_save_folder+'jet_resolution_phi_simple.png')
 
 
@@ -1457,7 +1479,7 @@ if phi_truth:
     plt.text(-2.15,0.96, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(-1.4,0.96, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(-2.15,0.945, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(-2.15,0.932, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(-2.15,0.932, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(phi_save_folder+'comp_truth_jet_response_phi.png')
    
     plt.figure()
@@ -1484,6 +1506,6 @@ if phi_truth:
     plt.text(-2.15,0.27, "ATLAS",fontfamily='sans-serif',fontsize=20,fontstyle='italic',fontweight='bold')
     plt.text(-1.4,0.27, "Simulation Internal",fontfamily='sans-serif',fontsize=14,fontstyle='italic')
     plt.text(-2.15,0.256, r"$\sqrt{s}=14\,$TeV $\mu=200$",fontsize=12)
-    plt.text(-2.15,0.244, r"MC21 Dijet JZ1-4, $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
+    plt.text(-2.15,0.244, f"{proc_dict[proc]}" + r", $p_T > 20\,$GeV",fontfamily='sans-serif',fontsize=12)
     plt.savefig(phi_save_folder+'comp_truth_jet_resolution_phi.png')
 

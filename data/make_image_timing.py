@@ -12,10 +12,6 @@ import json
 import scipy
 import time
 
-sys.path.insert(1, '/home/users/b/bozianu/work/SSD/SSD')
-from utils.utils import remove_nan, phi_mod2pi, clip_boxes_to_image, merge_rectangles
-
-
 
 def examine_one_image(path):
     #code to plot the calorimeter + cluster bboxes 
@@ -58,12 +54,12 @@ if __name__=="__main__":
     global_counter = 0
     time_per_event = list()
     time_per_event2 = list()
-    file_nos = ["01","02","03","04","05","06","07","08","09"] + np.arange(10,23).tolist()
+    file_nos = np.arange(14,18).tolist()
     for file_no in file_nos:
         file_start_time = time.perf_counter()
         print('Loading file {}/{}'.format(file_no,22))     
 
-        cells_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_200/user.lbozianu.40987219._0000{}.calocellD3PD_mc21_14TeV_JZ4.r14365.h5".format(file_no)
+        cells_file = "/srv/beegfs/scratch/shares/atlas_caloM/mu_200_truthjets/cells/JZ4/user.lbozianu/user.lbozianu.43589851._0000{}.calocellD3PD_mc21_14TeV_JZ4.r14365.h5".format(file_no)
         chunk_size = 50
 
         with h5py.File(cells_file,"r") as f1:
@@ -100,11 +96,15 @@ if __name__=="__main__":
                 start_time2 = time.perf_counter()
 
                 cell_etas   = cells2sig['cell_eta']
-                cell_phis   = cells2sig['cell_phi'] 
-                cell_energy = cells2sig['cell_E']
-                cell_pt     = cells2sig['cell_pt']
-                cell_sigma  = cells2sig['cell_Sigma']    
-                cell_time   = cells2sig['cell_TimeCells']   
+                centralmask = abs(cell_etas) < 2.5
+                cellscentral = cells2sig[centralmask]
+
+                cell_etas   = cellscentral['cell_eta']
+                cell_phis   = cellscentral['cell_phi'] 
+                cell_energy = cellscentral['cell_E']
+                cell_pt     = cellscentral['cell_pt']
+                cell_sigma  = cellscentral['cell_Sigma']    
+                cell_time   = cellscentral['cell_TimeCells']   
                 cell_Esig   =  cell_energy / cell_sigma     
 
                 # make 2d histograms
