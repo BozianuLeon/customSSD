@@ -197,7 +197,6 @@ with torch.inference_mode():
             plt.close()
             print(step*BS + i)
             print("\t",len(tru_boxes_ext),len(tar_boxes_ext),len(det_boxes_ext),len(det_boxes_pts))
-            quit()
             if (step*BS + i) == 16:
                 quit()
             ###############################

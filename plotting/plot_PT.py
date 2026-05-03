@@ -19,13 +19,16 @@ def load_object(fname):
         return pickle.load(file)
 
 
-model_name = "jetSSD_custom_convnext_central_32e"
+# model_name = "jetSSD_custom_convnext_central_32e"
+model_name = "jetSSD_smallconvnext_central_40e"
 # proc = "JZcomb0_test"
 # date = "20250313-06"
 # # date = "20250406-23"
-proc = "ttbar_test"
-date = "20250407-14"
+# proc = "ttbar_test"
+# date = "20250407-14"
 # date = "20250626-18"
+proc = "JZ0"
+date = "20251114-09"
 
 metrics_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/cache/{model_name}/{proc}/{date}/box_metrics/"
 save_folder = f"/home/users/b/bozianu/work/paperSSD/customSSD/plotting/figs/{model_name}/{proc}/{date}/jet_kin/"
@@ -96,54 +99,54 @@ print()
 print(f"Number dR (truth) matched truth: {len(dRtruthmatch_tru_pt)}\nNumber dR (truth) matched preds: {len(dRtruthmatch_p_pt)}")
 print(f"Number dR (truth) unmatched truth: {len(dRtruthunmatch_tru_pt)}\nNumber dR (truth) unmatched preds: {len(dRtruthunmatch_p_pt)}")
 
-scr_threshold = 0.5
-total_scr_mask = total_p_scr > scr_threshold
-total_p_pt = total_p_pt[total_scr_mask]
-total_p_weight = total_p_weight[total_scr_mask]
+# scr_threshold = 0.5
+# total_scr_mask = total_p_scr > scr_threshold
+# total_p_pt = total_p_pt[total_scr_mask]
+# total_p_weight = total_p_weight[total_scr_mask]
 
-match_scr_mask = match_p_scr > scr_threshold
-match_tar_pt = match_tar_pt[match_scr_mask]
-match_p_pt = match_p_pt[match_scr_mask]
+# match_scr_mask = match_p_scr > scr_threshold
+# match_tar_pt = match_tar_pt[match_scr_mask]
+# match_p_pt = match_p_pt[match_scr_mask]
 
-dRmatch_scr_mask = dRmatch_p_scr > scr_threshold
-dRmatch_tar_pt = dRmatch_tar_pt[dRmatch_scr_mask]
-dRmatch_p_pt = dRmatch_p_pt[dRmatch_scr_mask]
+# dRmatch_scr_mask = dRmatch_p_scr > scr_threshold
+# dRmatch_tar_pt = dRmatch_tar_pt[dRmatch_scr_mask]
+# dRmatch_p_pt = dRmatch_p_pt[dRmatch_scr_mask]
 
-unmatch_scr_mask = unmatch_p_scr > scr_threshold
-unmatch_p_pt = unmatch_p_pt[unmatch_scr_mask]
+# unmatch_scr_mask = unmatch_p_scr > scr_threshold
+# unmatch_p_pt = unmatch_p_pt[unmatch_scr_mask]
 
-dRunmatch_scr_mask = dRunmatch_p_scr > scr_threshold
-dRunmatch_p_pt = dRunmatch_p_pt[dRunmatch_scr_mask]
+# dRunmatch_scr_mask = dRunmatch_p_scr > scr_threshold
+# dRunmatch_p_pt = dRunmatch_p_pt[dRunmatch_scr_mask]
 
-# truth matching
-dRtruthmatch_scr_mask = dRtruthmatch_p_scr > scr_threshold
-dRtruthmatch_tru_pt = dRtruthmatch_tru_pt[dRtruthmatch_scr_mask]
-dRtruthmatch_p_pt = dRtruthmatch_p_pt[dRtruthmatch_scr_mask]
+# # truth matching
+# dRtruthmatch_scr_mask = dRtruthmatch_p_scr > scr_threshold
+# dRtruthmatch_tru_pt = dRtruthmatch_tru_pt[dRtruthmatch_scr_mask]
+# dRtruthmatch_p_pt = dRtruthmatch_p_pt[dRtruthmatch_scr_mask]
 
-dRtruthunmatch_scr_mask = dRtruthunmatch_p_scr > scr_threshold
-dRtruthunmatch_p_pt = dRtruthunmatch_p_pt[dRtruthunmatch_scr_mask]
+# dRtruthunmatch_scr_mask = dRtruthunmatch_p_scr > scr_threshold
+# dRtruthunmatch_p_pt = dRtruthunmatch_p_pt[dRtruthunmatch_scr_mask]
 
-print("\n\nNew score threshold applied")
-print(f"Number        total targets: {len(total_tar_pt)}\nNumber        total predictions: {len(total_p_pt)}")
-print(f"Number      matched targets: {len(match_tar_pt)}\nNumber      matched predictions: {len(match_p_pt)}")
-print(f"Number    unmatched targets: {len(unmatch_tar_pt)}\nNumber    unmatched predictions: {len(unmatch_p_pt)}")
-print(f"Number dR   matched targets: {len(dRmatch_tar_pt)}\nNumber dR   matched predictions: {len(dRmatch_p_pt)}")
-print(f"Number dR unmatched targets: {len(dRunmatch_tar_pt)}\nNumber dR unmatched predictions: {len(dRunmatch_p_pt)}")
-print()
-print(f"Number dR (truth) matched truth: {len(dRtruthmatch_tru_pt)}\nNumber dR (truth) matched preds: {len(dRtruthmatch_p_pt)}")
-print(f"Number dR (truth) unmatched truth: {len(dRtruthunmatch_tru_pt)}\nNumber dR (truth) unmatched preds: {len(dRtruthunmatch_p_pt)}")
+# print("\n\nNew score threshold applied")
+# print(f"Number        total targets: {len(total_tar_pt)}\nNumber        total predictions: {len(total_p_pt)}")
+# print(f"Number      matched targets: {len(match_tar_pt)}\nNumber      matched predictions: {len(match_p_pt)}")
+# print(f"Number    unmatched targets: {len(unmatch_tar_pt)}\nNumber    unmatched predictions: {len(unmatch_p_pt)}")
+# print(f"Number dR   matched targets: {len(dRmatch_tar_pt)}\nNumber dR   matched predictions: {len(dRmatch_p_pt)}")
+# print(f"Number dR unmatched targets: {len(dRunmatch_tar_pt)}\nNumber dR unmatched predictions: {len(dRunmatch_p_pt)}")
+# print()
+# print(f"Number dR (truth) matched truth: {len(dRtruthmatch_tru_pt)}\nNumber dR (truth) matched preds: {len(dRtruthmatch_p_pt)}")
+# print(f"Number dR (truth) unmatched truth: {len(dRtruthunmatch_tru_pt)}\nNumber dR (truth) unmatched preds: {len(dRtruthunmatch_p_pt)}")
 
 
 
-nominal = False
+nominal = True
 square_comp = False
-total_unc = False
-jet_lead_pt = False
-jet_sublead_pt = False
-jet_asymmetry = False
-jet_thresh_cut = False
-jet_thresh_cut2 = False
-jet_thresh_cut3 = False
+total_unc = True
+jet_lead_pt = True
+jet_sublead_pt = True
+jet_asymmetry = True
+jet_thresh_cut = True
+jet_thresh_cut2 = True
+jet_thresh_cut3 = True
 jet_thresh_cut1b = True
 jet_thresh_cut3b = True
 
@@ -717,6 +720,10 @@ if jet_sublead_pt:
     n_bins = int(np.ceil((bin_stop - bin_start) / bin_width))
     bins = np.linspace(bin_start, bin_stop, n_bins)
     bin_centers = (bins[:-1] + bins[1:]) / 2
+
+
+
+
     # plot 1
     f, ax = plt.subplots(2, 1, figsize=(9, 8), sharex=True, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0}) 
     freq_tru, bins, _   = ax[0].hist(tru_lead_pt,bins=bins,histtype='step',color='gold',lw=2,label='Truth Jets')
@@ -859,6 +866,15 @@ if jet_sublead_pt:
     f.savefig(save_folder + f'/jet_sublead_pt_unc.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
     plt.close()
 
+
+    f,ax0 = plt.subplots(1,1,figsize=(9, 6))
+    freq_pred, bins, _   = ax0.hist(p_sublead_pt,bins=100,histtype='step',color='red',lw=1.5,label='Predicted Jets')
+    freq_tar, bins, _    = ax0.hist(tar_sublead_pt,bins=bins,histtype='step',color='green',lw=1.5,label='Target Jets')
+    ax0.legend(loc='lower left',bbox_to_anchor=(0.65, 0.7),fontsize="medium")
+    hep.atlas.label(ax=ax0,label='Work in Progress',data=False,lumi=None,loc=1)
+    ax0.set(yscale='log',xlabel='Subleading Jet $p_{\mathrm{T}}$ constituentScale [GeV]')
+    f.savefig(save_folder + f'/jet_pt_subleadb.{image_format}',dpi=400,format=image_format,bbox_inches="tight")
+    plt.close()
 
 
 

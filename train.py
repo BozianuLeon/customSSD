@@ -39,10 +39,8 @@ torch.manual_seed(config["seed"])
 
 
 dataset = data.CustomDataset(annotation_file=args.input_file, rnd_flips=True)
-train_len = int(0.90 * len(dataset))
+train_len = int(0.9 * len(dataset))
 val_len = int(0.08 * len(dataset))
-# train_len = int(0.3 * len(dataset))
-# val_len = int(0.0001 * len(dataset))
 test_len = len(dataset) - train_len - val_len
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_len, val_len, test_len])
 print('\ttrain / val / test size : ',train_len,'/',val_len,'/',test_len,'\n')
@@ -53,7 +51,7 @@ test_loader  = torch.utils.data.DataLoader(test_dataset, collate_fn=dataset.coll
 
 
 # instantiate model
-model = models.SSD(backbone_name=args.backbone,in_channels=5)
+model = models.SSD(backbone_name=args.backbone,in_channels=5,diamond_mask=True)
 model = model.to(config["device"]) 
 total_params = sum(p.numel() for p in model.parameters())
 print(model.backbone_name, f'\t{total_params:,} total! parameters.\n')
@@ -69,7 +67,6 @@ print("Generated prior boxes, ",dboxes.dboxes.shape, ", default boxes", dboxes.d
 # encoder and loss
 encoder = data.Encoder(dboxes)
 loss = models.Loss(dboxes)
-loss2 = models.Loss2(dboxes)
 newloss = models.NewLoss(dboxes,scalar=1.0)
 
 
@@ -80,7 +77,6 @@ for epoch in range(config["n_epochs"]):
     model.train()
     running_loss = list()
     s_loss,g_loss,c_loss,f_loss,v_loss = list(),list(),list(),list(),list()
-    # torch.autograd.set_detect_anomaly(True)
     for step, (images, target_dict) in enumerate(train_loader):
         # send data to gpu (annoying)
         images = images.to(config["device"],non_blocking=True)
@@ -91,39 +87,44 @@ for epoch in range(config["n_epochs"]):
         # # encode targets/default boxes
         gloc,glabel = encoder.encode_batch(target_dict, config["BS"])
         # train_loss = loss(plocs, plabel, gloc, glabel)
-        reg_loss, clf_loss = loss2(plocs, plabel, gloc, glabel)
-        s_loss.append(reg_loss.item())
-        f_loss.append(clf_loss.item())
-        train_loss = reg_loss + clf_loss
-        # new loss:
-        # newtrain_loss_dict = newloss(plocs, plabel, gloc, glabel)
-        # s_loss.append(newtrain_loss_dict["SL1"].item())
-        # # g_loss.append(newtrain_loss_dict["GIOU"].item())
-        # c_loss.append(newtrain_loss_dict["BCE"].item())
-        # f_loss.append(newtrain_loss_dict["FCL"].item())
-        # # v_loss.append(newtrain_loss_dict["VFCL"].item())
-        # train_loss = newtrain_loss_dict["SL1"] + newtrain_loss_dict["FCL"]
+        newtrain_loss_dict = newloss(plocs, plabel, gloc, glabel)
+        s_loss.append(newtrain_loss_dict["SL1"].item())
+        # g_loss.append(newtrain_loss_dict["GIOU"].item())
+        c_loss.append(newtrain_loss_dict["BCE"].item())
+        f_loss.append(newtrain_loss_dict["FCL"].item())
+        # v_loss.append(newtrain_loss_dict["VFCL"].item())
+        train_loss = newtrain_loss_dict["SL1"] + newtrain_loss_dict["FCL"]
         running_loss.append(train_loss.item())
 
         # back prop
         optimizer.zero_grad()
         train_loss.backward()
         optimizer.step()
-        # print(step,'/',len(train_loader))
 
 # ###
+
+#         output = encoder.decode_batch(plocs, plabel, ptmap, iou_thresh=0.25, confidence=0.45,max_num=155) 
+#         boxes, labels, scores, pts = zip(*output)
+#         # det_boxes_ext = boxes[i].detach().cpu().numpy()
+#         # det_boxes_ext[:,(0,2)] = (det_boxes_ext[:,(0,2)]*((extent_i[1]-extent_i[0])))+extent_i[0]
+#         # det_boxes_ext[:,(1,3)] = (det_boxes_ext[:,(1,3)]*((extent_i[3]-extent_i[2])))+extent_i[2]
 #         f,ax = plt.subplots()
 #         img = images.cpu().detach().numpy()
-#         ii = ax.imshow(img[i][0],cmap='binary_r')
+#         ii = ax.imshow(img[0][0],cmap='binary_r')
 #         # ax.hlines([-np.pi,np.pi],-3,3,color='red',ls='dashed')
 #         # ax.hlines([-1.9396086193266369,1.940238044375465],-3,3,color='orange',ls='dashed')
+#         true_bboxes = target_dict[0]["boxes"]
 #         for bbx in true_bboxes:
 #             bbx = bbx.cpu().detach().numpy()
 #             bb = matplotlib.patches.Rectangle((bbx[0],bbx[1]),bbx[2]-bbx[0],bbx[3]-bbx[1],lw=1,ec='limegreen',fc='none')
 #             ax.add_patch(bb)
+#         for bbx in boxes:
+#             bbx = bbx.cpu().detach().numpy()
+#             bb = matplotlib.patches.Rectangle((bbx[0],bbx[1]),bbx[2]-bbx[0],bbx[3]-bbx[1],lw=1,ec='red',fc='none')
+#             ax.add_patch(bb)
 #         cbar = f.colorbar(ii,ax=ax)
 #         cbar.ax.get_yaxis().labelpad = 10
-#         cbar.set_label('cell significance', rotation=90)
+#         cbar.set_label('sum cell E', rotation=90)
 #         ax.set(xlabel='eta',ylabel='phi')
 #         f.savefig('central-image-example.png')
 #         plt.close()
@@ -131,13 +132,11 @@ for epoch in range(config["n_epochs"]):
 # ###
 
     print(f"\tEpoch {epoch} / {config['n_epochs']}: train loss {mean(running_loss):.4f}, train time {time.perf_counter() - beginning:.2f}s, LR: {optimizer.param_groups[0]['lr']:.4f}")
-    print(f"\tLoss2: Focal Loss: {mean(f_loss):.3f}, SL1 Loss: {mean(s_loss):.3f}")
-    # print(f"\t\tSL1 Loss: {mean(s_loss):.3f}, GIOU Loss: {0.0:.3f}, BCE Loss: {mean(c_loss):.3f}, Focal Loss: {mean(f_loss):.3f}, VariFocal Loss: {0.00:.3f}")
-
+    print(f"\t\tSL1 Loss: {mean(s_loss):.3f}, GIOU Loss: {mean([0.0]):.3f}, BCE Loss: {mean(c_loss):.3f}, Focal Loss: {mean(f_loss):.3f}, VariFocal Loss: {mean([0.0]):.3f}")
+    val_beginning = time.perf_counter()
     # validation step
     model.eval()
     with torch.inference_mode():
-        beginning = time.perf_counter()
         running_val_loss = list()
         for step, (val_images, val_dict) in enumerate(val_loader):
             # send data to gpu (annoying)
@@ -149,10 +148,12 @@ for epoch in range(config["n_epochs"]):
             # encode val_targets/default boxes
             gloc,glabel = encoder.encode_batch(val_dict, config["BS"])
 
-            val_loss = loss(plocs, plabel, gloc, glabel) 
+            # val_loss = loss(plocs, plabel, gloc, glabel) 
+            newval_loss_dict = newloss(plocs, plabel, gloc, glabel)
+            val_loss = newval_loss_dict["SL1"] + newval_loss_dict["FCL"]
             running_val_loss.append(val_loss.item())
         
-    print(f"\tEpoch {epoch} / {config['n_epochs']}: valid loss {mean(running_val_loss):.4f}, valid time {time.perf_counter() - beginning:.2f}s")
+    print(f"\tEpoch {epoch} / {config['n_epochs']}: valid loss {mean(running_val_loss):.4f}, valid time {time.perf_counter() - val_beginning:.2f}s")
     
     # update LR scheduler
     scheduler.step()
@@ -247,4 +248,3 @@ with torch.no_grad():
             plt.close()
             
             quit()
-
